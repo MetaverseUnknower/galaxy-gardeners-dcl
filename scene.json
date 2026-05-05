@@ -1,0 +1,58 @@
+{
+  "ecs7": true,
+  "runtimeVersion": "7",
+  "display": {
+    "title": "Galaxy Gardeners",
+    "description": "Explore the galaxy, mine asteroids, and discover alien flora",
+    "favicon": "favicon_asset",
+    "navmapThumbnail": ""
+  },
+  "owner": "",
+  "contact": {
+    "name": "Galaxy Gardeners",
+    "email": ""
+  },
+  "main": "bin/index.js",
+  "tags": ["space", "exploration", "galaxy"],
+  "scene": {
+    "parcels": [
+      "0,0", "0,1", "1,0", "1,1"
+    ],
+    "base": "0,0"
+  },
+  "spawnPoints": [
+    {
+      "name": "Bridge",
+      "default": true,
+      "position": {
+        "x": [7, 9],
+        "y": [0, 0],
+        "z": [14, 15]
+      },
+      "cameraTarget": {
+        "x": 8,
+        "y": 4,
+        "z": 8
+      }
+    }
+  ],
+  "requiredPermissions": [
+    "ALLOW_TO_TRIGGER_AVATAR_EMOTE",
+    "ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE",
+    "ALLOW_MEDIA_HOSTNAMES"
+  ],
+  "allowedMediaHostnames": [
+    "staging.galaxygardeners.app"
+  ],
+  "featureToggles": {
+    "voiceChat": "enabled",
+    "portableExperiences": "enabled",
+    "nearbyVoiceChat": "enabled"
+  },
+  "creator": "",
+  "skyboxConfig": {},
+  "source": {
+    "origin": "creator-hub",
+    "projectId": "c0286980-281b-4b74-9adf-4295253204f4"
+  }
+}
