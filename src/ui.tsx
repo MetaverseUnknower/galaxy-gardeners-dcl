@@ -59,6 +59,16 @@ const SystemInfoPanel = () => {
             uiText={{ value: 'Has Station', fontSize: 14, color: Color4.create(0, 1, 1, 1) }}
           />
         ) : null}
+        {selectedSystem.discovered_by ? (
+          <UiEntity
+            uiTransform={{ margin: { bottom: 4 } }}
+            uiText={{
+              value: `Discovered by: ${selectedSystem.discovered_by}`,
+              fontSize: 13,
+              color: Color4.create(0.6, 0.6, 0.6, 1)
+            }}
+          />
+        ) : null}
         {selectedSystem.has_wormhole ? (
           <UiEntity
             uiTransform={{ margin: { bottom: 4 } }}

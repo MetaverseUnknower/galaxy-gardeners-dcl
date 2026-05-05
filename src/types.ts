@@ -29,9 +29,9 @@ export interface PlayerInfo {
 }
 
 export interface AuthResponse {
-  token: string
-  playerId: string | null
-  isNewPlayer: boolean
+  accessToken: string
+  refreshToken: string
+  hasPlayer: boolean
 }
 
 export interface TravelStatus {

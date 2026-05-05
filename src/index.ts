@@ -11,6 +11,7 @@ import { drawRouteLine } from './navigation'
 let playerInfo: PlayerInfo | null = null
 let systems: StarSystem[] = []
 let arrivalCheckTimer = 0
+let statusClearTimer = -1
 
 export async function main() {
   setupUi()
@@ -109,6 +110,15 @@ export async function main() {
   engine.addSystem(travelUpdateSystem)
 
   engine.addSystem((dt: number) => {
+    // Clear status messages after a delay
+    if (statusClearTimer > 0) {
+      statusClearTimer -= dt
+      if (statusClearTimer <= 0) {
+        statusClearTimer = -1
+        setStatusMessage(null)
+      }
+    }
+
     arrivalCheckTimer += dt
     if (arrivalCheckTimer >= 5) {
       arrivalCheckTimer = 0
@@ -117,6 +127,7 @@ export async function main() {
           if (arrived) {
             setTravelingStatus(null)
             setStatusMessage('Arrived!')
+            statusClearTimer = 3
             reloadMap()
           }
         })

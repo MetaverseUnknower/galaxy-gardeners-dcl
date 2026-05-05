@@ -43,6 +43,7 @@ async function apiPost<T>(path: string, body?: Record<string, unknown>): Promise
     throw new Error(`API error ${response.status}: ${response.body}`)
   }
 
+  if (!response.body) return undefined as T
   return JSON.parse(response.body) as T
 }
 

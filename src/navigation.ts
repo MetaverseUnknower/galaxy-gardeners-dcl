@@ -32,14 +32,31 @@ export function drawRouteLine(fromPos: Vector3, toPos: Vector3): void {
 
   const entity = engine.addEntity()
 
-  // Orient cylinder along the line between two points
+  // Orient cylinder from Y-up to the direction vector using axis-angle rotation
   const direction = Vector3.normalize(Vector3.create(dx, dy, dz))
-  const rotation = Quaternion.fromLookAt(fromPos, toPos)
+  const yAxis = Vector3.create(0, 1, 0)
+  const dot = Vector3.dot(yAxis, direction)
+  let rotation: { x: number; y: number; z: number; w: number }
+
+  if (dot > 0.9999) {
+    // Already aligned with Y
+    rotation = Quaternion.Identity()
+  } else if (dot < -0.9999) {
+    // Opposite to Y, rotate 180 around X
+    rotation = Quaternion.fromEulerDegrees(180, 0, 0)
+  } else {
+    // Cross product gives rotation axis, acos(dot) gives angle
+    const axis = Vector3.normalize(Vector3.cross(yAxis, direction))
+    const angle = Math.acos(dot)
+    const halfAngle = angle / 2
+    const sinHalf = Math.sin(halfAngle)
+    rotation = { x: axis.x * sinHalf, y: axis.y * sinHalf, z: axis.z * sinHalf, w: Math.cos(halfAngle) }
+  }
 
   Transform.create(entity, {
     position: midpoint,
     scale: Vector3.create(0.015, length / 2, 0.015),
-    rotation: Quaternion.multiply(rotation, Quaternion.fromEulerDegrees(90, 0, 0))
+    rotation
   })
   MeshRenderer.setCylinder(entity)
   Material.setPbrMaterial(entity, {
