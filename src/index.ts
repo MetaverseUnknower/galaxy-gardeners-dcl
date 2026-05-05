@@ -29,8 +29,8 @@ export async function main() {
         return
       }
 
-      const { getPlayerData } = await import('~system/Players')
-      const userData = await getPlayerData({})
+      const { getUserData } = await import('~system/UserIdentity')
+      const userData = await getUserData({})
       const username = userData.data?.displayName || 'Explorer'
 
       await api.joinGalaxy(galaxies[0].id, username)
