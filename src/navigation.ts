@@ -112,7 +112,8 @@ export async function startTravel(destinationId: string): Promise<void> {
 export async function updateTravelState(): Promise<void> {
   const status = await api.getTravelStatus()
 
-  if (!status.is_traveling) {
+  const traveling = (status as any).isTraveling ?? status.is_traveling
+  if (!traveling) {
     isTraveling = false
     if (travelMarkerEntity) {
       engine.removeEntity(travelMarkerEntity)
@@ -123,14 +124,16 @@ export async function updateTravelState(): Promise<void> {
   }
 
   isTraveling = true
-  travelStartTime = new Date(status.departure_time!).getTime()
-  travelEndTime = new Date(status.arrival_time!).getTime()
+  const raw = status as any
+  const startedAt = raw.startedAt || raw.started_at || status.departure_time
+  const completesAt = raw.completesAt || raw.completes_at || status.arrival_time
+  const destId = raw.destinationSystemId || raw.destination_system_id || status.destination_system_id
+
+  travelStartTime = new Date(startedAt).getTime()
+  travelEndTime = new Date(completesAt).getTime()
 
   for (const [entity, system] of starEntities) {
-    if (system.id === status.origin_system_id) {
-      originPosition = Transform.get(entity).position
-    }
-    if (system.id === status.destination_system_id) {
+    if (system.id === destId) {
       destinationPosition = Transform.get(entity).position
     }
   }

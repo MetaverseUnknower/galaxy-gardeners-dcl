@@ -107,7 +107,8 @@ export async function main() {
     await updateTravelState()
     if (isCurrentlyTraveling()) {
       const status = await api.getTravelStatus()
-      const destSystem = systems.find(s => s.id === status.destination_system_id)
+      const destId = (status as any).destinationSystemId || status.destination_system_id
+      const destSystem = systems.find(s => s.id === destId)
       if (destSystem) setTravelingStatus(destSystem.name)
     }
 
