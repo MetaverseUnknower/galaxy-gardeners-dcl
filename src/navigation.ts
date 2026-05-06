@@ -2,7 +2,7 @@ import { engine, Entity, Transform, MeshRenderer, Material, MaterialTransparency
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { TravelStatus } from './types'
-import { starEntities } from './galaxyMap'
+import { starEntities, getGalaxyRoot } from './galaxyMap'
 
 let routeLineEntities: Entity[] = []
 let travelMarkerEntity: Entity | null = null
@@ -11,9 +11,19 @@ let travelStartTime = 0
 let travelEndTime = 0
 let originPosition: Vector3 | null = null
 let destinationPosition: Vector3 | null = null
+let travelMarkerRotation = 0
+let currentProgress = 0
+let totalTravelDistance = 0
 
 export function isCurrentlyTraveling(): boolean {
   return isTraveling
+}
+
+export function getTravelProgress(): { progress: number; remainingDistance: number } {
+  return {
+    progress: currentProgress,
+    remainingDistance: totalTravelDistance * (1 - currentProgress)
+  }
 }
 
 export function drawRouteLine(fromPos: Vector3, toPos: Vector3): void {
@@ -32,20 +42,16 @@ export function drawRouteLine(fromPos: Vector3, toPos: Vector3): void {
 
   const entity = engine.addEntity()
 
-  // Orient cylinder from Y-up to the direction vector using axis-angle rotation
   const direction = Vector3.normalize(Vector3.create(dx, dy, dz))
   const yAxis = Vector3.create(0, 1, 0)
   const dot = Vector3.dot(yAxis, direction)
   let rotation: { x: number; y: number; z: number; w: number }
 
   if (dot > 0.9999) {
-    // Already aligned with Y
     rotation = Quaternion.Identity()
   } else if (dot < -0.9999) {
-    // Opposite to Y, rotate 180 around X
     rotation = Quaternion.fromEulerDegrees(180, 0, 0)
   } else {
-    // Cross product gives rotation axis, acos(dot) gives angle
     const axis = Vector3.normalize(Vector3.cross(yAxis, direction))
     const angle = Math.acos(dot)
     const halfAngle = angle / 2
@@ -55,8 +61,9 @@ export function drawRouteLine(fromPos: Vector3, toPos: Vector3): void {
 
   Transform.create(entity, {
     position: midpoint,
-    scale: Vector3.create(0.015, length / 2, 0.015),
-    rotation
+    scale: Vector3.create(0.015, length, 0.015),
+    rotation,
+    parent: getGalaxyRoot()
   })
   MeshRenderer.setCylinder(entity)
   Material.setPbrMaterial(entity, {
@@ -83,15 +90,18 @@ function createTravelMarker(position: Vector3): void {
 
   travelMarkerEntity = engine.addEntity()
   Transform.create(travelMarkerEntity, {
-    position,
-    scale: Vector3.create(0.18, 0.18, 0.18)
+    position: Vector3.create(position.x, position.y + 0.25, position.z),
+    scale: Vector3.create(0.12, 0.12, 0.12),
+    rotation: Quaternion.fromEulerDegrees(45, 0, 45),
+    parent: getGalaxyRoot()
   })
-  MeshRenderer.setSphere(travelMarkerEntity)
+  MeshRenderer.setBox(travelMarkerEntity)
   Material.setPbrMaterial(travelMarkerEntity, {
     albedoColor: Color4.create(0, 1, 0.5, 1),
     emissiveColor: Color3.create(0, 1, 0.5),
-    emissiveIntensity: 5
+    emissiveIntensity: 6
   })
+  travelMarkerRotation = 0
 }
 
 export async function startTravel(destinationId: string): Promise<void> {
@@ -126,6 +136,10 @@ export async function updateTravelState(): Promise<void> {
   }
 
   if (originPosition && destinationPosition) {
+    const dx = destinationPosition.x - originPosition.x
+    const dy = destinationPosition.y - originPosition.y
+    const dz = destinationPosition.z - originPosition.z
+    totalTravelDistance = Math.sqrt(dx * dx + dy * dy + dz * dz)
     drawRouteLine(originPosition, destinationPosition)
     createTravelMarker(originPosition)
   }
@@ -158,16 +172,19 @@ export function travelUpdateSystem(dt: number): void {
   const now = Date.now()
   const totalDuration = travelEndTime - travelStartTime
   const elapsed = now - travelStartTime
-  const progress = Math.min(elapsed / totalDuration, 1.0)
+  currentProgress = Math.min(elapsed / totalDuration, 1.0)
 
   const pos = Vector3.create(
-    originPosition.x + (destinationPosition.x - originPosition.x) * progress,
-    originPosition.y + (destinationPosition.y - originPosition.y) * progress,
-    originPosition.z + (destinationPosition.z - originPosition.z) * progress
+    originPosition.x + (destinationPosition.x - originPosition.x) * currentProgress,
+    originPosition.y + (destinationPosition.y - originPosition.y) * currentProgress + 0.25,
+    originPosition.z + (destinationPosition.z - originPosition.z) * currentProgress
   )
 
+  travelMarkerRotation += dt * 60
   Transform.createOrReplace(travelMarkerEntity, {
     position: pos,
-    scale: Vector3.create(0.18, 0.18, 0.18)
+    scale: Vector3.create(0.12, 0.12, 0.12),
+    rotation: Quaternion.fromEulerDegrees(45, travelMarkerRotation, 45),
+    parent: getGalaxyRoot()
   })
 }

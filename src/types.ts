@@ -10,6 +10,7 @@ export interface StarSystem {
   coord_z: number
   origin: boolean
   discovered_by: string | null
+  discovered_by_name: string | null
   has_station: boolean
   solar_recharge_rate: number
   has_wormhole: boolean

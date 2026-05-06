@@ -1,6 +1,7 @@
 import { engine, Entity, Transform, MeshRenderer, Material, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
-import { starEntities } from './galaxyMap'
+import { starEntities, getGalaxyRoot } from './galaxyMap'
+import { isCurrentlyTraveling } from './navigation'
 import { StarSystem } from './types'
 
 let selectedSystem: StarSystem | null = null
@@ -18,6 +19,7 @@ export function setSelectionCallback(callback: (system: StarSystem | null) => vo
 function createSelectionRing(position: Vector3): void {
   clearSelectionRing()
 
+  const root = getGalaxyRoot()
   const ringRadius = 0.25
   const segments = 16
   for (let i = 0; i < segments; i++) {
@@ -29,7 +31,8 @@ function createSelectionRing(position: Vector3): void {
         position.y,
         position.z + Math.sin(angle) * ringRadius
       ),
-      scale: Vector3.create(0.025, 0.025, 0.025)
+      scale: Vector3.create(0.025, 0.025, 0.025),
+      parent: root
     })
     MeshRenderer.setSphere(entity)
     Material.setPbrMaterial(entity, {
@@ -75,6 +78,7 @@ export function setupInteraction(): void {
         }
       },
       () => {
+        if (isCurrentlyTraveling()) return
         selectSystem(system, entity)
       }
     )

@@ -1,7 +1,7 @@
 import { getUserData } from '~system/UserIdentity'
 import { signedFetch } from '~system/SignedFetch'
 
-const API_BASE = 'https://staging.galaxygardeners.app'
+const API_BASE = 'http://localhost:3000'
 
 let authToken: string | null = null
 
