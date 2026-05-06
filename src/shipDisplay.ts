@@ -13,6 +13,8 @@ let shipData: any = null
 let expeditions: any[] = []
 let missionActionStatus: Record<string, string> = {}
 let onMissionNotify: ((text: string, color: Color4) => void) | null = null
+let missionPage = 0
+const MISSIONS_PER_PAGE = 4
 
 export function setMissionNotifyCallback(cb: (text: string, color: Color4) => void): void { onMissionNotify = cb }
 
@@ -119,16 +121,23 @@ function createMissionsPanel(): void {
   for (const e of missionEntities) engine.removeEntity(e)
   missionEntities = []
   const missionsX = DISPLAY_CENTER.x + MISSIONS_OFFSET_X
-  const panelHeight = Math.max(2.5, 1.5 + expeditions.length * 0.45)
+  const panelHeight = 2.5
   const mp = engine.addEntity()
   Transform.create(mp, { position: Vector3.create(missionsX, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), scale: Vector3.create(2.8, panelHeight, 0.03) })
   MeshRenderer.setBox(mp)
   Material.setPbrMaterial(mp, { albedoColor: Color4.create(0.05, 0.15, 0.25, 0.3), emissiveColor: Color3.create(0, 0.2, 0.4), emissiveIntensity: 0.5, metallic: 0.9, roughness: 0.1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND })
   missionEntities.push(mp)
 
+  const totalPages = Math.max(1, Math.ceil(expeditions.length / MISSIONS_PER_PAGE))
+  if (missionPage >= totalPages) missionPage = totalPages - 1
+  if (missionPage < 0) missionPage = 0
+
   const mt = engine.addEntity()
   Transform.create(mt, { position: Vector3.create(missionsX, DISPLAY_CENTER.y + 1.5, DISPLAY_CENTER.z + 0.03), rotation: TEXT_ROT })
-  TextShape.create(mt, { text: 'ACTIVE MISSIONS', fontSize: 1.5, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+  TextShape.create(mt, {
+    text: totalPages > 1 ? `ACTIVE MISSIONS (${missionPage + 1}/${totalPages})` : 'ACTIVE MISSIONS',
+    fontSize: 1.5, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+  })
   missionEntities.push(mt)
 
   if (expeditions.length === 0) {
@@ -139,9 +148,41 @@ function createMissionsPanel(): void {
     return
   }
 
-  for (let i = 0; i < expeditions.length; i++) {
+  // Page nav buttons
+  if (totalPages > 1) {
+    if (missionPage > 0) {
+      const prevBtn = engine.addEntity()
+      Transform.create(prevBtn, { position: Vector3.create(missionsX - 0.8, DISPLAY_CENTER.y - 0.55, DISPLAY_CENTER.z + 0.02), scale: Vector3.create(0.4, 0.2, 0.04) })
+      MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
+      Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
+      missionEntities.push(prevBtn)
+      const prevLabel = engine.addEntity()
+      Transform.create(prevLabel, { position: Vector3.create(missionsX - 0.8, DISPLAY_CENTER.y - 0.55, DISPLAY_CENTER.z + 0.05), rotation: TEXT_ROT })
+      TextShape.create(prevLabel, { text: '< PREV', fontSize: 0.4, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      missionEntities.push(prevLabel)
+      pointerEventsSystem.onPointerDown({ entity: prevBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Previous Page', maxDistance: 10 } }, () => { missionPage--; createMissionsPanel() })
+    }
+    if (missionPage < totalPages - 1) {
+      const nextBtn = engine.addEntity()
+      Transform.create(nextBtn, { position: Vector3.create(missionsX + 0.8, DISPLAY_CENTER.y - 0.55, DISPLAY_CENTER.z + 0.02), scale: Vector3.create(0.4, 0.2, 0.04) })
+      MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
+      Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
+      missionEntities.push(nextBtn)
+      const nextLabel = engine.addEntity()
+      Transform.create(nextLabel, { position: Vector3.create(missionsX + 0.8, DISPLAY_CENTER.y - 0.55, DISPLAY_CENTER.z + 0.05), rotation: TEXT_ROT })
+      TextShape.create(nextLabel, { text: 'NEXT >', fontSize: 0.4, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      missionEntities.push(nextLabel)
+      pointerEventsSystem.onPointerDown({ entity: nextBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Next Page', maxDistance: 10 } }, () => { missionPage++; createMissionsPanel() })
+    }
+  }
+
+  const startIdx = missionPage * MISSIONS_PER_PAGE
+  const endIdx = Math.min(startIdx + MISSIONS_PER_PAGE, expeditions.length)
+
+  for (let i = startIdx; i < endIdx; i++) {
     const exp = expeditions[i]
-    const y = DISPLAY_CENTER.y + 1.0 - i * 0.4
+    const row = i - startIdx
+    const y = DISPLAY_CENTER.y + 1.0 - row * 0.4
     const isComplete = exp.status === 'completed' || (exp.completes_at && new Date(exp.completes_at).getTime() <= Date.now())
     const typeLabel = exp.expedition_type === 'mining' ? 'Mining' : 'Exploration'
     const actionStatus = missionActionStatus[exp.id]
