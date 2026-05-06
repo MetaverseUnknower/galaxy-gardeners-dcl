@@ -54,7 +54,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   const panelTopLocalY = 1.0 + (panelHeight + 0.5) / 2
   const topWorldY = DISPLAY_CENTER.y + panelTopLocalY * cos50
   const topWorldZ = DISPLAY_CENTER.z + panelTopLocalY * sin50
-  const coordPanelZ = topWorldZ - 4.25
+  const coordPanelZ = topWorldZ - 4.1
   const coordPanelHeight = 1.2
   const coordPanelY = topWorldY + coordPanelHeight / 2
 
