@@ -63,8 +63,8 @@ let onBodySelect: ((body: BodyInfo | null) => void) | null = null
 let orbitsPaused = false
 let pauseBlend = 0
 const PAUSE_BLEND_SPEED = 3.0
-const ALIGNED_ANGLE = Math.PI
-const MOON_ALIGNED_ANGLE = Math.PI / 2
+const ALIGNED_ANGLE = Math.PI / 2
+const MOON_ALIGNED_ANGLE = Math.PI
 
 export function getSelectedBody(): BodyInfo | null { return selectedBody }
 export function setBodySelectCallback(callback: (body: BodyInfo | null) => void): void { onBodySelect = callback }
