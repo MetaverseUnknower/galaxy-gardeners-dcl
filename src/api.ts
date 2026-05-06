@@ -138,6 +138,14 @@ export async function completeDiscovery(discoveryId: string): Promise<any> {
   return apiPost<any>(`/api/expeditions/complete-discovery/${discoveryId}`)
 }
 
+export async function getAvailableUpgrades(): Promise<any[]> {
+  return apiGet<any[]>('/api/ships/upgrades')
+}
+
+export async function applyUpgrade(category: string): Promise<any> {
+  return apiPost<any>('/api/ships/upgrade', { category })
+}
+
 export async function deployMiningPod(beltId: string): Promise<any> {
   return apiPost('/api/expeditions/mine', { beltId })
 }

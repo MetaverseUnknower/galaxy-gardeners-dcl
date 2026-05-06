@@ -10,6 +10,7 @@ import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './
 import { createEnvironment, respawnSystem, twinkleSystem } from './environment'
 import { createShipDisplay, setMissionNotifyCallback, setSolarRechargeRate } from './shipDisplay'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback } from './discoveryPanel'
+import { createUpgradesPanel, setUpgradeNotifyCallback } from './upgradesPanel'
 
 let playerInfo: PlayerInfo | null = null
 let systems: StarSystem[] = []
@@ -55,6 +56,9 @@ export async function main() {
 
     setDiscoveryNotifyCallback((text, color) => showNotification(text, color))
     createDiscoveryPanel(systems, playerInfo.current_system_id)
+
+    setUpgradeNotifyCallback((text, color) => showNotification(text, color))
+    createUpgradesPanel()
 
     setSelectionCallback(async (system: StarSystem | null) => {
       if (!system) { setSelectedSystemUI(null, null); return }
