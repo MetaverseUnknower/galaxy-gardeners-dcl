@@ -3,7 +3,7 @@ import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 
 // East edge of platform, facing -X (inward toward center)
-const DISPLAY_CENTER = Vector3.create(146, 41.3, 128)
+const DISPLAY_CENTER = Vector3.create(146, 43.3, 128)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, 90, 0) // faces -X (toward center)
 
 const displayEntities: Entity[] = []
@@ -96,9 +96,9 @@ export async function createUpgradesPanel(): Promise<void> {
     const color = CATEGORY_COLORS[upgrade.category] || Color3.create(0.5, 0.5, 0.5)
     const actionStatus = upgradeActionStatus[upgrade.category]
 
-    // Cost text
+    // Cost text — capitalize each word
     const costs = Object.entries(upgrade.resourceCosts as Record<string, number>)
-      .map(([k, v]) => `${v} ${k.replace(/_/g, ' ')}`)
+      .map(([k, v]) => `${v} ${k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`)
       .join(', ')
 
     // Category label
@@ -113,7 +113,7 @@ export async function createUpgradesPanel(): Promise<void> {
     TextShape.create(costLabel, {
       text: actionStatus || costs,
       fontSize: 0.45,
-      textColor: actionStatus ? Color4.create(0, 1, 0.5, 1) : (upgrade.canAfford ? Color4.create(0.6, 0.6, 0.6, 1) : Color4.create(1, 0.3, 0.3, 0.7)),
+      textColor: actionStatus ? Color4.create(0, 1, 0.5, 1) : (upgrade.canAfford ? Color4.create(0.7, 0.7, 0.7, 1) : Color4.create(0.8, 0.3, 0.3, 1)),
       textAlign: TextAlignMode.TAM_MIDDLE_RIGHT
     })
     displayEntities.push(costLabel)
