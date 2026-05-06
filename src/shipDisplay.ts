@@ -209,9 +209,9 @@ function createMissionsPanel(): void {
       missionEntities.push(btn)
       const bl = engine.addEntity()
       Transform.create(bl, { position: Vector3.create(missionsX + 1.05, y, DISPLAY_CENTER.z + 0.05), rotation: TEXT_ROT })
-      TextShape.create(bl, { text: 'COLLECT', fontSize: 0.5, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      TextShape.create(bl, { text: 'COMPLETE', fontSize: 0.5, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       missionEntities.push(bl)
-      pointerEventsSystem.onPointerDown({ entity: btn, opts: { button: InputAction.IA_POINTER, hoverText: 'Collect Rewards', maxDistance: 10 } }, () => handleMissionCollect(exp.id))
+      pointerEventsSystem.onPointerDown({ entity: btn, opts: { button: InputAction.IA_POINTER, hoverText: 'Complete Mission', maxDistance: 10 } }, () => handleMissionCollect(exp.id))
     }
   }
 }
