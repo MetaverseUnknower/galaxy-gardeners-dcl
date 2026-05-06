@@ -39,6 +39,9 @@ export async function main() {
     setStatusMessage('Loading player data...')
     playerInfo = await api.getPlayerMe()
 
+    // Apply solar recharge on scene load
+    try { await api.solarRecharge() } catch {}
+
     setStatusMessage('Loading galaxy map...')
     systems = await api.getSystems(playerInfo.galaxy_id)
 

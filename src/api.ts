@@ -102,6 +102,10 @@ export async function arrive(): Promise<void> {
   await apiPost('/api/ships/arrive')
 }
 
+export async function solarRecharge(): Promise<any> {
+  return apiPost<any>('/api/ships/recharge')
+}
+
 export async function getShipDashboard(): Promise<any> {
   return apiGet<any>('/api/ships')
 }
