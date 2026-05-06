@@ -3,7 +3,7 @@ import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 
 // East edge of platform, facing -X (inward toward center)
-const DISPLAY_CENTER = Vector3.create(146, 43.3, 128)
+const DISPLAY_CENTER = Vector3.create(146, 42.0, 128)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, 90, 0) // faces -X (toward center)
 
 const displayEntities: Entity[] = []
@@ -53,7 +53,7 @@ export async function createUpgradesPanel(): Promise<void> {
   const titlePanel = engine.addEntity()
   Transform.create(titlePanel, {
     position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 2.2, DISPLAY_CENTER.z),
-    scale: Vector3.create(0.03, 0.8, 5)
+    scale: Vector3.create(0.03, 0.8, 7.0)
   })
   MeshRenderer.setBox(titlePanel)
   Material.setPbrMaterial(titlePanel, {
@@ -67,12 +67,13 @@ export async function createUpgradesPanel(): Promise<void> {
   TextShape.create(title, { text: 'SHIP UPGRADES', fontSize: 1.5, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
   displayEntities.push(title)
 
-  // Main glass panel
-  const panelHeight = Math.max(3, upgradeData.length * 0.5 + 0.5)
+  // Main glass panel — wider for 2 columns
+  const panelHeight = 3.0
+  const panelWidth = 7.0
   const mainPanel = engine.addEntity()
   Transform.create(mainPanel, {
     position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z),
-    scale: Vector3.create(0.03, panelHeight, 5)
+    scale: Vector3.create(0.03, panelHeight, panelWidth)
   })
   MeshRenderer.setBox(mainPanel)
   Material.setPbrMaterial(mainPanel, {
@@ -89,32 +90,37 @@ export async function createUpgradesPanel(): Promise<void> {
     return
   }
 
+  const colOffsets = [1.7, -1.7] // Z offsets for left and right columns
+  const rowSpacing = 0.45
+
   for (let i = 0; i < upgradeData.length; i++) {
     const upgrade = upgradeData[i]
-    const y = DISPLAY_CENTER.y + 1.5 - i * 0.45
+    const col = i < 5 ? 0 : 1
+    const row = i < 5 ? i : i - 5
+    const colZ = DISPLAY_CENTER.z + colOffsets[col]
+    const y = DISPLAY_CENTER.y + 1.5 - row * rowSpacing
     const label = CATEGORY_LABELS[upgrade.category] || upgrade.category.replace(/_/g, ' ')
     const color = CATEGORY_COLORS[upgrade.category] || Color3.create(0.5, 0.5, 0.5)
     const actionStatus = upgradeActionStatus[upgrade.category]
 
-    // Cost text — capitalize each word
     const costs = Object.entries(upgrade.resourceCosts as Record<string, number>)
       .map(([k, v]) => `${v} ${k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`)
       .join(', ')
 
     // Category label
     const catLabel = engine.addEntity()
-    Transform.create(catLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.03, y, DISPLAY_CENTER.z + 1.5), rotation: TEXT_ROT })
-    TextShape.create(catLabel, { text: `${label} (Tier ${upgrade.tier})`, fontSize: 0.6, textColor: Color4.create(color.r, color.g, color.b, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
+    Transform.create(catLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.03, y, colZ + 1.2), rotation: TEXT_ROT })
+    TextShape.create(catLabel, { text: `${label} T${upgrade.tier}`, fontSize: 0.5, textColor: Color4.create(color.r, color.g, color.b, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
     displayEntities.push(catLabel)
 
     // Cost
     const costLabel = engine.addEntity()
-    Transform.create(costLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.03, y, DISPLAY_CENTER.z - 0.2), rotation: TEXT_ROT })
+    Transform.create(costLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.03, y - 0.18, colZ + 1.2), rotation: TEXT_ROT })
     TextShape.create(costLabel, {
       text: actionStatus || costs,
-      fontSize: 0.45,
+      fontSize: 0.35,
       textColor: actionStatus ? Color4.create(0, 1, 0.5, 1) : (upgrade.canAfford ? Color4.create(0.7, 0.7, 0.7, 1) : Color4.create(0.8, 0.3, 0.3, 1)),
-      textAlign: TextAlignMode.TAM_MIDDLE_RIGHT
+      textAlign: TextAlignMode.TAM_MIDDLE_LEFT
     })
     displayEntities.push(costLabel)
 
@@ -122,8 +128,8 @@ export async function createUpgradesPanel(): Promise<void> {
     if (upgrade.canAfford && !actionStatus) {
       const btn = engine.addEntity()
       Transform.create(btn, {
-        position: Vector3.create(DISPLAY_CENTER.x - 0.02, y, DISPLAY_CENTER.z - 1.6),
-        scale: Vector3.create(0.04, 0.25, 0.6)
+        position: Vector3.create(DISPLAY_CENTER.x - 0.02, y - 0.08, colZ - 0.5),
+        scale: Vector3.create(0.04, 0.3, 0.5)
       })
       MeshRenderer.setBox(btn); MeshCollider.setBox(btn)
       Material.setPbrMaterial(btn, {
@@ -132,8 +138,8 @@ export async function createUpgradesPanel(): Promise<void> {
       displayEntities.push(btn)
 
       const btnLabel = engine.addEntity()
-      Transform.create(btnLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.05, y, DISPLAY_CENTER.z - 1.6), rotation: TEXT_ROT })
-      TextShape.create(btnLabel, { text: 'UPGRADE', fontSize: 0.45, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      Transform.create(btnLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.05, y - 0.08, colZ - 0.5), rotation: TEXT_ROT })
+      TextShape.create(btnLabel, { text: 'UPGRADE', fontSize: 0.4, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       displayEntities.push(btnLabel)
 
       pointerEventsSystem.onPointerDown(
@@ -142,8 +148,8 @@ export async function createUpgradesPanel(): Promise<void> {
       )
     } else if (!actionStatus) {
       const insuffLabel = engine.addEntity()
-      Transform.create(insuffLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.03, y, DISPLAY_CENTER.z - 1.6), rotation: TEXT_ROT })
-      TextShape.create(insuffLabel, { text: 'NEED RESOURCES', fontSize: 0.35, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      Transform.create(insuffLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.03, y - 0.08, colZ - 0.5), rotation: TEXT_ROT })
+      TextShape.create(insuffLabel, { text: 'NEED RESOURCES', fontSize: 0.3, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       displayEntities.push(insuffLabel)
     }
   }
