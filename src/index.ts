@@ -8,7 +8,7 @@ import { setupUi, setSelectedSystemUI, setTravelingStatus, setStatusMessage, set
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './systemView'
 import { createEnvironment, respawnSystem, twinkleSystem } from './environment'
-import { createShipDisplay, setMissionNotifyCallback } from './shipDisplay'
+import { createShipDisplay, setMissionNotifyCallback, setSolarRechargeRate } from './shipDisplay'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback } from './discoveryPanel'
 
 let playerInfo: PlayerInfo | null = null
@@ -49,6 +49,8 @@ export async function main() {
     setupInteraction()
 
     setMissionNotifyCallback((text, color) => showNotification(text, color))
+    const currentSys = systems.find(s => s.id === playerInfo!.current_system_id)
+    if (currentSys) setSolarRechargeRate(currentSys.solar_recharge_rate)
     createShipDisplay()
 
     setDiscoveryNotifyCallback((text, color) => showNotification(text, color))

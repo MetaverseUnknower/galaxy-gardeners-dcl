@@ -16,6 +16,12 @@ let onMissionNotify: ((text: string, color: Color4) => void) | null = null
 
 export function setMissionNotifyCallback(cb: (text: string, color: Color4) => void): void { onMissionNotify = cb }
 
+let solarRechargeRate = 0
+
+export function setSolarRechargeRate(rate: number): void {
+  solarRechargeRate = rate
+}
+
 export async function createShipDisplay(): Promise<void> {
   clearShipDisplay()
   try {
@@ -60,6 +66,14 @@ export async function createShipDisplay(): Promise<void> {
   Transform.create(fuelText, { position: Vector3.create(DISPLAY_CENTER.x + gaugeWidth / 2 + 0.1, fuelY + 0.25, DISPLAY_CENTER.z + 0.03), rotation: TEXT_ROT })
   TextShape.create(fuelText, { text: `${shipData.ship.fuel_current.toFixed(0)} / ${shipData.ship.fuel_capacity.toFixed(0)}`, fontSize: 1, textColor: Color4.create(0.8, 0.8, 0.8, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
   displayEntities.push(fuelText)
+
+  // Solar recharge rate
+  if (solarRechargeRate > 0) {
+    const rechargeText = engine.addEntity()
+    Transform.create(rechargeText, { position: Vector3.create(DISPLAY_CENTER.x, fuelY - 0.35, DISPLAY_CENTER.z + 0.03), rotation: TEXT_ROT })
+    TextShape.create(rechargeText, { text: `Solar Recharge: +${solarRechargeRate.toFixed(1)} fuel/hr`, fontSize: 0.6, textColor: Color4.create(1, 0.9, 0.3, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+    displayEntities.push(rechargeText)
+  }
 
   // Ship Stats panel
   const statsX = DISPLAY_CENTER.x + STATS_OFFSET_X
