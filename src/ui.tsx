@@ -123,7 +123,7 @@ const TravelStatusPanel = () => {
   const { progress, remainingDistance } = getTravelProgress()
   const pct = Math.floor(progress * 100)
   return (
-    <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { bottom: 40 }, justifyContent: 'center' }}>
+    <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { top: 20 }, justifyContent: 'center' }}>
       <UiEntity uiTransform={{ width: 500, flexDirection: 'column', padding: { top: 20, bottom: 20, left: 20, right: 20 } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.92) }}>
         <UiEntity uiTransform={{ width: '100%', height: 32, margin: { bottom: 8 } }} uiText={{ value: `Traveling to ${travelingTo}`, fontSize: 24, color: Color4.create(0, 1, 0.5, 1), textAlign: 'middle-center' }} />
         <UiEntity uiTransform={{ width: '100%', height: 24, margin: { bottom: 8 } }} uiText={{ value: `${pct}% — ${remainingDistance.toFixed(1)} units remaining`, fontSize: 18, color: Color4.create(0.7, 0.7, 0.7, 1), textAlign: 'middle-center' }} />
