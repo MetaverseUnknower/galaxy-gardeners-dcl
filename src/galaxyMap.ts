@@ -33,6 +33,8 @@ let currentLocationMarker: Entity | null = null
 let markerRotation = 0
 let beamEntity: Entity | null = null
 let beamTime = 0
+let systemViewBtnEntity: Entity | null = null
+let systemViewBtnDisabled = false
 const NEBULA_EXTENT = MAP_RADIUS * 1.5
 
 // Exported for station panel alignment
@@ -219,6 +221,7 @@ export function createProjectorBase(): void {
 
   // System View button
   const systemViewBtn = engine.addEntity()
+  systemViewBtnEntity = systemViewBtn
   Transform.create(systemViewBtn, {
     position: Vector3.create(MAP_CENTER.x - viewSpacing / 2, panelY + viewRowOffsetY, panelZ + viewRowOffsetZ),
     scale: viewBtnWidth, rotation: panelTilt
@@ -531,6 +534,31 @@ export function galaxyAnimationSystem(dt: number): void {
       emissiveColor: Color3.create(0, 0.2 + pulse * 0.3, 0.6 + pulse * 0.4),
       emissiveIntensity: intensity, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
     })
+  }
+
+  // Update System View button based on travel state
+  if (systemViewBtnEntity) {
+    const disabled = canSwitchToSystem ? !canSwitchToSystem() : false
+    if (disabled !== systemViewBtnDisabled) {
+      systemViewBtnDisabled = disabled
+      if (disabled) {
+        Material.setPbrMaterial(systemViewBtnEntity, {
+          albedoColor: Color4.create(0.1, 0.1, 0.1, 1), emissiveColor: Color3.create(0.2, 0.2, 0.2), emissiveIntensity: 0.3
+        })
+        pointerEventsSystem.onPointerDown(
+          { entity: systemViewBtnEntity, opts: { button: InputAction.IA_POINTER, hoverText: 'System View (Disabled - In Transit)', maxDistance: 8 } },
+          () => {}
+        )
+      } else {
+        Material.setPbrMaterial(systemViewBtnEntity, {
+          albedoColor: Color4.create(0, 0.2, 0.3, 1), emissiveColor: Color3.create(0, 0.8, 1), emissiveIntensity: 1.5
+        })
+        pointerEventsSystem.onPointerDown(
+          { entity: systemViewBtnEntity, opts: { button: InputAction.IA_POINTER, hoverText: 'System View', maxDistance: 8 } },
+          () => switchViewMode('system')
+        )
+      }
+    }
   }
 }
 
