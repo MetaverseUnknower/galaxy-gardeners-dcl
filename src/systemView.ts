@@ -6,9 +6,14 @@ import { PANEL_Z, PANEL_Y, PANEL_TILT, PANEL_CENTER_X, GLASS_PANEL_Z, GLASS_PANE
 const SYSTEM_CENTER = Vector3.create(128, 41, 128)
 
 let systemRoot: Entity | null = null
+let systemAutoScale = 1.0
 
 export function getSystemRoot(): Entity | null {
   return systemRoot
+}
+
+export function getSystemAutoScale(): number {
+  return systemAutoScale
 }
 
 const staticEntities: Entity[] = []
@@ -172,11 +177,37 @@ export async function renderSystemView(systemId: string): Promise<void> {
   let detail: any
   try { detail = await api.getSystemDetail(systemId) } catch { return }
 
-  systemRoot = engine.addEntity()
-  Transform.create(systemRoot, { position: SYSTEM_CENTER, scale: Vector3.create(0, 0, 0) })
-
   const sysData = detail.system || detail
   const starType = sysData.star_type || null
+  const planets = detail.planets || []
+  const belts = detail.asteroidBelts || []
+  const maxSlot = planets.length > 0 ? Math.max(...planets.map((p: any) => p.orbital_slot)) : 1
+
+  // Calculate max extent of the system to auto-scale it to fit
+  let maxExtent = 2 // minimum for star
+  for (const p of planets) {
+    const r = orbitalRadius(p.orbital_slot, starType)
+    if (r > maxExtent) maxExtent = r
+  }
+  // Belt radii
+  const habitableSlot = Math.max(2, Math.min(Math.floor(maxSlot / 2) + 1, 4))
+  for (let i = 0; i < belts.length; i++) {
+    let beltR: number
+    if (i === 0) beltR = orbitalRadius(habitableSlot, starType) + 0.9
+    else if (i === 1) beltR = orbitalRadius(maxSlot, starType) + 2.5
+    else beltR = orbitalRadius(Math.max(1, habitableSlot - (belts.length - i)), starType) + 0.9
+    if (beltR > maxExtent) maxExtent = beltR
+  }
+  // Add padding
+  maxExtent += 0.5
+
+  // Scale to fit within target radius (MAP_RADIUS = 6)
+  const targetRadius = 5.5
+  const autoScale = maxExtent > targetRadius ? targetRadius / maxExtent : 1.0
+
+  systemAutoScale = autoScale
+  systemRoot = engine.addEntity()
+  Transform.create(systemRoot, { position: SYSTEM_CENTER, scale: Vector3.create(0, 0, 0) })
   const starColor = getStarTypeColor(starType)
   starBaseEmissive = starColor.emissive
 
@@ -193,9 +224,6 @@ export async function renderSystemView(systemId: string): Promise<void> {
     albedoColor: Color4.create(starColor.emissive.r, starColor.emissive.g, starColor.emissive.b, 0.06),
     emissiveColor: starColor.emissive, emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
   })
-
-  const planets = detail.planets || []
-  const maxSlot = planets.length > 0 ? Math.max(...planets.map((p: any) => p.orbital_slot)) : 1
 
   for (let pIdx = 0; pIdx < planets.length; pIdx++) {
     const planet = planets[pIdx]
@@ -293,7 +321,6 @@ export async function renderSystemView(systemId: string): Promise<void> {
   }
 
   // Asteroid belts
-  const belts = detail.asteroidBelts || []
   for (let beltIdx = 0; beltIdx < belts.length; beltIdx++) {
     const belt = belts[beltIdx]
     const riskLevel: string = belt.risk_level || 'low'

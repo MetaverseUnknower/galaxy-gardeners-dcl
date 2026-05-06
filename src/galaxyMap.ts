@@ -1,7 +1,7 @@
 import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, TextShape, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { StarSystem } from './types'
-import { getSystemRoot } from './systemView'
+import { getSystemRoot, getSystemAutoScale } from './systemView'
 
 const FLOOR_Y = 40
 const MAP_CENTER = Vector3.create(128, FLOOR_Y + 1, 128)
@@ -105,7 +105,8 @@ function createGalaxyRoot(): Entity {
 
 function applyGalaxyTransform(): void {
   const activeRoot = currentViewMode === 'system' ? getSystemRoot() : galaxyRoot
-  const s = currentScale * transitionScale
+  const autoScale = currentViewMode === 'system' ? getSystemAutoScale() : 1.0
+  const s = currentScale * transitionScale * autoScale
   if (activeRoot) {
     const transform = Transform.getMutable(activeRoot)
     transform.position = Vector3.create(MAP_CENTER.x, currentHeight, MAP_CENTER.z)
