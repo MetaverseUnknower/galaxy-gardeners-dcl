@@ -202,7 +202,7 @@ export async function renderSystemView(systemId: string): Promise<void> {
   maxExtent += 0.5
 
   // Scale to fit within target radius (MAP_RADIUS = 6)
-  const targetRadius = 5.5
+  const targetRadius = 8.0
   const autoScale = maxExtent > targetRadius ? targetRadius / maxExtent : 1.0
 
   systemAutoScale = autoScale
