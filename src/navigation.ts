@@ -104,7 +104,22 @@ function createTravelMarker(position: Vector3): void {
   travelMarkerRotation = 0
 }
 
+let currentSystemId: string | null = null
+
+export function setCurrentSystemForTravel(systemId: string | null): void {
+  currentSystemId = systemId
+}
+
 export async function startTravel(destinationId: string): Promise<void> {
+  // Store origin before travel starts
+  if (currentSystemId) {
+    for (const [entity, system] of starEntities) {
+      if (system.id === currentSystemId) {
+        originPosition = Transform.get(entity).position
+        break
+      }
+    }
+  }
   await api.travel(destinationId)
   await updateTravelState()
 }
@@ -135,6 +150,9 @@ export async function updateTravelState(): Promise<void> {
   for (const [entity, system] of starEntities) {
     if (system.id === destId) {
       destinationPosition = Transform.get(entity).position
+    }
+    if (currentSystemId && system.id === currentSystemId) {
+      originPosition = Transform.get(entity).position
     }
   }
 

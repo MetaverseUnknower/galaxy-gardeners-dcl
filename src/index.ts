@@ -3,7 +3,7 @@ import { authenticate } from './auth'
 import * as api from './api'
 import { createProjectorBase, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem } from './interaction'
-import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine } from './navigation'
+import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
 import { setupUi, setSelectedSystemUI, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification } from './ui'
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './systemView'
@@ -86,6 +86,7 @@ export async function main() {
     })
 
     setCurrentSystemId(playerInfo.current_system_id)
+    setCurrentSystemForTravel(playerInfo.current_system_id)
     setCanSwitchCheck(() => !isCurrentlyTraveling())
     setViewSystemCallback(() => {
       if (playerInfo?.current_system_id && !isCurrentlyTraveling()) switchViewMode('system')
