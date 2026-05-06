@@ -4,7 +4,7 @@ import * as api from './api'
 
 // East edge of platform, facing -X (inward toward center)
 const DISPLAY_CENTER = Vector3.create(146, 41.3, 128)
-const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0) // faces -X (toward center)
+const TEXT_ROT = Quaternion.fromEulerDegrees(0, 90, 0) // faces -X (toward center)
 
 const displayEntities: Entity[] = []
 let upgradeData: any[] = []
@@ -53,8 +53,7 @@ export async function createUpgradesPanel(): Promise<void> {
   const titlePanel = engine.addEntity()
   Transform.create(titlePanel, {
     position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 2.2, DISPLAY_CENTER.z),
-    scale: Vector3.create(0.03, 0.8, 5),
-    rotation: Quaternion.fromEulerDegrees(0, 90, 0)
+    scale: Vector3.create(0.03, 0.8, 5)
   })
   MeshRenderer.setBox(titlePanel)
   Material.setPbrMaterial(titlePanel, {
@@ -73,8 +72,7 @@ export async function createUpgradesPanel(): Promise<void> {
   const mainPanel = engine.addEntity()
   Transform.create(mainPanel, {
     position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z),
-    scale: Vector3.create(0.03, panelHeight, 5),
-    rotation: Quaternion.fromEulerDegrees(0, 90, 0)
+    scale: Vector3.create(0.03, panelHeight, 5)
   })
   MeshRenderer.setBox(mainPanel)
   Material.setPbrMaterial(mainPanel, {
