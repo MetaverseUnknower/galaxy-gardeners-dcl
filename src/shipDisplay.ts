@@ -208,7 +208,7 @@ function createMissionsPanel(): void {
       Material.setPbrMaterial(btn, { albedoColor: Color4.create(0, 0.4, 0.5, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
       missionEntities.push(btn)
       const bl = engine.addEntity()
-      Transform.create(bl, { position: Vector3.create(missionsX + 1.05, y, DISPLAY_CENTER.z + 0.05), rotation: TEXT_ROT })
+      Transform.create(bl, { position: Vector3.create(missionsX + 1.05, y, DISPLAY_CENTER.z - 0.05), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
       TextShape.create(bl, { text: 'COMPLETE', fontSize: 0.5, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       missionEntities.push(bl)
       pointerEventsSystem.onPointerDown({ entity: btn, opts: { button: InputAction.IA_POINTER, hoverText: 'Complete Mission', maxDistance: 10 } }, () => handleMissionCollect(exp.id))
