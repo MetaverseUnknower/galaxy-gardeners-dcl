@@ -3,6 +3,7 @@ import { Color4 } from '@dcl/sdk/math'
 import { StarSystem, FuelCostResponse } from './types'
 import { getTravelProgress } from './navigation'
 import { getSelectedBody, BodyInfo } from './systemView'
+import { isCurrentlyTraveling } from './navigation'
 import * as api from './api'
 
 let selectedSystem: StarSystem | null = null
@@ -68,7 +69,12 @@ const SystemInfoPanel = () => {
           </UiEntity>
         ) : null}
         {selectedSystem.id === currentSystemId ? <UiEntity uiTransform={{ width: '100%', height: 50, margin: { top: 14 }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.1, 0.3, 0.5, 1) }} uiText={{ value: 'VIEW SYSTEM', fontSize: 20, color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onViewSystem) onViewSystem() }} /> : null}
-        {selectedSystem.id !== currentSystemId && fuelInfo && !showTravelConfirm ? <UiEntity uiTransform={{ width: '100%', height: 50, margin: { top: 14 }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: canAfford ? Color4.create(0, 0.4, 0.5, 1) : Color4.create(0.15, 0.15, 0.15, 1) }} uiText={{ value: canAfford ? 'TRAVEL' : 'INSUFFICIENT FUEL', fontSize: 20, color: canAfford ? Color4.White() : Color4.create(0.4, 0.4, 0.4, 1), textAlign: 'middle-center' }} onMouseDown={() => { if (canAfford) showTravelConfirm = true }} /> : null}
+        {selectedSystem.id !== currentSystemId && fuelInfo && !showTravelConfirm ? (() => {
+          const traveling = isCurrentlyTraveling()
+          const canTravel = canAfford && !traveling
+          const label = traveling ? 'IN TRANSIT' : (canAfford ? 'TRAVEL' : 'INSUFFICIENT FUEL')
+          return <UiEntity uiTransform={{ width: '100%', height: 50, margin: { top: 14 }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: canTravel ? Color4.create(0, 0.4, 0.5, 1) : Color4.create(0.15, 0.15, 0.15, 1) }} uiText={{ value: label, fontSize: 20, color: canTravel ? Color4.White() : Color4.create(0.4, 0.4, 0.4, 1), textAlign: 'middle-center' }} onMouseDown={() => { if (canTravel) showTravelConfirm = true }} />
+        })() : null}
         {showTravelConfirm ? (
           <UiEntity uiTransform={{ margin: { top: 14 }, flexDirection: 'column', alignItems: 'center' }}>
             <UiEntity uiTransform={{ width: '100%', height: 28, margin: { bottom: 10 } }} uiText={{ value: `Travel to ${selectedSystem.name}? (${fuelInfo!.fuel_cost.toFixed(1)} fuel)`, fontSize: 20, color: Color4.create(1, 1, 0, 1), textAlign: 'middle-center' }} />

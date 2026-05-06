@@ -78,7 +78,6 @@ export function setupInteraction(): void {
         }
       },
       () => {
-        if (isCurrentlyTraveling()) return
         selectSystem(system, entity)
       }
     )
