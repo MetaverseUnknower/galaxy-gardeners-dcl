@@ -119,7 +119,7 @@ function createMissionsPanel(): void {
   for (const e of missionEntities) engine.removeEntity(e)
   missionEntities = []
   const missionsX = DISPLAY_CENTER.x + MISSIONS_OFFSET_X
-  const panelHeight = Math.max(2.5, 1.5 + expeditions.length * 0.8)
+  const panelHeight = Math.max(2.5, 1.5 + expeditions.length * 0.45)
   const mp = engine.addEntity()
   Transform.create(mp, { position: Vector3.create(missionsX, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), scale: Vector3.create(2.8, panelHeight, 0.03) })
   MeshRenderer.setBox(mp)
@@ -141,7 +141,7 @@ function createMissionsPanel(): void {
 
   for (let i = 0; i < expeditions.length; i++) {
     const exp = expeditions[i]
-    const y = DISPLAY_CENTER.y + 1.0 - i * 0.7
+    const y = DISPLAY_CENTER.y + 1.0 - i * 0.4
     const isComplete = exp.status === 'completed' || (exp.completes_at && new Date(exp.completes_at).getTime() <= Date.now())
     const typeLabel = exp.expedition_type === 'mining' ? 'Mining' : 'Exploration'
     const actionStatus = missionActionStatus[exp.id]
@@ -201,6 +201,14 @@ async function handleMissionCollect(expeditionId: string): Promise<void> {
     delete missionActionStatus[expeditionId]
     createMissionsPanel()
   } catch (err: any) { missionActionStatus[expeditionId] = err.message || 'Failed'; createMissionsPanel() }
+}
+
+export async function refreshMissions(): Promise<void> {
+  try {
+    const exps = await api.getExpeditions()
+    expeditions = exps.filter((e: any) => e.status !== 'collected')
+    createMissionsPanel()
+  } catch {}
 }
 
 export function clearShipDisplay(): void {

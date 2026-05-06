@@ -4,6 +4,7 @@ import { StarSystem, FuelCostResponse } from './types'
 import { getTravelProgress } from './navigation'
 import { getSelectedBody, BodyInfo } from './systemView'
 import { isCurrentlyTraveling } from './navigation'
+import { refreshMissions } from './shipDisplay'
 import * as api from './api'
 
 let selectedSystem: StarSystem | null = null
@@ -33,6 +34,7 @@ async function deployPod(body: BodyInfo): Promise<void> {
     if (body.type === 'belt') { await api.deployMiningPod(body.id); deployStatus = 'Mining pod deployed!' }
     else if (body.type === 'moon') { await api.deployExplorationPodToMoon(body.id); deployStatus = 'Exploration pod deployed!' }
     else { await api.deployExplorationPod(body.id); deployStatus = 'Exploration pod deployed!' }
+    refreshMissions()
   } catch (err: any) { deployStatus = err.message || 'Deploy failed' }
 }
 
