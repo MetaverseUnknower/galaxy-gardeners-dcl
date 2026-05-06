@@ -2,6 +2,7 @@ import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, Materi
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { StarSystem } from './types'
 import { getSystemRoot } from './systemView'
+import { isCurrentlyTraveling } from './navigation'
 
 const FLOOR_Y = 40
 const MAP_CENTER = Vector3.create(128, FLOOR_Y + 1, 128)
@@ -67,6 +68,7 @@ export function setViewModeCallback(callback: (mode: ViewMode) => any): void {
 
 export function switchViewMode(mode: ViewMode): void {
   if (mode === currentViewMode || transitionPhase !== 'idle') return
+  if (mode === 'system' && isCurrentlyTraveling()) return
   pendingMode = mode
   transitionPhase = 'shrinking'
 }
