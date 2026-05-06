@@ -91,7 +91,7 @@ export async function getFuelCost(destinationId: string): Promise<FuelCostRespon
 }
 
 export async function travel(destinationId: string): Promise<void> {
-  await apiPost('/api/ships/travel', { systemId: destinationId })
+  await apiPost('/api/ships/travel', { targetSystemId: destinationId })
 }
 
 export async function getTravelStatus(): Promise<TravelStatus> {
