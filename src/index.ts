@@ -108,6 +108,7 @@ export async function main() {
 
     await updateTravelState()
     if (isCurrentlyTraveling()) {
+      hideCurrentLocationMarker()
       const status = await api.getTravelStatus()
       const destId = (status as any).destinationSystemId || status.destination_system_id
       const destSystem = systems.find(s => s.id === destId)
