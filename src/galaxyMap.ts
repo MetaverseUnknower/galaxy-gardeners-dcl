@@ -451,6 +451,10 @@ function getStarColor(system: StarSystem, homeSystemId: string | null, currentSy
   return { color: Color4.create(1, 1, 1, 1), emissive: Color3.create(0.6, 0.6, 0.6), size: 0.05, intensity: 1.5 }
 }
 
+export function hideCurrentLocationMarker(): void {
+  if (currentLocationMarker) { engine.removeEntity(currentLocationMarker); currentLocationMarker = null }
+}
+
 function createCurrentLocationMarker(position: Vector3): void {
   const root = createGalaxyRoot()
   if (currentLocationMarker) engine.removeEntity(currentLocationMarker)

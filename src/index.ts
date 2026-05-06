@@ -1,7 +1,7 @@
 import { engine, Transform } from '@dcl/sdk/ecs'
 import { authenticate } from './auth'
 import * as api from './api'
-import { createProjectorBase, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck } from './galaxyMap'
+import { createProjectorBase, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem } from './interaction'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
 import { setupUi, setSelectedSystemUI, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification } from './ui'
@@ -78,6 +78,7 @@ export async function main() {
       if (!selected) return
       try {
         setStatusMessage('Initiating travel...')
+        hideCurrentLocationMarker()
         await startTravel(selected.id)
         setTravelingStatus(selected.name)
         setSelectedSystemUI(null, null)
