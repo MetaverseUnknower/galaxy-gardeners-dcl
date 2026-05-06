@@ -17,30 +17,20 @@ export function setUpgradeNotifyCallback(cb: (text: string, color: Color4) => vo
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  fuel_capacity: 'Fuel Capacity',
+  fuel_tank: 'Fuel Tank',
   fuel_efficiency: 'Fuel Efficiency',
-  resource_storage: 'Cargo Storage',
+  cargo_hold: 'Cargo Hold',
   specimen_vault: 'Specimen Vault',
-  mining_pods: 'Mining Pods',
-  exploration_pods: 'Exploration Pods',
+  mining_bay: 'Mining Bay',
+  exploration_bay: 'Exploration Bay',
   expedition_speed: 'Expedition Speed',
   hull_reinforcement: 'Blast Shielding',
   pod_shielding: 'Env. Shielding',
   discovery_array: 'Discovery Array',
 }
 
-const CATEGORY_COLORS: Record<string, Color3> = {
-  fuel_capacity: Color3.create(0, 0.8, 0.3),
-  fuel_efficiency: Color3.create(0, 0.7, 0.5),
-  resource_storage: Color3.create(0.8, 0.6, 0.2),
-  specimen_vault: Color3.create(0.7, 0.3, 0.8),
-  mining_pods: Color3.create(0.9, 0.7, 0.3),
-  exploration_pods: Color3.create(0.2, 0.8, 0.4),
-  expedition_speed: Color3.create(0, 0.8, 1),
-  hull_reinforcement: Color3.create(0.8, 0.3, 0.2),
-  pod_shielding: Color3.create(0.5, 0.3, 0.8),
-  discovery_array: Color3.create(0, 0.6, 0.9),
-}
+// Consistent color for all upgrade labels
+const UPGRADE_LABEL_COLOR = Color3.create(0, 0.8, 1)
 
 export async function createUpgradesPanel(): Promise<void> {
   clearUpgradesPanel()
@@ -99,8 +89,7 @@ export async function createUpgradesPanel(): Promise<void> {
     const row = i < 5 ? i : i - 5
     const colZ = DISPLAY_CENTER.z + colOffsets[col]
     const y = DISPLAY_CENTER.y + 1.5 - row * rowSpacing
-    const label = CATEGORY_LABELS[upgrade.category] || upgrade.category.replace(/_/g, ' ')
-    const color = CATEGORY_COLORS[upgrade.category] || Color3.create(0.5, 0.5, 0.5)
+    const label = CATEGORY_LABELS[upgrade.category] || upgrade.category.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
     const actionStatus = upgradeActionStatus[upgrade.category]
 
     const costs = Object.entries(upgrade.resourceCosts as Record<string, number>)
@@ -110,7 +99,7 @@ export async function createUpgradesPanel(): Promise<void> {
     // Category label
     const catLabel = engine.addEntity()
     Transform.create(catLabel, { position: Vector3.create(DISPLAY_CENTER.x - 0.03, y, colZ + 1.2), rotation: TEXT_ROT })
-    TextShape.create(catLabel, { text: `${label} T${upgrade.tier}`, fontSize: 0.5, textColor: Color4.create(color.r, color.g, color.b, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
+    TextShape.create(catLabel, { text: `${label} T${upgrade.tier}`, fontSize: 0.5, textColor: Color4.create(UPGRADE_LABEL_COLOR.r, UPGRADE_LABEL_COLOR.g, UPGRADE_LABEL_COLOR.b, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
     displayEntities.push(catLabel)
 
     // Cost
