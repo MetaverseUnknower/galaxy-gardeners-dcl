@@ -270,7 +270,7 @@ export async function renderSystemView(systemId: string): Promise<void> {
           planetDetails['Expedition'] = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
         }
       } else { planetDetails['Status'] = 'Unexplorable' }
-      if ((planet.moons || []).length > 0) planetDetails['Moons'] = `${(planet.moons || []).length}`
+      planetDetails['Moons'] = `${(planet.moons || []).length}`
 
       const planetInfo: BodyInfo = { type: 'planet', name: planet.name, id: planet.id, imageUrl: planet.image_url || undefined, details: planetDetails, canDeploy: planet.supports_life && !isBarren }
       pointerEventsSystem.onPointerDown(
