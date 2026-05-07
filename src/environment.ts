@@ -87,7 +87,7 @@ export function createEnvironment(): void {
   Transform.create(testModel, {
     position: Vector3.create(128, PLATFORM_Y + 1, 133),
     scale: Vector3.create(0.5, 0.5, 0.5),
-    rotation: Quaternion.fromEulerDegrees(0, 0, -90)
+    rotation: Quaternion.fromEulerDegrees(0, -90, 0)
   })
   GltfContainer.create(testModel, { src: 'assets/models/display_screen_low_poly.glb' })
 
