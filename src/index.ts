@@ -14,7 +14,8 @@ import { createShipDisplay, setMissionNotifyCallback, setSolarRechargeRate } fro
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { createUpgradesPanel, setUpgradeNotifyCallback } from './upgradesPanel'
-import { createCatalogPanel } from './catalogPanel'
+import { createCatalogPanel, setFloraSelectCallback } from './catalogPanel'
+import { setSelectedFlora, clearSelectedFlora } from './ui'
 
 let playerInfo: PlayerInfo | null = null
 let systems: StarSystem[] = []
@@ -100,9 +101,14 @@ export async function main() {
     setUpgradeNotifyCallback((text, color) => showNotification(text, color))
     createUpgradesPanel()
 
+    setFloraSelectCallback((flora) => {
+      clearSelectedFlora()
+      setSelectedFlora(flora)
+    })
     createCatalogPanel()
 
     setSelectionCallback(async (system: StarSystem | null) => {
+      clearSelectedFlora()
       if (!system) { setSelectedSystemUI(null, null); return }
       if (playerInfo?.current_system_id) {
         for (const [entity, sys] of starEntities) {

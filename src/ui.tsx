@@ -3,6 +3,10 @@ import { Color4 } from '@dcl/sdk/math'
 import { StarSystem, FuelCostResponse } from './types'
 import { getTravelProgress } from './navigation'
 import { getSelectedBody, BodyInfo } from './systemView'
+
+let selectedFlora: any = null
+export function setSelectedFlora(flora: any): void { selectedFlora = flora }
+export function clearSelectedFlora(): void { selectedFlora = null }
 import { isCurrentlyTraveling } from './navigation'
 import { refreshMissions } from './shipDisplay'
 import * as api from './api'
@@ -92,12 +96,12 @@ const SystemInfoPanel = () => {
 }
 
 const BodyDetailPanel = () => {
-  const body = getSelectedBody()
+  const body = getSelectedBody() || selectedFlora
   if (!body) return null
   if (body.id !== lastSelectedBodyId) { lastSelectedBodyId = body.id; deployStatus = null }
-  const typeColors: Record<string, Color4> = { planet: Color4.create(0.2, 0.8, 0.4, 1), moon: Color4.create(0.7, 0.7, 0.6, 1), belt: Color4.create(0.9, 0.7, 0.3, 1) }
+  const typeColors: Record<string, Color4> = { planet: Color4.create(0.2, 0.8, 0.4, 1), moon: Color4.create(0.7, 0.7, 0.6, 1), belt: Color4.create(0.9, 0.7, 0.3, 1), flora: Color4.create(0.9, 0.4, 0.7, 1) }
   const titleColor = typeColors[body.type] || Color4.create(0, 1, 1, 1)
-  const detailEntries = Object.entries(body.details)
+  const detailEntries = Object.entries(body.details) as [string, string][]
   return (
     <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 30, right: 30 }, flexDirection: 'column', width: 480 }}>
       {body.imageUrl ? (

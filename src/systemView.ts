@@ -71,7 +71,7 @@ export function setBodySelectCallback(callback: (body: BodyInfo | null) => void)
 export function toggleOrbits(): void { orbitsPaused = !orbitsPaused }
 export function areOrbitsPaused(): boolean { return orbitsPaused }
 
-function selectBody(body: BodyInfo | null, entity?: Entity): void {
+export function selectBody(body: BodyInfo | null, entity?: Entity): void {
   selectedBody = body
   selectedEntity = entity || null
   clearSelectionRing()

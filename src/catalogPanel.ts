@@ -1,8 +1,9 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
+import { selectBody } from './systemView'
 
-// West edge of platform, facing +X (inward toward center)
+// West edge of platform, facing +X
 const DISPLAY_CENTER = Vector3.create(110, 41.5, 128)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 const PLANE_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
@@ -11,7 +12,15 @@ const displayEntities: Entity[] = []
 let catalogData: any[] = []
 let catalogDetails: Record<string, any> = {}
 let catalogPage = 0
-const ITEMS_PER_PAGE = 2 // fewer per page to fit traits
+
+// Grid layout: 6 columns x 4 rows = 24 per page
+const COLS = 6
+const ROWS = 4
+const ITEMS_PER_PAGE = COLS * ROWS
+const TILE_SIZE = 0.9
+const TILE_SPACING = 1.0
+const GRID_WIDTH = (COLS - 1) * TILE_SPACING
+const GRID_HEIGHT = (ROWS - 1) * TILE_SPACING
 
 const RARITY_COLORS: Record<string, Color4> = {
   common: Color4.create(0.6, 0.6, 0.6, 1),
@@ -22,12 +31,19 @@ const RARITY_COLORS: Record<string, Color4> = {
   mythic: Color4.create(1, 0.3, 0.5, 1),
 }
 
+// Selected flora callback — shows in the body detail panel
+let onFloraSelect: ((flora: any) => void) | null = null
+export function setFloraSelectCallback(cb: (flora: any) => void): void { onFloraSelect = cb }
+
+function capitalize(s: string): string {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
 export async function createCatalogPanel(): Promise<void> {
   clearCatalogPanel()
 
   try {
     catalogData = await api.getCatalog()
-    // Fetch details for all species (traits)
     const detailPromises = catalogData.map(entry =>
       api.getCatalogDetail(entry.id).then(d => { catalogDetails[entry.id] = d }).catch(() => {})
     )
@@ -35,10 +51,6 @@ export async function createCatalogPanel(): Promise<void> {
   } catch { return }
 
   renderPage()
-}
-
-function capitalize(s: string): string {
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function renderPage(): void {
@@ -49,186 +61,167 @@ function renderPage(): void {
   if (catalogPage >= totalPages) catalogPage = totalPages - 1
   if (catalogPage < 0) catalogPage = 0
 
-  // Title panel
-  const titlePanel = engine.addEntity()
-  Transform.create(titlePanel, {
-    position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 3.0, DISPLAY_CENTER.z),
-    scale: Vector3.create(0.03, 0.8, 7)
+  // Main glass panel
+  const panelWidth = GRID_WIDTH + 1.5
+  const panelHeight = GRID_HEIGHT + 2.5
+  const mainPanel = engine.addEntity()
+  Transform.create(mainPanel, {
+    position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z),
+    scale: Vector3.create(0.03, panelHeight, panelWidth)
   })
-  MeshRenderer.setBox(titlePanel)
-  Material.setPbrMaterial(titlePanel, {
-    albedoColor: Color4.create(0.03, 0.1, 0.2, 0.4), emissiveColor: Color3.create(0, 0.15, 0.3),
+  MeshRenderer.setBox(mainPanel)
+  Material.setPbrMaterial(mainPanel, {
+    albedoColor: Color4.create(0.05, 0.15, 0.25, 0.3), emissiveColor: Color3.create(0, 0.2, 0.4),
     emissiveIntensity: 0.5, metallic: 0.9, roughness: 0.1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
   })
-  displayEntities.push(titlePanel)
+  displayEntities.push(mainPanel)
 
+  // Title
   const title = engine.addEntity()
-  Transform.create(title, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 3.0, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(title, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 + 0.1, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(title, {
     text: totalPages > 1 ? `FLORA CATALOG (${catalogPage + 1}/${totalPages})` : 'FLORA CATALOG',
-    fontSize: 1.5, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+    fontSize: 1.2, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
   displayEntities.push(title)
 
   const countText = engine.addEntity()
-  Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 2.65, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(countText, {
     text: `${catalogData.length} species cataloged`,
-    fontSize: 0.6, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+    fontSize: 0.5, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
   displayEntities.push(countText)
 
   if (catalogData.length === 0) {
     const emptyText = engine.addEntity()
-    Transform.create(emptyText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 1.0, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+    Transform.create(emptyText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
     TextShape.create(emptyText, {
       text: 'No species discovered yet.\nExplore life-bearing planets\nto discover alien flora!',
-      fontSize: 0.7, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+      fontSize: 0.6, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
     })
     displayEntities.push(emptyText)
     return
   }
 
+  // Grid of tiles
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, catalogData.length)
-  const cardSpacing = 3.2
-  const startZ = DISPLAY_CENTER.z + ((ITEMS_PER_PAGE - 1) * cardSpacing) / 2
+  const gridTopY = DISPLAY_CENTER.y + panelHeight / 2 - 1.2
+  const gridLeftZ = DISPLAY_CENTER.z + GRID_WIDTH / 2
 
   for (let i = startIdx; i < endIdx; i++) {
     const entry = catalogData[i]
     const detail = catalogDetails[entry.id]
-    const cardIdx = i - startIdx
-    const cardZ = startZ - cardIdx * cardSpacing
-    const cardY = DISPLAY_CENTER.y + 0.8
+    const idx = i - startIdx
+    const col = idx % COLS
+    const row = Math.floor(idx / COLS)
+    const tileZ = gridLeftZ - col * TILE_SPACING
+    const tileY = gridTopY - row * TILE_SPACING
 
-    // Card glass panel
-    const card = engine.addEntity()
-    Transform.create(card, {
-      position: Vector3.create(DISPLAY_CENTER.x, cardY, cardZ),
-      scale: Vector3.create(0.03, 4.0, 2.8)
+    // Thumbnail background
+    const tileBg = engine.addEntity()
+    Transform.create(tileBg, {
+      position: Vector3.create(DISPLAY_CENTER.x + 0.02, tileY + 0.1, tileZ),
+      scale: Vector3.create(TILE_SIZE, TILE_SIZE, 1), rotation: PLANE_ROT
     })
-    MeshRenderer.setBox(card)
-    Material.setPbrMaterial(card, {
-      albedoColor: Color4.create(0.05, 0.15, 0.25, 0.3), emissiveColor: Color3.create(0, 0.2, 0.4),
-      emissiveIntensity: 0.5, metallic: 0.9, roughness: 0.1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+    MeshRenderer.setPlane(tileBg)
+    Material.setPbrMaterial(tileBg, {
+      albedoColor: Color4.create(0.02, 0.02, 0.05, 0.8),
+      transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
     })
-    displayEntities.push(card)
+    displayEntities.push(tileBg)
 
-    // Specimen image — unlit material for true color
+    // Thumbnail image
     if (entry.image_url) {
-      const imgBorder = engine.addEntity()
-      Transform.create(imgBorder, {
-        position: Vector3.create(DISPLAY_CENTER.x + 0.02, cardY + 0.8, cardZ),
-        scale: Vector3.create(1.3, 1.3, 1), rotation: PLANE_ROT
-      })
-      MeshRenderer.setPlane(imgBorder)
-      Material.setPbrMaterial(imgBorder, {
-        albedoColor: Color4.create(0.02, 0.02, 0.05, 0.8),
-        transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-      })
-      displayEntities.push(imgBorder)
-
       const img = engine.addEntity()
       Transform.create(img, {
-        position: Vector3.create(DISPLAY_CENTER.x + 0.025, cardY + 0.8, cardZ),
-        scale: Vector3.create(1.2, 1.2, 1), rotation: PLANE_ROT
+        position: Vector3.create(DISPLAY_CENTER.x + 0.025, tileY + 0.1, tileZ),
+        scale: Vector3.create(TILE_SIZE - 0.05, TILE_SIZE - 0.05, 1), rotation: PLANE_ROT
       })
       MeshRenderer.setPlane(img)
+      MeshCollider.setPlane(img, ColliderLayer.CL_POINTER)
       Material.setBasicMaterial(img, {
         texture: Material.Texture.Common({ src: entry.image_url })
       })
       displayEntities.push(img)
+
+      // Click to view details
+      pointerEventsSystem.onPointerDown(
+        { entity: img, opts: { button: InputAction.IA_POINTER, hoverText: entry.name, maxDistance: 12 } },
+        () => handleFloraSelect(entry, detail)
+      )
     }
 
-    // Species name
+    // Species name below thumbnail
     const nameEntity = engine.addEntity()
-    Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.1, cardZ), rotation: TEXT_ROT })
+    Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY - 0.35, tileZ), rotation: TEXT_ROT })
     TextShape.create(nameEntity, {
-      text: entry.name, fontSize: 0.55,
+      text: entry.name, fontSize: 0.25,
       textColor: RARITY_COLORS[entry.rarity] || Color4.create(0.8, 0.8, 0.8, 1),
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER
     })
     displayEntities.push(nameEntity)
-
-    // Rarity
-    const rarityEntity = engine.addEntity()
-    Transform.create(rarityEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.35, cardZ), rotation: TEXT_ROT })
-    TextShape.create(rarityEntity, {
-      text: (entry.rarity || 'unknown').toUpperCase(), fontSize: 0.35,
-      textColor: RARITY_COLORS[entry.rarity] || Color4.create(0.5, 0.5, 0.5, 1),
-      textAlign: TextAlignMode.TAM_MIDDLE_CENTER
-    })
-    displayEntities.push(rarityEntity)
-
-    // Location
-    const locEntity = engine.addEntity()
-    Transform.create(locEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.55, cardZ), rotation: TEXT_ROT })
-    TextShape.create(locEntity, {
-      text: `${entry.body_name} — ${entry.system_name}`, fontSize: 0.3,
-      textColor: Color4.create(0.4, 0.4, 0.4, 1),
-      textAlign: TextAlignMode.TAM_MIDDLE_CENTER
-    })
-    displayEntities.push(locEntity)
-
-    // Traits (from detail)
-    if (detail) {
-      const traits = [
-        { label: 'Atmosphere', value: detail.atmosphere },
-        { label: 'Temperature', value: detail.temperature },
-        { label: 'Gravity', value: detail.gravity },
-        { label: 'Moisture', value: detail.moisture },
-        { label: 'Radiation', value: detail.radiation },
-        { label: 'Soil', value: detail.soil },
-      ].filter(t => t.value)
-
-      for (let t = 0; t < traits.length; t++) {
-        const traitY = cardY - 0.8 - t * 0.17
-
-        const traitLabel = engine.addEntity()
-        Transform.create(traitLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ - 0.4), rotation: TEXT_ROT })
-        TextShape.create(traitLabel, {
-          text: traits[t].label, fontSize: 0.4,
-          textColor: Color4.create(0.55, 0.55, 0.55, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT
-        })
-        displayEntities.push(traitLabel)
-
-        const traitValue = engine.addEntity()
-        Transform.create(traitValue, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ + 0.4), rotation: TEXT_ROT })
-        TextShape.create(traitValue, {
-          text: capitalize(traits[t].value), fontSize: 0.4,
-          textColor: Color4.create(0.85, 0.85, 0.85, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT
-        })
-        displayEntities.push(traitValue)
-      }
-    }
   }
 
-  // Page nav buttons
+  // Page nav
   if (totalPages > 1) {
     if (catalogPage > 0) {
       const prevBtn = engine.addEntity()
-      Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z + 2.8), scale: Vector3.create(0.04, 0.25, 0.5) })
+      Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
       MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
       Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
       displayEntities.push(prevBtn)
       const prevLabel = engine.addEntity()
-      Transform.create(prevLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z + 2.8), rotation: TEXT_ROT })
-      TextShape.create(prevLabel, { text: '< PREV', fontSize: 0.4, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      Transform.create(prevLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), rotation: TEXT_ROT })
+      TextShape.create(prevLabel, { text: '< PREV', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       displayEntities.push(prevLabel)
       pointerEventsSystem.onPointerDown({ entity: prevBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Previous Page', maxDistance: 10 } }, () => { catalogPage--; renderPage() })
     }
     if (catalogPage < totalPages - 1) {
       const nextBtn = engine.addEntity()
-      Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z - 2.8), scale: Vector3.create(0.04, 0.25, 0.5) })
+      Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
       MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
       Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
       displayEntities.push(nextBtn)
       const nextLabel = engine.addEntity()
-      Transform.create(nextLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z - 2.8), rotation: TEXT_ROT })
-      TextShape.create(nextLabel, { text: 'NEXT >', fontSize: 0.4, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      Transform.create(nextLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), rotation: TEXT_ROT })
+      TextShape.create(nextLabel, { text: 'NEXT >', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       displayEntities.push(nextLabel)
       pointerEventsSystem.onPointerDown({ entity: nextBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Next Page', maxDistance: 10 } }, () => { catalogPage++; renderPage() })
     }
+  }
+}
+
+function handleFloraSelect(entry: any, detail: any): void {
+  // Deselect any celestial body
+  selectBody(null)
+
+  // Build flora info for the body detail panel
+  const details: Record<string, string> = {}
+  details['Rarity'] = capitalize(entry.rarity || 'unknown')
+  details['Location'] = entry.body_name || 'Unknown'
+  details['System'] = entry.system_name || 'Unknown'
+
+  if (detail) {
+    if (detail.atmosphere) details['Atmosphere'] = capitalize(detail.atmosphere)
+    if (detail.temperature) details['Temperature'] = capitalize(detail.temperature)
+    if (detail.gravity) details['Gravity'] = capitalize(detail.gravity)
+    if (detail.moisture) details['Moisture'] = capitalize(detail.moisture)
+    if (detail.radiation) details['Radiation'] = capitalize(detail.radiation)
+    if (detail.soil) details['Soil'] = capitalize(detail.soil)
+    if (detail.discovered_by) details['Discovered By'] = detail.discovered_by
+  }
+
+  if (onFloraSelect) {
+    onFloraSelect({
+      type: 'flora',
+      name: entry.name,
+      id: entry.id,
+      imageUrl: entry.image_url,
+      details,
+      canDeploy: false
+    })
   }
 }
 
