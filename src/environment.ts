@@ -1,4 +1,4 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, GltfContainer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
@@ -81,6 +81,14 @@ export function createEnvironment(): void {
     metallic: 0.9,
     roughness: 0.2
   })
+
+  // Test model
+  const testModel = engine.addEntity()
+  Transform.create(testModel, {
+    position: Vector3.create(128, PLATFORM_Y, 133),
+    scale: Vector3.create(1, 1, 1)
+  })
+  GltfContainer.create(testModel, { src: 'assets/models/display_screen_low_poly.glb' })
 
   // Platform edge ring glow
   const edgeSegments = 48
