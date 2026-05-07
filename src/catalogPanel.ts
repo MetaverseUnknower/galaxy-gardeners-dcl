@@ -109,9 +109,10 @@ function renderPage(): void {
       const imgBorder = engine.addEntity()
       Transform.create(imgBorder, {
         position: Vector3.create(DISPLAY_CENTER.x + 0.02, cardY + 0.5, cardZ),
-        scale: Vector3.create(0.01, 1.1, 1.1)
+        scale: Vector3.create(1.1, 1.1, 1),
+        rotation: Quaternion.fromEulerDegrees(0, -90, 0)
       })
-      MeshRenderer.setBox(imgBorder)
+      MeshRenderer.setPlane(imgBorder)
       Material.setPbrMaterial(imgBorder, {
         albedoColor: Color4.create(0.02, 0.02, 0.05, 0.8),
         transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
@@ -121,9 +122,10 @@ function renderPage(): void {
       const img = engine.addEntity()
       Transform.create(img, {
         position: Vector3.create(DISPLAY_CENTER.x + 0.025, cardY + 0.5, cardZ),
-        scale: Vector3.create(0.01, 1.0, 1.0)
+        scale: Vector3.create(1.0, 1.0, 1),
+        rotation: Quaternion.fromEulerDegrees(0, -90, 0)
       })
-      MeshRenderer.setBox(img)
+      MeshRenderer.setPlane(img)
       Material.setPbrMaterial(img, {
         texture: Material.Texture.Common({ src: entry.image_url }),
         emissiveTexture: Material.Texture.Common({ src: entry.image_url }),
