@@ -170,7 +170,7 @@ function renderCatalogGrid(panelWidth: number, panelHeight: number): void {
   Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(countText, {
     text: `${catalogData.length} species cataloged${totalPages > 1 ? ` — Page ${catalogPage + 1}/${totalPages}` : ''}`,
-    fontSize: 0.5, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+    fontSize: 0.6, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
   displayEntities.push(countText)
 
@@ -225,7 +225,7 @@ function renderVaultGrid(panelWidth: number, panelHeight: number): void {
   Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(countText, {
     text: `${specimenData.length} specimens stored${totalPages > 1 ? ` — Page ${catalogPage + 1}/${totalPages}` : ''}`,
-    fontSize: 0.5, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+    fontSize: 0.6, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
   displayEntities.push(countText)
 
