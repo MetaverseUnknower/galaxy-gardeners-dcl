@@ -4,12 +4,14 @@ import * as api from './api'
 
 // West edge of platform, facing +X (inward toward center)
 const DISPLAY_CENTER = Vector3.create(110, 41.5, 128)
-const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0) // faces +X
+const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
+const PLANE_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 
 const displayEntities: Entity[] = []
 let catalogData: any[] = []
+let catalogDetails: Record<string, any> = {}
 let catalogPage = 0
-const ITEMS_PER_PAGE = 4
+const ITEMS_PER_PAGE = 2 // fewer per page to fit traits
 
 const RARITY_COLORS: Record<string, Color4> = {
   common: Color4.create(0.6, 0.6, 0.6, 1),
@@ -25,13 +27,21 @@ export async function createCatalogPanel(): Promise<void> {
 
   try {
     catalogData = await api.getCatalog()
+    // Fetch details for all species (traits)
+    const detailPromises = catalogData.map(entry =>
+      api.getCatalogDetail(entry.id).then(d => { catalogDetails[entry.id] = d }).catch(() => {})
+    )
+    await Promise.all(detailPromises)
   } catch { return }
 
   renderPage()
 }
 
+function capitalize(s: string): string {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
 function renderPage(): void {
-  // Clear previous page entities (keep title/panel)
   for (const e of displayEntities) engine.removeEntity(e)
   displayEntities.length = 0
 
@@ -42,7 +52,7 @@ function renderPage(): void {
   // Title panel
   const titlePanel = engine.addEntity()
   Transform.create(titlePanel, {
-    position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 2.5, DISPLAY_CENTER.z),
+    position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 3.0, DISPLAY_CENTER.z),
     scale: Vector3.create(0.03, 0.8, 7)
   })
   MeshRenderer.setBox(titlePanel)
@@ -53,7 +63,7 @@ function renderPage(): void {
   displayEntities.push(titlePanel)
 
   const title = engine.addEntity()
-  Transform.create(title, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 2.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(title, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 3.0, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(title, {
     text: totalPages > 1 ? `FLORA CATALOG (${catalogPage + 1}/${totalPages})` : 'FLORA CATALOG',
     fontSize: 1.5, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -61,7 +71,7 @@ function renderPage(): void {
   displayEntities.push(title)
 
   const countText = engine.addEntity()
-  Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 2.15, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 2.65, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(countText, {
     text: `${catalogData.length} species cataloged`,
     fontSize: 0.6, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -70,7 +80,7 @@ function renderPage(): void {
 
   if (catalogData.length === 0) {
     const emptyText = engine.addEntity()
-    Transform.create(emptyText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+    Transform.create(emptyText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 1.0, DISPLAY_CENTER.z), rotation: TEXT_ROT })
     TextShape.create(emptyText, {
       text: 'No species discovered yet.\nExplore life-bearing planets\nto discover alien flora!',
       fontSize: 0.7, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -79,23 +89,23 @@ function renderPage(): void {
     return
   }
 
-  // Catalog entries
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, catalogData.length)
-  const cardSpacing = 1.6
+  const cardSpacing = 3.2
   const startZ = DISPLAY_CENTER.z + ((ITEMS_PER_PAGE - 1) * cardSpacing) / 2
 
   for (let i = startIdx; i < endIdx; i++) {
     const entry = catalogData[i]
+    const detail = catalogDetails[entry.id]
     const cardIdx = i - startIdx
     const cardZ = startZ - cardIdx * cardSpacing
-    const cardY = DISPLAY_CENTER.y + 0.5
+    const cardY = DISPLAY_CENTER.y + 0.8
 
     // Card glass panel
     const card = engine.addEntity()
     Transform.create(card, {
       position: Vector3.create(DISPLAY_CENTER.x, cardY, cardZ),
-      scale: Vector3.create(0.03, 2.8, 1.4)
+      scale: Vector3.create(0.03, 4.0, 2.8)
     })
     MeshRenderer.setBox(card)
     Material.setPbrMaterial(card, {
@@ -104,13 +114,12 @@ function renderPage(): void {
     })
     displayEntities.push(card)
 
-    // Specimen image
+    // Specimen image — unlit material for true color
     if (entry.image_url) {
       const imgBorder = engine.addEntity()
       Transform.create(imgBorder, {
-        position: Vector3.create(DISPLAY_CENTER.x + 0.02, cardY + 0.5, cardZ),
-        scale: Vector3.create(1.1, 1.1, 1),
-        rotation: Quaternion.fromEulerDegrees(0, -90, 0)
+        position: Vector3.create(DISPLAY_CENTER.x + 0.02, cardY + 0.8, cardZ),
+        scale: Vector3.create(1.3, 1.3, 1), rotation: PLANE_ROT
       })
       MeshRenderer.setPlane(imgBorder)
       Material.setPbrMaterial(imgBorder, {
@@ -121,24 +130,21 @@ function renderPage(): void {
 
       const img = engine.addEntity()
       Transform.create(img, {
-        position: Vector3.create(DISPLAY_CENTER.x + 0.025, cardY + 0.5, cardZ),
-        scale: Vector3.create(1.0, 1.0, 1),
-        rotation: Quaternion.fromEulerDegrees(0, -90, 0)
+        position: Vector3.create(DISPLAY_CENTER.x + 0.025, cardY + 0.8, cardZ),
+        scale: Vector3.create(1.2, 1.2, 1), rotation: PLANE_ROT
       })
       MeshRenderer.setPlane(img)
-      Material.setPbrMaterial(img, {
-        texture: Material.Texture.Common({ src: entry.image_url }),
-        emissiveTexture: Material.Texture.Common({ src: entry.image_url }),
-        emissiveIntensity: 0.5
+      Material.setBasicMaterial(img, {
+        texture: Material.Texture.Common({ src: entry.image_url })
       })
       displayEntities.push(img)
     }
 
     // Species name
     const nameEntity = engine.addEntity()
-    Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.65, cardZ), rotation: TEXT_ROT })
+    Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.1, cardZ), rotation: TEXT_ROT })
     TextShape.create(nameEntity, {
-      text: entry.name, fontSize: 0.5,
+      text: entry.name, fontSize: 0.55,
       textColor: RARITY_COLORS[entry.rarity] || Color4.create(0.8, 0.8, 0.8, 1),
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER
     })
@@ -146,7 +152,7 @@ function renderPage(): void {
 
     // Rarity
     const rarityEntity = engine.addEntity()
-    Transform.create(rarityEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.9, cardZ), rotation: TEXT_ROT })
+    Transform.create(rarityEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.35, cardZ), rotation: TEXT_ROT })
     TextShape.create(rarityEntity, {
       text: (entry.rarity || 'unknown').toUpperCase(), fontSize: 0.35,
       textColor: RARITY_COLORS[entry.rarity] || Color4.create(0.5, 0.5, 0.5, 1),
@@ -156,37 +162,69 @@ function renderPage(): void {
 
     // Location
     const locEntity = engine.addEntity()
-    Transform.create(locEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 1.15, cardZ), rotation: TEXT_ROT })
+    Transform.create(locEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, cardY - 0.55, cardZ), rotation: TEXT_ROT })
     TextShape.create(locEntity, {
       text: `${entry.body_name} — ${entry.system_name}`, fontSize: 0.3,
       textColor: Color4.create(0.4, 0.4, 0.4, 1),
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER
     })
     displayEntities.push(locEntity)
+
+    // Traits (from detail)
+    if (detail) {
+      const traits = [
+        { label: 'Atmosphere', value: detail.atmosphere },
+        { label: 'Temperature', value: detail.temperature },
+        { label: 'Gravity', value: detail.gravity },
+        { label: 'Moisture', value: detail.moisture },
+        { label: 'Radiation', value: detail.radiation },
+        { label: 'Soil', value: detail.soil },
+      ].filter(t => t.value)
+
+      for (let t = 0; t < traits.length; t++) {
+        const traitY = cardY - 0.8 - t * 0.2
+
+        const traitLabel = engine.addEntity()
+        Transform.create(traitLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ + 0.4), rotation: TEXT_ROT })
+        TextShape.create(traitLabel, {
+          text: traits[t].label, fontSize: 0.25,
+          textColor: Color4.create(0.45, 0.45, 0.45, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT
+        })
+        displayEntities.push(traitLabel)
+
+        const traitValue = engine.addEntity()
+        Transform.create(traitValue, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ - 0.4), rotation: TEXT_ROT })
+        TextShape.create(traitValue, {
+          text: capitalize(traits[t].value), fontSize: 0.25,
+          textColor: Color4.create(0.7, 0.7, 0.7, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT
+        })
+        displayEntities.push(traitValue)
+      }
+    }
   }
 
   // Page nav buttons
   if (totalPages > 1) {
     if (catalogPage > 0) {
       const prevBtn = engine.addEntity()
-      Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - 1.0, DISPLAY_CENTER.z + 2.5), scale: Vector3.create(0.04, 0.25, 0.5) })
+      Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z + 2.8), scale: Vector3.create(0.04, 0.25, 0.5) })
       MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
       Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
       displayEntities.push(prevBtn)
       const prevLabel = engine.addEntity()
-      Transform.create(prevLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - 1.0, DISPLAY_CENTER.z + 2.5), rotation: TEXT_ROT })
+      Transform.create(prevLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z + 2.8), rotation: TEXT_ROT })
       TextShape.create(prevLabel, { text: '< PREV', fontSize: 0.4, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       displayEntities.push(prevLabel)
       pointerEventsSystem.onPointerDown({ entity: prevBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Previous Page', maxDistance: 10 } }, () => { catalogPage--; renderPage() })
     }
     if (catalogPage < totalPages - 1) {
       const nextBtn = engine.addEntity()
-      Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - 1.0, DISPLAY_CENTER.z - 2.5), scale: Vector3.create(0.04, 0.25, 0.5) })
+      Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z - 2.8), scale: Vector3.create(0.04, 0.25, 0.5) })
       MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
       Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
       displayEntities.push(nextBtn)
       const nextLabel = engine.addEntity()
-      Transform.create(nextLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - 1.0, DISPLAY_CENTER.z - 2.5), rotation: TEXT_ROT })
+      Transform.create(nextLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - 1.2, DISPLAY_CENTER.z - 2.8), rotation: TEXT_ROT })
       TextShape.create(nextLabel, { text: 'NEXT >', fontSize: 0.4, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       displayEntities.push(nextLabel)
       pointerEventsSystem.onPointerDown({ entity: nextBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Next Page', maxDistance: 10 } }, () => { catalogPage++; renderPage() })
@@ -198,5 +236,6 @@ export function clearCatalogPanel(): void {
   for (const e of displayEntities) engine.removeEntity(e)
   displayEntities.length = 0
   catalogData = []
+  catalogDetails = {}
   catalogPage = 0
 }

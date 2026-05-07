@@ -142,6 +142,10 @@ export async function getCatalog(): Promise<any[]> {
   return apiGet<any[]>('/api/catalog')
 }
 
+export async function getCatalogDetail(speciesId: string): Promise<any> {
+  return apiGet<any>(`/api/catalog/detail/${speciesId}`)
+}
+
 export async function getAvailableUpgrades(): Promise<any[]> {
   return apiGet<any[]>('/api/ships/upgrades')
 }
