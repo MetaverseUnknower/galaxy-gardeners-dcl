@@ -40,12 +40,14 @@ const NEBULA_EXTENT = MAP_RADIUS * 1.5
 // Exported for station panel alignment
 export const PANEL_Z = () => MAP_CENTER.z + NEBULA_EXTENT + 0.5
 export const PANEL_Y = () => FLOOR_Y + 0.45
-export const PANEL_TILT = () => Quaternion.fromEulerDegrees(-30, 0, 0)
+export const PANEL_TILT = () => Quaternion.fromEulerDegrees(-10, 0, 0)
 export const PANEL_CENTER_X = () => MAP_CENTER.x
-const VIEW_ROW_OFFSET_Z = -0.35 * Math.sin(30 * Math.PI / 180)
-const VIEW_ROW_OFFSET_Y = 0.35 * Math.cos(30 * Math.PI / 180)
+const VIEW_ROW_OFFSET_Z = -0.35 * Math.sin(10 * Math.PI / 180)
+const VIEW_ROW_OFFSET_Y = 0.35 * Math.cos(10 * Math.PI / 180)
 export const GLASS_PANEL_Z = () => MAP_CENTER.z + NEBULA_EXTENT + 0.5 + VIEW_ROW_OFFSET_Z / 2
 export const GLASS_PANEL_Y = () => FLOOR_Y + 0.45 + VIEW_ROW_OFFSET_Y / 2
+
+const PANEL_ANGLE = 10 // degrees
 
 // View mode
 export type ViewMode = 'galaxy' | 'system'
@@ -175,13 +177,13 @@ export function createProjectorBase(): void {
   // Control panel
   const panelZ = MAP_CENTER.z + NEBULA_EXTENT + 0.5
   const panelY = FLOOR_Y + 0.45
-  const panelTilt = Quaternion.fromEulerDegrees(-30, 0, 0)
+  const panelTilt = Quaternion.fromEulerDegrees(-PANEL_ANGLE, 0, 0)
   const btnSize = Vector3.create(0.22, 0.22, 0.08)
   const spacing = 0.3
   const startX = MAP_CENTER.x - (spacing * 2.5)
 
-  const viewRowOffsetY = 0.35 * Math.cos(30 * Math.PI / 180)
-  const viewRowOffsetZ = -0.35 * Math.sin(30 * Math.PI / 180)
+  const viewRowOffsetY = 0.35 * Math.cos(PANEL_ANGLE * Math.PI / 180)
+  const viewRowOffsetZ = -0.35 * Math.sin(PANEL_ANGLE * Math.PI / 180)
   const viewBtnWidth = Vector3.create(0.5, 0.22, 0.08)
   const viewSpacing = 0.55
 
@@ -202,9 +204,9 @@ export function createProjectorBase(): void {
   )
 
   // Galaxy icon
-  const iconRotation = Quaternion.fromEulerDegrees(30, 180, 0)
-  const iconOffY = 0.025 * Math.cos(30 * Math.PI / 180)
-  const iconOffZ = -0.025 * Math.sin(30 * Math.PI / 180)
+  const iconRotation = Quaternion.fromEulerDegrees(PANEL_ANGLE, 180, 0)
+  const iconOffY = 0.025 * Math.cos(PANEL_ANGLE * Math.PI / 180)
+  const iconOffZ = -0.025 * Math.sin(PANEL_ANGLE * Math.PI / 180)
   const iconStyle = {
     albedoColor: Color4.create(0, 0.08, 0.25, 0.9),
     emissiveColor: Color3.create(0, 0.08, 0.25),

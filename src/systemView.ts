@@ -463,9 +463,9 @@ function createStationPanel(): void {
   const glassZ = GLASS_PANEL_Z()
   const glassY = GLASS_PANEL_Y()
   const panelTilt = PANEL_TILT()
-  const textRotation = Quaternion.fromEulerDegrees(30, 180, 0)
-  const upY = 0.3 * Math.cos(30 * Math.PI / 180)
-  const upZ = -0.3 * Math.sin(30 * Math.PI / 180)
+  const textRotation = Quaternion.fromEulerDegrees(10, 180, 0)
+  const upY = 0.3 * Math.cos(10 * Math.PI / 180)
+  const upZ = -0.3 * Math.sin(10 * Math.PI / 180)
 
   stationPanelEntity = engine.addEntity()
   Transform.create(stationPanelEntity, { position: Vector3.create(panelX, glassY, glassZ), scale: Vector3.create(0, 0, 0.03), rotation: panelTilt })
