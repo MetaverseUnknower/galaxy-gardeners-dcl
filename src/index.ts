@@ -15,7 +15,8 @@ import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteC
 import { movePlayerTo } from '~system/RestrictedActions'
 import { createUpgradesPanel, setUpgradeNotifyCallback } from './upgradesPanel'
 import { createCatalogPanel, setFloraSelectCallback } from './catalogPanel'
-import { setSelectedFlora, clearSelectedFlora } from './ui'
+import { setSelectedFlora, clearSelectedFlora, setCloseDetailCallback } from './ui'
+import { selectBody } from './systemView'
 
 let playerInfo: PlayerInfo | null = null
 let systems: StarSystem[] = []
@@ -100,6 +101,11 @@ export async function main() {
 
     setUpgradeNotifyCallback((text, color) => showNotification(text, color))
     createUpgradesPanel()
+
+    setCloseDetailCallback(() => {
+      selectBody(null)
+      clearSelectedFlora()
+    })
 
     setFloraSelectCallback((flora) => {
       clearSelectedFlora()

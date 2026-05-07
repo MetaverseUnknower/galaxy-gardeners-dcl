@@ -5,8 +5,10 @@ import { getTravelProgress } from './navigation'
 import { getSelectedBody, BodyInfo } from './systemView'
 
 let selectedFlora: any = null
+let onCloseDetailPanel: (() => void) | null = null
 export function setSelectedFlora(flora: any): void { selectedFlora = flora }
 export function clearSelectedFlora(): void { selectedFlora = null }
+export function setCloseDetailCallback(cb: () => void): void { onCloseDetailPanel = cb }
 import { isCurrentlyTraveling } from './navigation'
 import { refreshMissions } from './shipDisplay'
 import * as api from './api'
@@ -110,7 +112,15 @@ const BodyDetailPanel = () => {
         </UiEntity>
       ) : null}
       <UiEntity uiTransform={{ width: 480, flexDirection: 'column', padding: { top: 20, bottom: 20, left: 24, right: 24 } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.92) }}>
-        <UiEntity uiTransform={{ width: '100%', height: 46, margin: { bottom: 2 } }} uiText={{ value: body.name, fontSize: 36, color: titleColor, textAlign: 'middle-left', textWrap: 'nowrap' }} />
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', margin: { bottom: 2 } }}>
+          <UiEntity uiTransform={{ height: 46, flex: 1 }} uiText={{ value: body.name, fontSize: 36, color: titleColor, textAlign: 'middle-left', textWrap: 'nowrap' }} />
+          <UiEntity
+            uiTransform={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0.3, 0.1, 0.1, 1) }}
+            uiText={{ value: 'X', fontSize: 20, color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { selectedFlora = null; if (onCloseDetailPanel) onCloseDetailPanel() }}
+          />
+        </UiEntity>
         <UiEntity uiTransform={{ width: '100%', height: 26, margin: { bottom: 16 } }} uiText={{ value: body.type.toUpperCase(), fontSize: 18, color: Color4.create(0.45, 0.45, 0.45, 1), textAlign: 'middle-left' }} />
         {detailEntries.map(([key, val]) => (
           <UiEntity key={key} uiTransform={{ width: '100%', flexDirection: 'row', margin: { bottom: 8 } }}>
