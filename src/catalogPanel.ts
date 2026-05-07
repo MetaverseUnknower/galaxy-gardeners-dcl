@@ -4,7 +4,7 @@ import * as api from './api'
 import { selectBody } from './systemView'
 
 // West edge of platform, facing +X
-const DISPLAY_CENTER = Vector3.create(110, 42.5, 128)
+const DISPLAY_CENTER = Vector3.create(110, 42.0, 128)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 const PLANE_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 const ICON_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
