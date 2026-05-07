@@ -7,13 +7,15 @@ import { selectBody } from './systemView'
 const DISPLAY_CENTER = Vector3.create(110, 41.5, 128)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 const PLANE_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
+const ICON_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 
 const displayEntities: Entity[] = []
 let catalogData: any[] = []
 let catalogDetails: Record<string, any> = {}
+let specimenData: any[] = []
 let catalogPage = 0
+let viewMode: 'catalog' | 'vault' = 'catalog'
 
-// Grid layout: 6 columns x 4 rows = 24 per page
 const COLS = 6
 const ROWS = 4
 const ITEMS_PER_PAGE = COLS * ROWS
@@ -31,7 +33,6 @@ const RARITY_COLORS: Record<string, Color4> = {
   mythic: Color4.create(1, 0.3, 0.5, 1),
 }
 
-// Selected flora callback — shows in the body detail panel
 let onFloraSelect: ((flora: any) => void) | null = null
 export function setFloraSelectCallback(cb: (flora: any) => void): void { onFloraSelect = cb }
 
@@ -43,7 +44,13 @@ export async function createCatalogPanel(): Promise<void> {
   clearCatalogPanel()
 
   try {
-    catalogData = await api.getCatalog()
+    const [catalog, shipDash] = await Promise.all([
+      api.getCatalog(),
+      api.getShipDashboard()
+    ])
+    catalogData = catalog
+    specimenData = shipDash?.specimenSamples || []
+
     const detailPromises = catalogData.map(entry =>
       api.getCatalogDetail(entry.id).then(d => { catalogDetails[entry.id] = d }).catch(() => {})
     )
@@ -57,13 +64,10 @@ function renderPage(): void {
   for (const e of displayEntities) engine.removeEntity(e)
   displayEntities.length = 0
 
-  const totalPages = Math.max(1, Math.ceil(catalogData.length / ITEMS_PER_PAGE))
-  if (catalogPage >= totalPages) catalogPage = totalPages - 1
-  if (catalogPage < 0) catalogPage = 0
-
-  // Main glass panel
   const panelWidth = GRID_WIDTH + 1.5
   const panelHeight = GRID_HEIGHT + 2.5
+
+  // Main glass panel
   const mainPanel = engine.addEntity()
   Transform.create(mainPanel, {
     position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z),
@@ -76,19 +80,101 @@ function renderPage(): void {
   })
   displayEntities.push(mainPanel)
 
-  // Title
+  // Title bar with view toggle buttons
+  const titleY = DISPLAY_CENTER.y + panelHeight / 2 + 0.1
+
+  // Catalog button
+  const catalogBtn = engine.addEntity()
+  Transform.create(catalogBtn, {
+    position: Vector3.create(DISPLAY_CENTER.x + 0.02, titleY, DISPLAY_CENTER.z + 1.2),
+    scale: Vector3.create(0.04, 0.6, 0.6)
+  })
+  MeshRenderer.setBox(catalogBtn); MeshCollider.setBox(catalogBtn)
+  Material.setPbrMaterial(catalogBtn, {
+    albedoColor: viewMode === 'catalog' ? Color4.create(0, 0.3, 0.4, 1) : Color4.create(0.1, 0.1, 0.1, 1),
+    emissiveColor: viewMode === 'catalog' ? Color3.create(0, 0.6, 0.8) : Color3.create(0.2, 0.2, 0.2),
+    emissiveIntensity: viewMode === 'catalog' ? 1.5 : 0.5
+  })
+  displayEntities.push(catalogBtn)
+  pointerEventsSystem.onPointerDown(
+    { entity: catalogBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Flora Catalog', maxDistance: 10 } },
+    () => { viewMode = 'catalog'; catalogPage = 0; renderPage() }
+  )
+
+  // Catalog icon
+  const catalogIcon = engine.addEntity()
+  Transform.create(catalogIcon, {
+    position: Vector3.create(DISPLAY_CENTER.x + 0.05, titleY, DISPLAY_CENTER.z + 1.2),
+    scale: Vector3.create(0.45, 0.45, 1), rotation: ICON_ROT
+  })
+  MeshRenderer.setPlane(catalogIcon)
+  Material.setPbrMaterial(catalogIcon, {
+    texture: Material.Texture.Common({ src: 'assets/icons/catalog-icon.png' }),
+    emissiveTexture: Material.Texture.Common({ src: 'assets/icons/catalog-icon.png' }),
+    albedoColor: Color4.create(0, 0.08, 0.25, 0.9), emissiveColor: Color3.create(0, 0.08, 0.25),
+    emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+  })
+  displayEntities.push(catalogIcon)
+
+  // Vault button
+  const vaultBtn = engine.addEntity()
+  Transform.create(vaultBtn, {
+    position: Vector3.create(DISPLAY_CENTER.x + 0.02, titleY, DISPLAY_CENTER.z - 1.2),
+    scale: Vector3.create(0.04, 0.6, 0.6)
+  })
+  MeshRenderer.setBox(vaultBtn); MeshCollider.setBox(vaultBtn)
+  Material.setPbrMaterial(vaultBtn, {
+    albedoColor: viewMode === 'vault' ? Color4.create(0, 0.3, 0.4, 1) : Color4.create(0.1, 0.1, 0.1, 1),
+    emissiveColor: viewMode === 'vault' ? Color3.create(0, 0.6, 0.8) : Color3.create(0.2, 0.2, 0.2),
+    emissiveIntensity: viewMode === 'vault' ? 1.5 : 0.5
+  })
+  displayEntities.push(vaultBtn)
+  pointerEventsSystem.onPointerDown(
+    { entity: vaultBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Specimen Vault', maxDistance: 10 } },
+    () => { viewMode = 'vault'; catalogPage = 0; renderPage() }
+  )
+
+  // Vault icon
+  const vaultIcon = engine.addEntity()
+  Transform.create(vaultIcon, {
+    position: Vector3.create(DISPLAY_CENTER.x + 0.05, titleY, DISPLAY_CENTER.z - 1.2),
+    scale: Vector3.create(0.45, 0.45, 1), rotation: ICON_ROT
+  })
+  MeshRenderer.setPlane(vaultIcon)
+  Material.setPbrMaterial(vaultIcon, {
+    texture: Material.Texture.Common({ src: 'assets/icons/specimen-icon.png' }),
+    emissiveTexture: Material.Texture.Common({ src: 'assets/icons/specimen-icon.png' }),
+    albedoColor: Color4.create(0, 0.08, 0.25, 0.9), emissiveColor: Color3.create(0, 0.08, 0.25),
+    emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+  })
+  displayEntities.push(vaultIcon)
+
+  // Title text between buttons
   const title = engine.addEntity()
-  Transform.create(title, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 + 0.1, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(title, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, titleY, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(title, {
-    text: totalPages > 1 ? `FLORA CATALOG (${catalogPage + 1}/${totalPages})` : 'FLORA CATALOG',
+    text: viewMode === 'catalog' ? 'FLORA CATALOG' : 'SPECIMEN VAULT',
     fontSize: 1.2, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
   displayEntities.push(title)
 
+  if (viewMode === 'catalog') {
+    renderCatalogGrid(panelWidth, panelHeight)
+  } else {
+    renderVaultGrid(panelWidth, panelHeight)
+  }
+}
+
+function renderCatalogGrid(panelWidth: number, panelHeight: number): void {
+  const totalPages = Math.max(1, Math.ceil(catalogData.length / ITEMS_PER_PAGE))
+  if (catalogPage >= totalPages) catalogPage = totalPages - 1
+  if (catalogPage < 0) catalogPage = 0
+
+  // Count
   const countText = engine.addEntity()
   Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(countText, {
-    text: `${catalogData.length} species cataloged`,
+    text: `${catalogData.length} species cataloged${totalPages > 1 ? ` — Page ${catalogPage + 1}/${totalPages}` : ''}`,
     fontSize: 0.5, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
   })
   displayEntities.push(countText)
@@ -104,18 +190,75 @@ function renderPage(): void {
     return
   }
 
-  // Grid of tiles
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, catalogData.length)
+  renderTileGrid(catalogData.slice(startIdx, endIdx), panelWidth, panelHeight, (entry) => {
+    const detail = catalogDetails[entry.id]
+    handleFloraSelect(entry, detail)
+  })
+  renderPageNav(totalPages, panelWidth, panelHeight)
+}
+
+function renderVaultGrid(panelWidth: number, panelHeight: number): void {
+  // Group specimens by species_id, count them, cross-reference with catalog for names/images
+  const speciesCounts: Record<string, number> = {}
+  for (const s of specimenData) {
+    speciesCounts[s.species_id] = (speciesCounts[s.species_id] || 0) + 1
+  }
+
+  // Build vault entries with catalog info
+  const vaultEntries: any[] = []
+  for (const [speciesId, count] of Object.entries(speciesCounts)) {
+    const catalogEntry = catalogData.find(c => c.id === speciesId)
+    vaultEntries.push({
+      id: speciesId,
+      name: catalogEntry?.name || 'Unknown Species',
+      rarity: catalogEntry?.rarity || 'common',
+      image_url: catalogEntry?.image_url || null,
+      count,
+    })
+  }
+
+  const totalPages = Math.max(1, Math.ceil(vaultEntries.length / ITEMS_PER_PAGE))
+  if (catalogPage >= totalPages) catalogPage = totalPages - 1
+  if (catalogPage < 0) catalogPage = 0
+
+  const countText = engine.addEntity()
+  Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  TextShape.create(countText, {
+    text: `${specimenData.length} specimens stored${totalPages > 1 ? ` — Page ${catalogPage + 1}/${totalPages}` : ''}`,
+    fontSize: 0.5, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+  })
+  displayEntities.push(countText)
+
+  if (vaultEntries.length === 0) {
+    const emptyText = engine.addEntity()
+    Transform.create(emptyText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+    TextShape.create(emptyText, {
+      text: 'No specimens in vault.\nComplete exploration expeditions\nto collect samples!',
+      fontSize: 0.6, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+    })
+    displayEntities.push(emptyText)
+    return
+  }
+
+  const startIdx = catalogPage * ITEMS_PER_PAGE
+  const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, vaultEntries.length)
+  renderTileGrid(vaultEntries.slice(startIdx, endIdx), panelWidth, panelHeight, (entry) => {
+    const detail = catalogDetails[entry.id]
+    handleFloraSelect(entry, detail)
+  }, true)
+  renderPageNav(totalPages, panelWidth, panelHeight)
+}
+
+function renderTileGrid(entries: any[], panelWidth: number, panelHeight: number, onClick: (entry: any) => void, showCount: boolean = false): void {
   const gridTopY = DISPLAY_CENTER.y + panelHeight / 2 - 1.2
   const gridRightZ = DISPLAY_CENTER.z - GRID_WIDTH / 2
 
-  for (let i = startIdx; i < endIdx; i++) {
-    const entry = catalogData[i]
-    const detail = catalogDetails[entry.id]
-    const idx = i - startIdx
-    const col = idx % COLS
-    const row = Math.floor(idx / COLS)
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]
+    const col = i % COLS
+    const row = Math.floor(i / COLS)
     const tileZ = gridRightZ + col * TILE_SPACING
     const tileY = gridTopY - row * TILE_SPACING
 
@@ -146,14 +289,14 @@ function renderPage(): void {
       })
       displayEntities.push(img)
 
-      // Click to view details
+      const capturedEntry = entry
       pointerEventsSystem.onPointerDown(
         { entity: img, opts: { button: InputAction.IA_POINTER, hoverText: entry.name, maxDistance: 12 } },
-        () => handleFloraSelect(entry, detail)
+        () => onClick(capturedEntry)
       )
     }
 
-    // Species name below thumbnail
+    // Name below
     const nameEntity = engine.addEntity()
     Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY - 0.35, tileZ), rotation: TEXT_ROT })
     TextShape.create(nameEntity, {
@@ -162,45 +305,57 @@ function renderPage(): void {
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER
     })
     displayEntities.push(nameEntity)
-  }
 
-  // Page nav
-  if (totalPages > 1) {
-    if (catalogPage > 0) {
-      const prevBtn = engine.addEntity()
-      Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
-      MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
-      Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
-      displayEntities.push(prevBtn)
-      const prevLabel = engine.addEntity()
-      Transform.create(prevLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), rotation: TEXT_ROT })
-      TextShape.create(prevLabel, { text: '< PREV', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-      displayEntities.push(prevLabel)
-      pointerEventsSystem.onPointerDown({ entity: prevBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Previous Page', maxDistance: 10 } }, () => { catalogPage--; renderPage() })
-    }
-    if (catalogPage < totalPages - 1) {
-      const nextBtn = engine.addEntity()
-      Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
-      MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
-      Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
-      displayEntities.push(nextBtn)
-      const nextLabel = engine.addEntity()
-      Transform.create(nextLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), rotation: TEXT_ROT })
-      TextShape.create(nextLabel, { text: 'NEXT >', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-      displayEntities.push(nextLabel)
-      pointerEventsSystem.onPointerDown({ entity: nextBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Next Page', maxDistance: 10 } }, () => { catalogPage++; renderPage() })
+    // Count badge for vault
+    if (showCount && entry.count > 1) {
+      const countBadge = engine.addEntity()
+      Transform.create(countBadge, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY + 0.45, tileZ + TILE_SIZE / 2 - 0.15), rotation: TEXT_ROT })
+      TextShape.create(countBadge, {
+        text: `x${entry.count}`, fontSize: 0.3,
+        textColor: Color4.create(1, 1, 1, 1),
+        textAlign: TextAlignMode.TAM_MIDDLE_CENTER
+      })
+      displayEntities.push(countBadge)
     }
   }
 }
 
+function renderPageNav(totalPages: number, panelWidth: number, panelHeight: number): void {
+  if (totalPages <= 1) return
+
+  if (catalogPage > 0) {
+    const prevBtn = engine.addEntity()
+    Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
+    MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
+    Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
+    displayEntities.push(prevBtn)
+    const prevLabel = engine.addEntity()
+    Transform.create(prevLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), rotation: TEXT_ROT })
+    TextShape.create(prevLabel, { text: '< PREV', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+    displayEntities.push(prevLabel)
+    pointerEventsSystem.onPointerDown({ entity: prevBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Previous Page', maxDistance: 10 } }, () => { catalogPage--; renderPage() })
+  }
+  if (catalogPage < totalPages - 1) {
+    const nextBtn = engine.addEntity()
+    Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
+    MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
+    Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
+    displayEntities.push(nextBtn)
+    const nextLabel = engine.addEntity()
+    Transform.create(nextLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), rotation: TEXT_ROT })
+    TextShape.create(nextLabel, { text: 'NEXT >', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+    displayEntities.push(nextLabel)
+    pointerEventsSystem.onPointerDown({ entity: nextBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Next Page', maxDistance: 10 } }, () => { catalogPage++; renderPage() })
+  }
+}
+
 function handleFloraSelect(entry: any, detail: any): void {
-  // Deselect any celestial body
   selectBody(null)
 
-  // Build flora info for the body detail panel
   const details: Record<string, string> = {}
   details['Rarity'] = capitalize(entry.rarity || 'unknown')
-  details['Location'] = entry.body_name || 'Unknown'
+  if (entry.count) details['Specimens'] = `${entry.count}`
+  details['Location'] = entry.body_name || entry.planet_name || 'Unknown'
   details['System'] = entry.system_name || 'Unknown'
 
   if (detail) {
@@ -227,7 +382,12 @@ function handleFloraSelect(entry: any, detail: any): void {
 
 export async function refreshCatalog(): Promise<void> {
   try {
-    catalogData = await api.getCatalog()
+    const [catalog, shipDash] = await Promise.all([
+      api.getCatalog(),
+      api.getShipDashboard()
+    ])
+    catalogData = catalog
+    specimenData = shipDash?.specimenSamples || []
     const newIds = catalogData.filter(e => !catalogDetails[e.id]).map(e => e.id)
     const detailPromises = newIds.map(id =>
       api.getCatalogDetail(id).then(d => { catalogDetails[id] = d }).catch(() => {})
@@ -242,5 +402,7 @@ export function clearCatalogPanel(): void {
   displayEntities.length = 0
   catalogData = []
   catalogDetails = {}
+  specimenData = []
   catalogPage = 0
+  viewMode = 'catalog'
 }
