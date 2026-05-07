@@ -50,26 +50,6 @@ export async function createCatalogPanel(): Promise<void> {
     ])
     catalogData = catalog.reverse()
     specimenData = shipDash?.specimenSamples || []
-
-    // TEMP: Mock data for testing pagination
-    const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic']
-    const mockNames = ['Luminara', 'Verdantis', 'Crystalbloom', 'Nightshade', 'Starweaver', 'Frostpetal', 'Sunfire Lily', 'Voidrose', 'Nebula Orchid', 'Thornveil', 'Glowmoss', 'Ashblossom', 'Dreamfern', 'Ironroot', 'Moonwhisper', 'Stardust Vine', 'Flamepetal', 'Icebloom', 'Shadowleaf', 'Radiant Sprout', 'Darkflower', 'Lightcap', 'Emberfern', 'Glacial Rose', 'Thunderbloom', 'Silkweed', 'Pearlpetal', 'Cosmicbloom', 'Aurora Fern', 'Solarbud', 'Voidthorn', 'Duskpetal', 'Dawnlily', 'Quartz Orchid', 'Stormroot', 'Prismflower']
-    for (let i = 0; i < 34; i++) {
-      const existing = catalogData[i % Math.max(1, catalogData.length)]
-      catalogData.push({
-        id: `mock-${i}`,
-        name: mockNames[i] || `Flora ${i + 1}`,
-        rarity: rarities[i % rarities.length],
-        image_url: existing?.image_url || null,
-        body_name: `Planet-${i}`,
-        system_name: `System-${i}`,
-      })
-    }
-
-    const detailPromises = catalogData.map(entry =>
-      api.getCatalogDetail(entry.id).then(d => { catalogDetails[entry.id] = d }).catch(() => {})
-    )
-    await Promise.all(detailPromises)
   } catch { return }
 
   renderPage()
@@ -207,9 +187,11 @@ function renderCatalogGrid(panelWidth: number, panelHeight: number): void {
 
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, catalogData.length)
-  renderTileGrid(catalogData.slice(startIdx, endIdx), panelWidth, panelHeight, (entry) => {
-    const detail = catalogDetails[entry.id]
-    handleFloraSelect(entry, detail)
+  renderTileGrid(catalogData.slice(startIdx, endIdx), panelWidth, panelHeight, async (entry) => {
+    if (!catalogDetails[entry.id]) {
+      try { catalogDetails[entry.id] = await api.getCatalogDetail(entry.id) } catch {}
+    }
+    handleFloraSelect(entry, catalogDetails[entry.id])
   })
   renderPageNav(totalPages, panelWidth, panelHeight)
 }
@@ -259,9 +241,11 @@ function renderVaultGrid(panelWidth: number, panelHeight: number): void {
 
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, vaultEntries.length)
-  renderTileGrid(vaultEntries.slice(startIdx, endIdx), panelWidth, panelHeight, (entry) => {
-    const detail = catalogDetails[entry.id]
-    handleFloraSelect(entry, detail)
+  renderTileGrid(vaultEntries.slice(startIdx, endIdx), panelWidth, panelHeight, async (entry) => {
+    if (!catalogDetails[entry.id]) {
+      try { catalogDetails[entry.id] = await api.getCatalogDetail(entry.id) } catch {}
+    }
+    handleFloraSelect(entry, catalogDetails[entry.id])
   }, true)
   renderPageNav(totalPages, panelWidth, panelHeight)
 }
@@ -416,13 +400,8 @@ export async function refreshCatalog(): Promise<void> {
       api.getCatalog(),
       api.getShipDashboard()
     ])
-    catalogData = catalog
+    catalogData = catalog.reverse()
     specimenData = shipDash?.specimenSamples || []
-    const newIds = catalogData.filter(e => !catalogDetails[e.id]).map(e => e.id)
-    const detailPromises = newIds.map(id =>
-      api.getCatalogDetail(id).then(d => { catalogDetails[id] = d }).catch(() => {})
-    )
-    await Promise.all(detailPromises)
     renderPage()
   } catch {}
 }
