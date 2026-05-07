@@ -85,7 +85,7 @@ export function createEnvironment(): void {
   // Test model
   const testModel = engine.addEntity()
   Transform.create(testModel, {
-    position: Vector3.create(128, PLATFORM_Y, 133),
+    position: Vector3.create(128, PLATFORM_Y, 139),
     scale: Vector3.create(0.5, 0.5, 0.5),
     rotation: Quaternion.fromEulerDegrees(-90, 180, 0)
   })
