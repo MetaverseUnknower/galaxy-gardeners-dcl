@@ -85,8 +85,8 @@ export function createEnvironment(): void {
   // Test model
   const testModel = engine.addEntity()
   Transform.create(testModel, {
-    position: Vector3.create(128, PLATFORM_Y, 133),
-    scale: Vector3.create(1, 1, 1)
+    position: Vector3.create(128, PLATFORM_Y + 1, 133),
+    scale: Vector3.create(0.5, 0.5, 0.5)
   })
   GltfContainer.create(testModel, { src: 'assets/models/display_screen_low_poly.glb' })
 
