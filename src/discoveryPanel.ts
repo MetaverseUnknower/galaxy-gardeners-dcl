@@ -21,7 +21,9 @@ const ARROW_SIZE = 0.1
 const ARROW_DISTANCE = 0.08
 
 let onDiscoveryNotify: ((text: string, color: Color4) => void) | null = null
+let onDiscoveryComplete: ((systemId: string, systemName: string) => void) | null = null
 export function setDiscoveryNotifyCallback(cb: (text: string, color: Color4) => void): void { onDiscoveryNotify = cb }
+export function setDiscoveryCompleteCallback(cb: (systemId: string, systemName: string) => void): void { onDiscoveryComplete = cb }
 
 let mapCenterYStored = 1.0
 let mapZStored = 0
@@ -277,6 +279,9 @@ async function handleCompleteDiscovery(discoveryId: string): Promise<void> {
     const result = await api.completeDiscovery(discoveryId)
     if (onDiscoveryNotify) onDiscoveryNotify(`New system discovered: ${result.systemName || 'Unknown'}!`, Color4.create(0, 1, 0.5, 1))
     activeDiscovery = null
+    if (onDiscoveryComplete && result.systemId) {
+      onDiscoveryComplete(result.systemId, result.systemName || 'Unknown')
+    }
     await createDiscoveryPanel(allSystems, currentSystem?.id || null)
   } catch (err: any) { if (onDiscoveryNotify) onDiscoveryNotify(err.message || 'Complete failed', Color4.create(1, 0.3, 0.3, 1)) }
 }
