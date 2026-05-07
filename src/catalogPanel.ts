@@ -188,10 +188,11 @@ function renderCatalogGrid(panelWidth: number, panelHeight: number): void {
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, catalogData.length)
   renderTileGrid(catalogData.slice(startIdx, endIdx), panelWidth, panelHeight, async (entry) => {
+    handleFloraSelect(entry, catalogDetails[entry.id], !catalogDetails[entry.id])
     if (!catalogDetails[entry.id]) {
       try { catalogDetails[entry.id] = await api.getCatalogDetail(entry.id) } catch {}
+      handleFloraSelect(entry, catalogDetails[entry.id], false)
     }
-    handleFloraSelect(entry, catalogDetails[entry.id])
   })
   renderPageNav(totalPages, panelWidth, panelHeight)
 }
@@ -242,10 +243,11 @@ function renderVaultGrid(panelWidth: number, panelHeight: number): void {
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, vaultEntries.length)
   renderTileGrid(vaultEntries.slice(startIdx, endIdx), panelWidth, panelHeight, async (entry) => {
+    handleFloraSelect(entry, catalogDetails[entry.id], !catalogDetails[entry.id])
     if (!catalogDetails[entry.id]) {
       try { catalogDetails[entry.id] = await api.getCatalogDetail(entry.id) } catch {}
+      handleFloraSelect(entry, catalogDetails[entry.id], false)
     }
-    handleFloraSelect(entry, catalogDetails[entry.id])
   }, true)
   renderPageNav(totalPages, panelWidth, panelHeight)
 }
@@ -363,7 +365,7 @@ function renderPageNav(totalPages: number, panelWidth: number, panelHeight: numb
   }
 }
 
-function handleFloraSelect(entry: any, detail: any): void {
+function handleFloraSelect(entry: any, detail: any, loading: boolean = false): void {
   selectBody(null)
 
   const details: Record<string, string> = {}
@@ -372,7 +374,9 @@ function handleFloraSelect(entry: any, detail: any): void {
   details['Location'] = entry.body_name || entry.planet_name || 'Unknown'
   details['System'] = entry.system_name || 'Unknown'
 
-  if (detail) {
+  if (loading) {
+    details['Traits'] = 'Loading...'
+  } else if (detail) {
     if (detail.atmosphere) details['Atmosphere'] = capitalize(detail.atmosphere)
     if (detail.temperature) details['Temperature'] = capitalize(detail.temperature)
     if (detail.gravity) details['Gravity'] = capitalize(detail.gravity)
