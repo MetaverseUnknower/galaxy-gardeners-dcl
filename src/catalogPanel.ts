@@ -300,23 +300,12 @@ function renderTileGrid(entries: any[], panelWidth: number, panelHeight: number,
     const nameEntity = engine.addEntity()
     Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY - 0.35, tileZ), rotation: TEXT_ROT })
     TextShape.create(nameEntity, {
-      text: entry.name, fontSize: 0.25,
+      text: showCount ? `${entry.name} (x${entry.count})` : entry.name,
+      fontSize: 0.3,
       textColor: RARITY_COLORS[entry.rarity] || Color4.create(0.8, 0.8, 0.8, 1),
       textAlign: TextAlignMode.TAM_MIDDLE_CENTER
     })
     displayEntities.push(nameEntity)
-
-    // Count badge for vault
-    if (showCount && entry.count > 1) {
-      const countBadge = engine.addEntity()
-      Transform.create(countBadge, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY + 0.45, tileZ + TILE_SIZE / 2 - 0.15), rotation: TEXT_ROT })
-      TextShape.create(countBadge, {
-        text: `x${entry.count}`, fontSize: 0.3,
-        textColor: Color4.create(1, 1, 1, 1),
-        textAlign: TextAlignMode.TAM_MIDDLE_CENTER
-      })
-      displayEntities.push(countBadge)
-    }
   }
 }
 
