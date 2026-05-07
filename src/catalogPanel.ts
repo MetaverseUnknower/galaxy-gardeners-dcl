@@ -298,7 +298,7 @@ function renderTileGrid(entries: any[], panelWidth: number, panelHeight: number,
 
     // Name below
     const nameEntity = engine.addEntity()
-    Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY - 0.45, tileZ), rotation: TEXT_ROT })
+    Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY - 0.4, tileZ), rotation: TEXT_ROT })
     TextShape.create(nameEntity, {
       text: showCount ? `${entry.name} (x${entry.count})` : entry.name,
       fontSize: 0.6,
