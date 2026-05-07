@@ -1,6 +1,7 @@
 import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
+import { refreshCatalog } from './catalogPanel'
 
 const DISPLAY_CENTER = Vector3.create(128, 41.3, 146)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, 0, 0)
@@ -232,6 +233,7 @@ async function handleMissionCollect(expeditionId: string): Promise<void> {
           if (result.newSpecies) parts.push('New species!')
           if (result.sampleCollected) parts.push('Sample collected')
           if (onMissionNotify) onMissionNotify(parts.length > 0 ? `Exploration success! ${parts.join(' — ')}` : 'Exploration complete!', Color4.create(0.2, 0.8, 0.4, 1))
+          refreshCatalog()
         } else if (result?.rewards) {
           const rt = Object.entries(result.rewards).filter(([k]) => k !== 'species_id').map(([k, v]) => `${v} ${k.replace(/_/g, ' ')}`).join(', ')
           if (onMissionNotify) onMissionNotify(rt ? `Mining successful! ${rt}` : 'Mining complete!', Color4.create(0.9, 0.7, 0.3, 1))

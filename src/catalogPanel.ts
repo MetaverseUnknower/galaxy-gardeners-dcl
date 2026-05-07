@@ -108,7 +108,7 @@ function renderPage(): void {
   const startIdx = catalogPage * ITEMS_PER_PAGE
   const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, catalogData.length)
   const gridTopY = DISPLAY_CENTER.y + panelHeight / 2 - 1.2
-  const gridLeftZ = DISPLAY_CENTER.z + GRID_WIDTH / 2
+  const gridRightZ = DISPLAY_CENTER.z - GRID_WIDTH / 2
 
   for (let i = startIdx; i < endIdx; i++) {
     const entry = catalogData[i]
@@ -116,7 +116,7 @@ function renderPage(): void {
     const idx = i - startIdx
     const col = idx % COLS
     const row = Math.floor(idx / COLS)
-    const tileZ = gridLeftZ - col * TILE_SPACING
+    const tileZ = gridRightZ + col * TILE_SPACING
     const tileY = gridTopY - row * TILE_SPACING
 
     // Thumbnail background
@@ -223,6 +223,18 @@ function handleFloraSelect(entry: any, detail: any): void {
       canDeploy: false
     })
   }
+}
+
+export async function refreshCatalog(): Promise<void> {
+  try {
+    catalogData = await api.getCatalog()
+    const newIds = catalogData.filter(e => !catalogDetails[e.id]).map(e => e.id)
+    const detailPromises = newIds.map(id =>
+      api.getCatalogDetail(id).then(d => { catalogDetails[id] = d }).catch(() => {})
+    )
+    await Promise.all(detailPromises)
+    renderPage()
+  } catch {}
 }
 
 export function clearCatalogPanel(): void {
