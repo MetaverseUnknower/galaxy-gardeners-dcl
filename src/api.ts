@@ -138,6 +138,10 @@ export async function completeDiscovery(discoveryId: string): Promise<any> {
   return apiPost<any>(`/api/expeditions/complete-discovery/${discoveryId}`)
 }
 
+export async function getCatalog(): Promise<any[]> {
+  return apiGet<any[]>('/api/catalog')
+}
+
 export async function getAvailableUpgrades(): Promise<any[]> {
   return apiGet<any[]>('/api/ships/upgrades')
 }
