@@ -86,9 +86,9 @@ function renderPage(): void {
   })
   MeshRenderer.setBox(catalogBtn); MeshCollider.setBox(catalogBtn)
   Material.setPbrMaterial(catalogBtn, {
-    albedoColor: viewMode === 'catalog' ? Color4.create(0, 0.3, 0.4, 1) : Color4.create(0.1, 0.1, 0.1, 1),
-    emissiveColor: viewMode === 'catalog' ? Color3.create(0, 0.6, 0.8) : Color3.create(0.2, 0.2, 0.2),
-    emissiveIntensity: viewMode === 'catalog' ? 1.5 : 0.5
+    albedoColor: Color4.create(0, 0.3, 0.4, 1),
+    emissiveColor: Color3.create(0, 0.6, 0.8),
+    emissiveIntensity: 1.5
   })
   displayEntities.push(catalogBtn)
   pointerEventsSystem.onPointerDown(
@@ -119,9 +119,9 @@ function renderPage(): void {
   })
   MeshRenderer.setBox(vaultBtn); MeshCollider.setBox(vaultBtn)
   Material.setPbrMaterial(vaultBtn, {
-    albedoColor: viewMode === 'vault' ? Color4.create(0, 0.3, 0.4, 1) : Color4.create(0.1, 0.1, 0.1, 1),
-    emissiveColor: viewMode === 'vault' ? Color3.create(0, 0.6, 0.8) : Color3.create(0.2, 0.2, 0.2),
-    emissiveIntensity: viewMode === 'vault' ? 1.5 : 0.5
+    albedoColor: Color4.create(0, 0.3, 0.4, 1),
+    emissiveColor: Color3.create(0, 0.6, 0.8),
+    emissiveIntensity: 1.5
   })
   displayEntities.push(vaultBtn)
   pointerEventsSystem.onPointerDown(
