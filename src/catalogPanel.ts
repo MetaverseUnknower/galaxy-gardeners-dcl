@@ -182,21 +182,21 @@ function renderPage(): void {
       ].filter(t => t.value)
 
       for (let t = 0; t < traits.length; t++) {
-        const traitY = cardY - 0.8 - t * 0.2
+        const traitY = cardY - 0.8 - t * 0.17
 
         const traitLabel = engine.addEntity()
-        Transform.create(traitLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ + 0.4), rotation: TEXT_ROT })
+        Transform.create(traitLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ - 0.4), rotation: TEXT_ROT })
         TextShape.create(traitLabel, {
-          text: traits[t].label, fontSize: 0.25,
-          textColor: Color4.create(0.45, 0.45, 0.45, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT
+          text: traits[t].label, fontSize: 0.4,
+          textColor: Color4.create(0.55, 0.55, 0.55, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT
         })
         displayEntities.push(traitLabel)
 
         const traitValue = engine.addEntity()
-        Transform.create(traitValue, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ - 0.4), rotation: TEXT_ROT })
+        Transform.create(traitValue, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, traitY, cardZ + 0.4), rotation: TEXT_ROT })
         TextShape.create(traitValue, {
-          text: capitalize(traits[t].value), fontSize: 0.25,
-          textColor: Color4.create(0.7, 0.7, 0.7, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT
+          text: capitalize(traits[t].value), fontSize: 0.4,
+          textColor: Color4.create(0.85, 0.85, 0.85, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT
         })
         displayEntities.push(traitValue)
       }
