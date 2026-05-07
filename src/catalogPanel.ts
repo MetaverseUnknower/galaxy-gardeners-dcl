@@ -4,7 +4,7 @@ import * as api from './api'
 import { selectBody } from './systemView'
 
 // West edge of platform, facing +X
-const DISPLAY_CENTER = Vector3.create(110, 41.5, 128)
+const DISPLAY_CENTER = Vector3.create(110, 42.5, 128)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 const PLANE_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
 const ICON_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
@@ -17,7 +17,7 @@ let catalogPage = 0
 let viewMode: 'catalog' | 'vault' = 'catalog'
 
 const COLS = 6
-const ROWS = 4
+const ROWS = 2
 const ITEMS_PER_PAGE = COLS * ROWS
 const TILE_SIZE = 0.9
 const TILE_SPACING = 1.0
@@ -50,6 +50,21 @@ export async function createCatalogPanel(): Promise<void> {
     ])
     catalogData = catalog.reverse()
     specimenData = shipDash?.specimenSamples || []
+
+    // TEMP: Mock data for testing pagination
+    const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic']
+    const mockNames = ['Luminara', 'Verdantis', 'Crystalbloom', 'Nightshade', 'Starweaver', 'Frostpetal', 'Sunfire Lily', 'Voidrose', 'Nebula Orchid', 'Thornveil', 'Glowmoss', 'Ashblossom', 'Dreamfern', 'Ironroot', 'Moonwhisper', 'Stardust Vine', 'Flamepetal', 'Icebloom', 'Shadowleaf', 'Radiant Sprout', 'Darkflower', 'Lightcap', 'Emberfern', 'Glacial Rose', 'Thunderbloom', 'Silkweed', 'Pearlpetal', 'Cosmicbloom', 'Aurora Fern', 'Solarbud', 'Voidthorn', 'Duskpetal', 'Dawnlily', 'Quartz Orchid', 'Stormroot', 'Prismflower']
+    for (let i = 0; i < 34; i++) {
+      const existing = catalogData[i % Math.max(1, catalogData.length)]
+      catalogData.push({
+        id: `mock-${i}`,
+        name: mockNames[i] || `Flora ${i + 1}`,
+        rarity: rarities[i % rarities.length],
+        image_url: existing?.image_url || null,
+        body_name: `Planet-${i}`,
+        system_name: `System-${i}`,
+      })
+    }
 
     const detailPromises = catalogData.map(entry =>
       api.getCatalogDetail(entry.id).then(d => { catalogDetails[entry.id] = d }).catch(() => {})
@@ -312,28 +327,54 @@ function renderTileGrid(entries: any[], panelWidth: number, panelHeight: number,
 function renderPageNav(totalPages: number, panelWidth: number, panelHeight: number): void {
   if (totalPages <= 1) return
 
+  const navY = DISPLAY_CENTER.y - panelHeight / 2 + 0.3
+  const btnSpacing = 0.4
+
   if (catalogPage > 0) {
     const prevBtn = engine.addEntity()
-    Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
+    Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z + btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
     MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
     Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
     displayEntities.push(prevBtn)
-    const prevLabel = engine.addEntity()
-    Transform.create(prevLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z + panelWidth / 2 - 0.5), rotation: TEXT_ROT })
-    TextShape.create(prevLabel, { text: '< PREV', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-    displayEntities.push(prevLabel)
+
+    const prevIcon = engine.addEntity()
+    Transform.create(prevIcon, {
+      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z + btnSpacing),
+      scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -90, 180)
+    })
+    MeshRenderer.setPlane(prevIcon)
+    Material.setPbrMaterial(prevIcon, {
+      texture: Material.Texture.Common({ src: 'assets/icons/arrow-icon.png' }),
+      emissiveTexture: Material.Texture.Common({ src: 'assets/icons/arrow-icon.png' }),
+      albedoColor: Color4.create(0, 0.08, 0.25, 0.9), emissiveColor: Color3.create(0, 0.08, 0.25),
+      emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+    })
+    displayEntities.push(prevIcon)
+
     pointerEventsSystem.onPointerDown({ entity: prevBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Previous Page', maxDistance: 10 } }, () => { catalogPage--; renderPage() })
   }
+
   if (catalogPage < totalPages - 1) {
     const nextBtn = engine.addEntity()
-    Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), scale: Vector3.create(0.04, 0.25, 0.5) })
+    Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z - btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
     MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
     Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
     displayEntities.push(nextBtn)
-    const nextLabel = engine.addEntity()
-    Transform.create(nextLabel, { position: Vector3.create(DISPLAY_CENTER.x + 0.05, DISPLAY_CENTER.y - panelHeight / 2 + 0.7, DISPLAY_CENTER.z - panelWidth / 2 + 0.5), rotation: TEXT_ROT })
-    TextShape.create(nextLabel, { text: 'NEXT >', fontSize: 0.35, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-    displayEntities.push(nextLabel)
+
+    const nextIcon = engine.addEntity()
+    Transform.create(nextIcon, {
+      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z - btnSpacing),
+      scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -90, 0)
+    })
+    MeshRenderer.setPlane(nextIcon)
+    Material.setPbrMaterial(nextIcon, {
+      texture: Material.Texture.Common({ src: 'assets/icons/arrow-icon.png' }),
+      emissiveTexture: Material.Texture.Common({ src: 'assets/icons/arrow-icon.png' }),
+      albedoColor: Color4.create(0, 0.08, 0.25, 0.9), emissiveColor: Color3.create(0, 0.08, 0.25),
+      emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+    })
+    displayEntities.push(nextIcon)
+
     pointerEventsSystem.onPointerDown({ entity: nextBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Next Page', maxDistance: 10 } }, () => { catalogPage++; renderPage() })
   }
 }
