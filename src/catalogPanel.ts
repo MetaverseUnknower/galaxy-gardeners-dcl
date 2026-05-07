@@ -332,14 +332,14 @@ function renderPageNav(totalPages: number, panelWidth: number, panelHeight: numb
 
   if (catalogPage > 0) {
     const prevBtn = engine.addEntity()
-    Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z + btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
+    Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z - btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
     MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
     Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
     displayEntities.push(prevBtn)
 
     const prevIcon = engine.addEntity()
     Transform.create(prevIcon, {
-      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z + btnSpacing),
+      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z - btnSpacing),
       scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -90, 180)
     })
     MeshRenderer.setPlane(prevIcon)
@@ -356,14 +356,14 @@ function renderPageNav(totalPages: number, panelWidth: number, panelHeight: numb
 
   if (catalogPage < totalPages - 1) {
     const nextBtn = engine.addEntity()
-    Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z - btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
+    Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z + btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
     MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
     Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
     displayEntities.push(nextBtn)
 
     const nextIcon = engine.addEntity()
     Transform.create(nextIcon, {
-      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z - btnSpacing),
+      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z + btnSpacing),
       scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -90, 0)
     })
     MeshRenderer.setPlane(nextIcon)
