@@ -48,7 +48,7 @@ export async function createCatalogPanel(): Promise<void> {
       api.getCatalog(),
       api.getShipDashboard()
     ])
-    catalogData = catalog
+    catalogData = catalog.reverse()
     specimenData = shipDash?.specimenSamples || []
 
     const detailPromises = catalogData.map(entry =>
