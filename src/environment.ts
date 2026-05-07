@@ -1,5 +1,5 @@
 import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, GltfContainer } from '@dcl/sdk/ecs'
-import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
+import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
 
@@ -86,7 +86,8 @@ export function createEnvironment(): void {
   const testModel = engine.addEntity()
   Transform.create(testModel, {
     position: Vector3.create(128, PLATFORM_Y + 1, 133),
-    scale: Vector3.create(0.5, 0.5, 0.5)
+    scale: Vector3.create(0.5, 0.5, 0.5),
+    rotation: Quaternion.fromEulerDegrees(0, 0, -90)
   })
   GltfContainer.create(testModel, { src: 'assets/models/display_screen_low_poly.glb' })
 
