@@ -72,7 +72,10 @@ const SystemInfoPanel = () => {
               <UiEntity uiTransform={{ height: 28, margin: { right: 24 } }} uiText={{ value: `Distance: ${fuelInfo.distance.toFixed(1)}`, fontSize: 20, color: Color4.create(0.8, 0.8, 0.8, 1) }} />
               <UiEntity uiTransform={{ height: 28 }} uiText={{ value: `Fuel cost: ${fuelInfo.fuel_cost.toFixed(1)}`, fontSize: 20, color: canAfford ? Color4.create(0, 1, 0.5, 1) : Color4.create(1, 0.3, 0.3, 1) }} />
             </UiEntity>
-            <UiEntity uiTransform={{ width: '100%', height: 24, margin: { bottom: 4 } }} uiText={{ value: `Your fuel: ${fuelInfo.current_fuel.toFixed(1)}`, fontSize: 18, color: Color4.create(0.6, 0.6, 0.6, 1), textAlign: 'middle-center' }} />
+            <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'center', margin: { bottom: 4 } }}>
+              <UiEntity uiTransform={{ height: 24, margin: { right: 24 } }} uiText={{ value: `Your fuel: ${fuelInfo.current_fuel.toFixed(1)}`, fontSize: 18, color: Color4.create(0.6, 0.6, 0.6, 1) }} />
+              <UiEntity uiTransform={{ height: 24 }} uiText={{ value: `Travel time: ${fuelInfo.travel_minutes >= 60 ? `${Math.floor(fuelInfo.travel_minutes / 60)}h ${fuelInfo.travel_minutes % 60}m` : `${fuelInfo.travel_minutes}m`}`, fontSize: 18, color: Color4.create(0.6, 0.6, 0.6, 1) }} />
+            </UiEntity>
             {!canAfford ? <UiEntity uiTransform={{ width: '100%', height: 22 }} uiText={{ value: 'Not enough fuel', fontSize: 16, color: Color4.create(1, 0.3, 0.3, 0.8), textAlign: 'middle-center' }} /> : null}
           </UiEntity>
         ) : null}

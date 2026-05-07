@@ -82,11 +82,12 @@ export async function getNearestSystems(systemId: string, limit: number = 20): P
 }
 
 export async function getFuelCost(destinationId: string): Promise<FuelCostResponse> {
-  const raw = await apiGet<{ fuelCost: number; distance: number; currentFuel: number; canAfford: boolean }>(`/api/ships/fuel-cost?targetSystemId=${destinationId}`)
+  const raw = await apiGet<{ fuelCost: number; distance: number; currentFuel: number; canAfford: boolean; travelMinutes: number }>(`/api/ships/fuel-cost?targetSystemId=${destinationId}`)
   return {
     fuel_cost: raw.fuelCost,
     distance: raw.distance,
-    current_fuel: raw.currentFuel
+    current_fuel: raw.currentFuel,
+    travel_minutes: raw.travelMinutes
   }
 }
 

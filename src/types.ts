@@ -47,6 +47,7 @@ export interface FuelCostResponse {
   fuel_cost: number
   distance: number
   current_fuel: number
+  travel_minutes: number
 }
 
 export interface NearestSystem extends StarSystem {
