@@ -40,7 +40,7 @@ The player is purchasing a luxury metaverse-only experience: a remote consciousn
 - **Landing pad** in the far half: circular raised platform from primitives — dark metal disc with an emissive edge ring and pulsing landing lights, matching the main scene's glow language.
 - **DaisyClass_Exterior** hovering ~8–10m above the pad, gently bobbing and slowly yawing via a transform system ("station-keeping"). Must fit the 2-parcel height limit (~31.7m).
 - **FERN's booth** near the spawn end: kiosk from primitives (counter, canopy, holographic signage), placed so players pass it en route to the pad.
-- **FERN** behind the counter: holographic-AI placeholder body (emissive teal primitives, slight idle hover) until a GLB is provided.
+- **FERN** behind the counter: an `AvatarShape` entity wearing the user's 1-of-1 skin wearable (URN supplied via `config.ts`; AvatarShape renders listed wearables without ownership checks). Until the URN is provided, FERN falls back to a default avatar look.
 
 **Risk:** `DaisyClass_Exterior.glb` is 8.4MB; a 1x2 Genesis scene is capped at ~20k triangles total. Check triangle count during implementation; if over budget, request a decimated export with a stated target.
 
@@ -74,5 +74,5 @@ All API calls wrapped; any failure degrades to the "board anyway" path with FERN
 ## Out of scope
 
 - Real payment / on-chain purchase (narrative + API registration only for now).
-- Final GLBs for booth, pad, and FERN's body.
+- Final GLBs for booth and pad.
 - Backend changes of any kind.
