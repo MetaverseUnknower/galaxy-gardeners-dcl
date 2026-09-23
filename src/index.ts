@@ -14,7 +14,8 @@ import { setupUi, setSelectedSystemUI, setTravelingStatus, setStatusMessage, set
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './systemView'
 import { createEnvironment, respawnSystem, twinkleSystem } from './environment'
-import { createShipDisplay, setMissionNotifyCallback, setSolarRechargeRate, setOpenRefineryCallback, setOpenPurchaseCallback } from './shipDisplay'
+import { createShipDisplay, setMissionNotifyCallback, setOpenRefineryCallback, setOpenPurchaseCallback } from './shipDisplay'
+import { shipOverviewView, setSolarRechargeRate } from './stations/shipOverview'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { createUpgradesPanel, setUpgradeNotifyCallback } from './upgradesPanel'
@@ -147,7 +148,7 @@ export async function main() {
       }
     }
     const west = createStation({ id: 'flora', position: Vector3.create(117.2, DECK_Y, 121.3), yaw: -32 + 90, views: [stubView('a'), stubView('b'), stubView('fail', true)], notify: showNotification })
-    const east = createStation({ id: 'ship', position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3), yaw: -(-32 + 90), views: [stubView('a')], notify: showNotification })
+    const east = createStation({ id: 'ship', position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3), yaw: -(-32 + 90), views: [shipOverviewView, stubView('systems')], notify: showNotification })
     await Promise.all([west.refresh(), east.refresh()])
 
     setSelectionCallback(async (system: StarSystem | null) => {
