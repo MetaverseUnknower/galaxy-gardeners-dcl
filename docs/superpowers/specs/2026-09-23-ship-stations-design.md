@@ -1,157 +1,192 @@
 # Ship and Flora Stations — Design
 
-Date: 2026-09-23
+Date: 2026-09-23 (revised the same day to follow the concept art)
 
 ## Goal
 
 Consolidate everything ship-related and everything inventory/flora-related onto two
-physical stations inside the DaisyClass interior. Each station is a pair of desk
-models already in the scene: a tall desk whose screen shows content, and a low desk
-in front of it whose sloped screen holds the navigation buttons and a permanent
-readout. The framework must be reusable so further stations are a config entry.
+physical stations inside the DaisyClass interior, styled after the concept art in
+`references/`. Each station is a pair of desk models already in the scene: a tall
+desk (top screen) and a low desk in front of it (low screen). The framework must be
+reusable so further stations are a config entry.
+
+## References
+
+- `references/ship-overview-concept.png` — ship station, Overview view
+- `references/ship-upgrades-concept.png` — ship station, Systems (upgrades) view
+- `references/flora-station-concept.png` — flora station, Collections
+- `references/pod-operations-concept.png` — a future Pod Operations view (out of scope)
+
+The concepts define the visual language: dark navy glass panels with thin cyan
+(`#00E5FF`-ish) border lines, section headers of icon + title + small uppercase
+subtitle, cyan progress bars, cyan outline buttons with a bright filled variant for
+the primary action, magenta as the selected/accent color, small muted footers and
+quotes. Screens are content-dense but every element has a frame.
 
 ## Current state
 
-- `src/shipDisplay.ts` draws a fuel gauge, ship stats, refine/purchase buttons and a
-  paged missions list on a floating panel at the back (north) of the ship.
-- `src/upgradesPanel.ts` draws the upgrades list on a floating panel at the east wall.
-- `src/catalogPanel.ts` draws a species grid with a catalog/vault toggle on a floating
-  panel above the west desk pair.
-- All three position every entity in world coordinates from a hard-coded
-  `DISPLAY_CENTER`, so moving a desk means re-tuning each file by hand.
-- Desk models: `nav_panel_high_1.glb` (6m wide, screen body y 2.22..5.27) and
-  `nav_panel_low_1.glb` (6m wide, sloped body y -0.2..2.51). The west pair sits at
-  (117.2, DECK_Y, 121.3) with yaw `-32 + 90`; the east pair is its mirror across x=128
-  with the yaw negated.
+- `src/shipDisplay.ts`, `src/upgradesPanel.ts`, `src/catalogPanel.ts` draw three
+  floating panels in world coordinates from hard-coded centers.
+- Desk models: `nav_panel_high_1.glb` (tall; vertical screen slab x ±3, y 2.22..5.27,
+  front face at model z 0.79) and `nav_panel_low_1.glb` (low; sloped face from
+  (y 0.5, z -1.3) to (y 2.2, z 0.7), ~50° from vertical). Model front is -z.
+- West pair at (117.2, DECK_Y, 121.3) yaw `-32 + 90`; east pair mirrored across x=128
+  with yaw negated. Desk rotation is `fromEulerDegrees(180, yaw, 180)`.
+- Icons in `assets/icons/` are white glyphs on transparency, tinted in-scene.
+- `assets/models/DaisyClass_Exterior.glb` (93.5 × 93.6 × 21.7 at scale 1) is unused
+  in this scene and serves as the ship hologram at scale 0.012.
 
 ## Design
 
 ### Station framework (`src/stations.ts`)
 
-A station is described by a config object:
-
 ```ts
 interface StationConfig {
   id: string
-  position: Vector3        // desk pair position on the deck (world)
-  yaw: number              // desk facing, degrees, same convention as the existing desks
-  tabs: TabDefinition[]    // ordered; first is the default
-  readout: ReadoutRenderer // permanent strip on the low screen
+  position: Vector3          // desk pair position on the deck (world)
+  yaw: number                // middle Euler value; framework applies (180, yaw, 180)
+  views: ViewDefinition[]    // first is the default
+  notify: (text: string, color: Color4) => void
 }
-```
-
-`createStation(config)` spawns both desk models and two screen roots:
-
-- **Top screen root**: on the tall desk's screen face. Its position, yaw and tilt
-  relative to the desk origin are framework constants measured from the model
-  geometry.
-- **Low screen root**: on the low desk's sloped top, likewise from constants.
-
-A screen root is an invisible entity carrying the world transform. Tabs and the
-readout draw their entities as children of a root, using flat screen coordinates:
-x across (negative left), y up, z a small positive offset off the glass. Tabs never
-compute world coordinates.
-
-Mirroring is a config entry with the same position reflected about x=128 and the yaw
-negated; the framework does not special-case it.
-
-The station object exposes `setTab(id)`, `refresh()` and `destroy()`. It remembers
-the active tab across refreshes.
-
-### Tabs
-
-```ts
-interface TabDefinition {
+interface ViewDefinition {
   id: string
-  label: string
-  render(root: Entity, ctx: StationContext): Promise<void>  // draw top screen
+  render(screens: { top: Entity; low: Entity }, ctx: StationContext): Promise<void>
   clear(): void
-  // Optional: a tab that only triggers an action (Refinery, Buy Fuel) sets
-  // `action` instead of render/clear and draws nothing on the top screen.
-  action?: () => void
 }
+interface StationContext {
+  dashboard: any | null      // shared getShipDashboard() result; null if it has never loaded
+  notify(text: string, color: Color4): void
+  refresh(): Promise<void>   // re-fetch dashboard, clear and re-render the current view
+  setView(id: string): Promise<void>
+}
+interface Station { id: string; setView(id: string): Promise<void>; refresh(): Promise<void>; destroy(): void }
 ```
 
-`StationContext` gives a tab the shared dashboard data, a `notify(text, color)`
-hook wired to the scene's notification toast, and `refresh()` to redraw after an
-action.
+`createStation` spawns the two desk models and two invisible **screen roots** parented
+to them, using constants measured from the models: top root at desk-local
+(0, 3.75, 0.79) with no tilt; low root at (0, 1.35, -0.3) tilted 50° back. A view
+draws its entities as children of a root in screen coordinates: x to the viewer's
+right, y up, negative z toward the viewer. Views never compute world coordinates, so
+moving a desk moves everything on it, and the mirrored station is the same config
+with the yaw negated.
 
-### Low screen
+Usable areas: top screen 5.6 × 2.8, low screen 5.6 × 2.4.
 
-Owned by the station, not the tabs. Draws one button per tab along the top edge of
-the low screen, highlighting the active one, and calls the config's `readout` to
-draw the permanent strip beneath them. Action tabs render as buttons that call
-`action()` and do not change the active tab.
+A view renders **both** screens at once. Switching views clears both. `refresh()`
+keeps the current view. Overlapping refreshes are coalesced with a flag. If a view's
+`render` throws, the framework clears it and draws "Unable to load" on the top screen;
+`dashboard` keeps its last good value when the fetch fails.
+
+`refreshStation(id)` is exported for code outside the stations (the 2D overlays).
+
+### Drawing helpers (`src/stations/draw.ts`)
+
+One module implements the concept's visual language so views only compose:
+`text`, `frame` (glass + border strips, cyan or magenta), `header` (icon + title +
+subtitle), `bar` (track + fill), `button` (outline / primary / magenta / disabled),
+`tile` (category card with icon, title, subtitle, selected state), `listRow`
+(selectable row with optional thumbnail), `image`, `icon` (tinted glyph), and
+`hologram` (a GLB child that slowly yaws). Colors are constants here.
 
 ### Ship station (east pair)
 
-- Tabs: Overview, Upgrades, Refinery (action: `openRefineryDialog`), Buy Fuel
-  (action: `openPurchaseDialog`).
-- Readout: fuel gauge with current/capacity, and the ship stats currently shown on
-  the back panel.
-- Overview tab: active expeditions with progress and collect buttons, paged, ported
-  from `shipDisplay.ts` with local coordinates.
-- Upgrades tab: the list from `upgradesPanel.ts`, two columns, install buttons,
-  ported with local coordinates.
+**Overview view** (default), per `ship-overview-concept.png`:
 
-### Flora station (west pair)
+- Top: header "SHIP OVERVIEW / KEEP EXPLORING"; top-right "RESOURCES used / capacity"
+  with a bar. Left frame FUEL: gauge bar, "current / capacity", "Solar Recharge:
+  +x fuel/hr", and two outline buttons REFINE and BUY FUEL that open the existing 2D
+  overlays. Right frame: the ship hologram and an UPGRADES » button that switches to
+  the Systems view.
+- Low: left frame SHIP STATS, six rows of label / value / bar (bars are cosmetic,
+  scaled by a per-stat nominal maximum). Right frame ACTIVE MISSIONS: rows of type,
+  time remaining or READY, and a COLLECT button; paged when more than five; empty
+  state "No active missions / CHART A COURSE. MAKE IT COUNT." The Pod Operations
+  button in the concept is out of scope and not drawn.
 
-- Tabs: Inventory, Vault, Catalog.
-- Readout: specimen jars used against capacity, and species discovered count.
-- Inventory tab: mined resources from the dashboard's `inventory` array as a list
-  with quantities. New rendering, small.
-- Vault tab: the `vault` view mode from `catalogPanel.ts`.
-- Catalog tab: the `catalog` view mode from `catalogPanel.ts`, keeping the
-  `setFloraSelectCallback` hook that drives the galaxy/system view.
+**Systems view**, per `ship-upgrades-concept.png`:
+
+- Top: header "SHIP SYSTEMS / UPGRADE AND MAINTAIN YOUR VESSEL"; ship hologram in the
+  center; up to five upgrade cards per side (label "Cargo Hold T1" + cost line).
+  Clicking a card selects it (magenta frame). Footer "A DEEPER UNIVERSE AWAITS".
+- Low: left frame SELECTED MODULE: name, a one-line description per category,
+  CURRENT LEVEL / NEXT LEVEL, and the stat modifier entries. Middle frame REQUIRED
+  RESOURCES: one row per cost with "have / need" and a check or cross, then a large
+  UPGRADE button (primary when affordable, disabled otherwise). Right frame SYSTEM
+  STATUS: bars for Fuel, Cargo, Vault, Blast Shielding, Env. Shielding. Bottom-left
+  "‹ BACK TO OVERVIEW".
+- After a successful upgrade: toast, `refresh()`, selection stays on the same category
+  if it still has a next tier, else the first card.
+
+### Flora station (west pair), per `flora-station-concept.png`
+
+The top screen is the same in every flora view: header "SHIP COLLECTIONS / EXPLORE //
+STUDY // PRESERVE", a quote at the right, three tiles FLORA CATALOG (Discovered
+Species), SPECIMEN VAULT (Captured Life Forms), RESOURCE INVENTORY (Materials &
+Resources), and footer "SELECT A CATEGORY". The tile of the current view is
+highlighted. Clicking a tile switches view.
+
+- **Summary view** (default): low screen shows three counters with bars: species
+  discovered, jars used / vault capacity, cargo used / capacity.
+- **Catalog view**: low screen header "FLORA CATALOG / PLANTS & BOTANICAL DATA",
+  top-right "n SPECIES DISCOVERED". Left: species list rows (thumbnail + name), paged
+  by five, selected row highlighted. Center: large image of the selected species.
+  Right: name, rarity, location, system, and the traits from the detail endpoint
+  (loading state while it fetches). Selecting a species also calls the existing
+  flora-select callback so the rest of the scene behaves as it does today.
+  Bottom-left "‹ BACK TO COLLECTIONS" returns to Summary.
+- **Vault view**: same layout with specimens grouped by species and "(xN)" counts;
+  header "SPECIMEN VAULT / CAPTURED LIFE FORMS", top-right "jars / capacity" bar.
+- **Inventory view**: header "RESOURCE INVENTORY / MATERIALS & RESOURCES", top-right
+  "used / capacity" bar; rows of resource name, quantity and a bar, two columns when
+  more than six.
+
+### Icons
+
+Existing glyphs used: `catalog-icon.png` (catalog tiles/headers), `specimen-icon.png`
+(vault), `refinery-icon.png` and `fuel-purchase-icon.png` (fuel buttons),
+`arrow-icon.png` (back and paging). Wanted in the same style, white glyph on
+transparency, 512×512: `fuel-icon.png` (drop), `upgrades-icon.png` (wrench),
+`systems-icon.png` (emblem), `stats-icon.png` (bars), `missions-icon.png` (target),
+`resources-icon.png` (crystal), `check-icon.png`, `cross-icon.png`. Every icon slot is
+optional: a header or tile without an icon file simply omits the glyph, so the work
+does not block on art.
 
 ### Data and refresh
 
-- One shared `getShipDashboard()` fetch per station refresh feeds both the readout
-  and the active tab. Catalog and upgrades lists are fetched only when their tab
-  opens.
-- Refresh triggers: tab switch, after any action on the station (collect mission,
-  install upgrade, refine), and the existing scene-load path in `src/index.ts`
-  where the three panels are created today.
-- On fetch failure the tab draws one "Unable to load" line; the readout keeps its
-  last values; the next refresh retries.
+- One shared dashboard fetch per station refresh. The upgrades list and the catalog
+  list are fetched by the views that need them.
+- Refresh triggers: view switch, after any action (collect, upgrade, refine via the
+  overlay's existing hook), and the scene-load path in `src/index.ts`.
+- Failure: "Unable to load" on the top screen; last good dashboard kept; next refresh
+  retries.
 
 ### Removals
 
 - `src/shipDisplay.ts` and its floating fuel/missions panel behind the galaxy controls.
 - `src/upgradesPanel.ts` and its east-wall panel.
 - `src/catalogPanel.ts` and its floating panel.
+- The four station desk entities in `src/environment.ts` (the framework spawns them).
 - The `createShipDisplay` / `createUpgradesPanel` / `createCatalogPanel` wiring in
-  `src/index.ts`, replaced by two `createStation` calls. Notification and refinery/
-  purchase callbacks are passed through the station context instead of module-level
-  setters.
+  `src/index.ts`, replaced by two `createStation` calls.
 
 Unchanged: discovery desk and panel, the galaxy map, its control panel and the
-display-screen desk model it sits on north of center (these are the "back panel" and
-must not move), system view, the 2D refinery and purchase overlays in `src/ui.tsx`,
-and `src/api.ts`.
-
-### Screen geometry constants
-
-Measured from the GLBs during implementation and recorded as comments next to the
-constants:
-
-- Tall desk: screen face center height, forward offset, and tilt.
-- Low desk: sloped top center height, forward offset, and tilt.
-- Usable screen size for each, so tabs know their bounds (about 5.5m wide on both).
+display-screen desk model it sits on north of center (the "back panel", must not
+move), system view, the 2D refinery and purchase overlays in `src/ui.tsx`, `src/api.ts`.
 
 ## Verification
 
 No test runner exists in this repo. Verification is:
 
 1. `npm run build` type-checks clean.
-2. In the local preview: switch every tab on both stations; collect a mission;
-   install an upgrade; open Refinery and Buy Fuel from the ship station; select a
-   species in Catalog and confirm the galaxy view responds; confirm the removed
-   panels are gone.
+2. In the local preview: every view on both stations against its concept image;
+   collect a mission; select an upgrade card and confirm the low screen follows;
+   open REFINE and BUY FUEL; select a species and confirm the detail pane and the
+   existing flora callback; confirm the removed panels are gone and the galaxy
+   controls are untouched.
 3. Deploy to `metapetal.dcl.eth` and spot-check the same in the world.
 
 ## Out of scope
 
-- A 3D refinery tab (the 2D overlay stays for now).
-- Pods and fabrication UI.
+- Pod Operations view and any pod/fabrication UI.
+- A 3D refinery (the 2D overlay stays).
 - Any change to the API or server.
