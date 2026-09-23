@@ -1,5 +1,9 @@
-import { engine, Transform } from '@dcl/sdk/ecs'
+import { engine, Transform, TextAlignMode } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
+import { Color4 } from '@dcl/sdk/math'
+import { createStation, ViewDefinition } from './stations'
+import { Bag, clearBag, text, frame, header, bar, button, tile, listRow, CYAN, DIM, MUTED } from './stations/draw'
+import { DECK_Y } from './environment'
 import { authenticate } from './auth'
 import * as api from './api'
 import { createProjectorBase, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker } from './galaxyMap'
@@ -114,6 +118,37 @@ export async function main() {
       setSelectedFlora(flora)
     })
     createCatalogPanel()
+
+    // TEMP (Task 1 verification): stub views exercising every helper; replaced in Task 6
+    const stubView = (id: string, fail = false): ViewDefinition => {
+      const bag: Bag = []
+      return {
+        id,
+        async render({ top, low }, ctx) {
+          frame(bag, top, 0, 0, 5.6, 2.8)
+          header(bag, top, -2.6, 1.05, { icon: 'assets/icons/catalog-icon.png', title: `VIEW ${id.toUpperCase()}`, subtitle: 'explore // study // preserve' })
+          text(bag, top, 2.6, 1.1, `fuel ${ctx.dashboard?.ship?.fuel_current ?? '?'}`, 0.4, DIM, TextAlignMode.TAM_MIDDLE_RIGHT)
+          tile(bag, top, -1.85, -0.3, 1.6, 1.5, { icon: 'assets/icons/catalog-icon.png', title: 'Tile A', subtitle: 'selected', selected: true, hover: 'A', onClick: () => ctx.setView('a') })
+          tile(bag, top, 0, -0.3, 1.6, 1.5, { icon: 'assets/icons/specimen-icon.png', title: 'Tile B', subtitle: 'goes to b', hover: 'B', onClick: () => ctx.setView('b') })
+          tile(bag, top, 1.85, -0.3, 1.6, 1.5, { title: 'Fail', subtitle: 'throws', hover: 'fail', onClick: () => ctx.setView('fail') })
+          text(bag, top, 0, -1.25, 'SELECT A CATEGORY', 0.3, MUTED)
+          frame(bag, low, -1.4, 0, 2.6, 2.2)
+          header(bag, low, -2.6, 0.85, { title: 'LIST', subtitle: 'rows' })
+          listRow(bag, low, -1.4, 0.3, 2.3, 0.32, { label: 'Row one', sublabel: 'selected', selected: true, hover: 'one', onClick: () => ctx.notify('row one', Color4.create(0, 1, 0.5, 1)) })
+          listRow(bag, low, -1.4, -0.1, 2.3, 0.32, { label: 'Row two', hover: 'two', onClick: () => ctx.notify('row two', Color4.create(0, 1, 0.5, 1)) })
+          bar(bag, low, -1.4, -0.6, 2.2, 0.66)
+          frame(bag, low, 1.4, 0, 2.6, 2.2)
+          button(bag, low, 1.4, 0.5, 2.0, 0.4, 'PRIMARY', 'primary', () => ctx.notify('primary', CYAN), { variant: 'primary' })
+          button(bag, low, 1.4, 0, 2.0, 0.4, 'OUTLINE', 'outline', () => ctx.refresh(), { icon: 'assets/icons/refinery-icon.png' })
+          button(bag, low, 1.4, -0.5, 2.0, 0.4, 'DISABLED', 'disabled', () => {}, { variant: 'disabled' })
+          if (fail) throw new Error('forced')
+        },
+        clear() { clearBag(bag) },
+      }
+    }
+    const west = createStation({ id: 'flora', position: Vector3.create(117.2, DECK_Y, 121.3), yaw: -32 + 90, views: [stubView('a'), stubView('b'), stubView('fail', true)], notify: showNotification })
+    const east = createStation({ id: 'ship', position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3), yaw: -(-32 + 90), views: [stubView('a')], notify: showNotification })
+    await Promise.all([west.refresh(), east.refresh()])
 
     setSelectionCallback(async (system: StarSystem | null) => {
       clearSelectedFlora()

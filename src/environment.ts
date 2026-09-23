@@ -39,42 +39,6 @@ export function createEnvironment(): void {
   })
   GltfContainer.create(navPanel, { src: 'assets/models/nav_panel_low_1.glb' })
 
-  // Nav panel model (under catalog panel)
-  const catalogNavPanel = engine.addEntity()
-  Transform.create(catalogNavPanel, {
-    position: Vector3.create(117.2, DECK_Y, 121.3),
-    scale: Vector3.create(1, 1, 1),
-    rotation: Quaternion.fromEulerDegrees(180, -32 + 90, 180)
-  })
-  GltfContainer.create(catalogNavPanel, { src: 'assets/models/nav_panel_high_1.glb' })
-
-  // Low nav panel (in front of catalog high panel)
-  const catalogNavLow = engine.addEntity()
-  Transform.create(catalogNavLow, {
-    position: Vector3.create(117.2, DECK_Y, 121.3),
-    scale: Vector3.create(1, 1, 1),
-    rotation: Quaternion.fromEulerDegrees(180, -32 + 90, 180)
-  })
-  GltfContainer.create(catalogNavLow, { src: 'assets/models/nav_panel_low_1.glb' })
-
-  // Mirror of the catalog desk pair on the east side (reflected across the ship's centerline: x mirrored
-  // about 128, yaw negated) so the two flank the discovery desk symmetrically.
-  const mirrorNavPanel = engine.addEntity()
-  Transform.create(mirrorNavPanel, {
-    position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3),
-    scale: Vector3.create(1, 1, 1),
-    rotation: Quaternion.fromEulerDegrees(180, -(-32 + 90), 180)
-  })
-  GltfContainer.create(mirrorNavPanel, { src: 'assets/models/nav_panel_high_1.glb' })
-
-  const mirrorNavLow = engine.addEntity()
-  Transform.create(mirrorNavLow, {
-    position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3),
-    scale: Vector3.create(1, 1, 1),
-    rotation: Quaternion.fromEulerDegrees(180, -(-32 + 90), 180)
-  })
-  GltfContainer.create(mirrorNavLow, { src: 'assets/models/nav_panel_low_1.glb' })
-
   // Test model
   const testModel = engine.addEntity()
   Transform.create(testModel, {
