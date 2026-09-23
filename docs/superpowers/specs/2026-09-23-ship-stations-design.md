@@ -117,17 +117,18 @@ draw the permanent strip beneath them. Action tabs render as buttons that call
 
 ### Removals
 
-- `src/shipDisplay.ts` and its back-of-ship panel.
+- `src/shipDisplay.ts` and its floating fuel/missions panel behind the galaxy controls.
 - `src/upgradesPanel.ts` and its east-wall panel.
 - `src/catalogPanel.ts` and its floating panel.
-- The display-screen model north of center in `src/environment.ts`.
 - The `createShipDisplay` / `createUpgradesPanel` / `createCatalogPanel` wiring in
   `src/index.ts`, replaced by two `createStation` calls. Notification and refinery/
   purchase callbacks are passed through the station context instead of module-level
   setters.
 
-Unchanged: discovery desk and panel, galaxy map and its control panel, system view,
-the 2D refinery and purchase overlays in `src/ui.tsx`, and `src/api.ts`.
+Unchanged: discovery desk and panel, the galaxy map, its control panel and the
+display-screen desk model it sits on north of center (these are the "back panel" and
+must not move), system view, the 2D refinery and purchase overlays in `src/ui.tsx`,
+and `src/api.ts`.
 
 ### Screen geometry constants
 
