@@ -5,8 +5,8 @@ import { TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { ViewDefinition, StationContext, Screens, TOP } from '../stations'
-import { Bag, clearBag, text, frame, header, bar, button, hologram, clickable, icon, CYAN, MAGENTA3, MAGENTA, WHITE, DIM, MUTED, GREEN, RED, GREEN3, RED3 } from './draw'
-import { SHIP_HOLOGRAM } from './shipOverview'
+import { Bag, clearBag, text, frame, header, bar, button, image, clickable, icon, CYAN, MAGENTA3, MAGENTA, WHITE, DIM, MUTED, GREEN, RED, GREEN3, RED3 } from './draw'
+import { SHIP_BLUEPRINT } from './shipOverview'
 import { cargoUsed, titleCase } from './data'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -46,7 +46,7 @@ function drawTop(): void {
   frame(topBag, top, 0, 0, TOP.halfW * 2, TOP.halfH * 2)
   header(topBag, top, -2.6, 1.05, { icon: 'assets/icons/systems-icon.png', title: 'SHIP SYSTEMS', subtitle: 'upgrade and maintain your vessel' })
   text(topBag, top, 2.6, 1.05, 'EXPLORATION  //  RESEARCH  //  DISCOVERY', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
-  if (holoBag.length === 0) hologram(holoBag, top, 0, -0.25, SHIP_HOLOGRAM.src, SHIP_HOLOGRAM.scale)
+  if (holoBag.length === 0) image(holoBag, top, 0, -0.25, 1.7, 1.7, SHIP_BLUEPRINT)
   text(topBag, top, 0, -1.25, '— A DEEPER UNIVERSE AWAITS —', 0.24, MUTED)
   if (upgrades.length === 0) { text(topBag, top, 0, -0.9, 'All upgrades maxed!', 0.45, DIM); return }
   upgrades.forEach((u, i) => {

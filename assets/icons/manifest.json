@@ -62,5 +62,15 @@
       "used_for": "Ship Systems view: required resource missing."
     }
   ],
-  "deliverable": "Return one PNG per entry, named exactly as 'file' (path relative to the project root), overwriting the placeholder."
+  "deliverable": "Return one PNG per entry, named exactly as 'file' (path relative to the project root), overwriting the placeholder.",
+  "textures": [
+    {
+      "file": "assets/images/ship-blueprint.png",
+      "name": "Ship blueprint",
+      "format": "PNG with alpha, 1024 x 1024, square",
+      "look": "Technical blueprint / wireframe line drawing of the DaisyClass ship (the 3D model at assets/models/DaisyClass_Exterior.glb: a flat, roughly circular petal-shaped hull) seen from above or three-quarter view. Thin cyan (#00E5FF) lines with faint dimension marks and a subtle grid, on a FULLY TRANSPARENT background. No fill, no dark backing, no text. Matches the wireframe ship in docs/superpowers/specs/references/ship-overview-concept.png and ship-upgrades-concept.png.",
+      "used_for": "Ship station: Overview right frame and Systems view center, drawn flat on the screen glass.",
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+    }
+  ]
 }

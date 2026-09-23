@@ -33,10 +33,13 @@ export function clickable(e: Entity, hover: string, onClick: () => void): void {
   pointerEventsSystem.onPointerDown({ entity: e, opts: { button: InputAction.IA_POINTER, hoverText: hover, maxDistance: 10 } }, onClick)
 }
 
+// Every panel string is multiplied by this. Layout sizes in the views are authored at scale 1.
+export const TEXT_SCALE = 1.5
+
 export function text(into: Bag, root: Entity, x: number, y: number, str: string, size: number, color: Color4 = WHITE, align: TextAlignMode = TextAlignMode.TAM_MIDDLE_CENTER, z: number = -0.04): Entity {
   const e = engine.addEntity()
   Transform.create(e, { position: Vector3.create(x, y, z), parent: root })
-  TextShape.create(e, { text: str, fontSize: size, textColor: color, textAlign: align })
+  TextShape.create(e, { text: str, fontSize: size * TEXT_SCALE, textColor: color, textAlign: align })
   into.push(e)
   return e
 }

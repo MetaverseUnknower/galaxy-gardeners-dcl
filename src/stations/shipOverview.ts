@@ -6,10 +6,11 @@ import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { openRefineryDialog, openPurchaseDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
-import { Bag, clearBag, text, frame, header, bar, button, hologram, WHITE, DIM, MUTED, GREEN } from './draw'
+import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN } from './draw'
 import { cargoUsed } from './data'
 
-export const SHIP_HOLOGRAM = { src: 'assets/models/DaisyClass_Exterior.glb', scale: 0.012 }
+// Blueprint line-art of the ship, drawn flat on the glass (see assets/icons/manifest.json for the art spec).
+export const SHIP_BLUEPRINT = 'assets/images/ship-blueprint.png'
 
 let solarRechargeRate = 0
 export function setSolarRechargeRate(rate: number): void { solarRechargeRate = rate }
@@ -64,7 +65,7 @@ function drawTop(top: Entity, ctx: StationContext): void {
 
   // Ship frame, right: hologram + Upgrades entry
   frame(topBag, top, 1.4, -0.35, 2.6, 1.85)
-  hologram(topBag, top, 0.9, -0.35, SHIP_HOLOGRAM.src, SHIP_HOLOGRAM.scale)
+  image(topBag, top, 0.9, -0.35, 1.3, 1.3, SHIP_BLUEPRINT)
   button(topBag, top, 2.05, -0.35, 1.1, 0.42, 'UPGRADES »', 'Ship Systems', () => ctx.setView('systems'), { icon: icons('upgrades'), size: 0.34 })
   text(topBag, top, 2.6, -1.25, 'EXPLORE  //  UPGRADE  //  GO FURTHER', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
 }
