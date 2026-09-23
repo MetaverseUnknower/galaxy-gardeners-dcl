@@ -7,6 +7,7 @@ import { selectBody } from '../systemView'
 import { ViewDefinition, StationContext, Screens, LOW } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, listRow, image, WHITE, DIM, MUTED, CYAN } from './draw'
 import { drawCollectionsTop, setSpeciesCount, ICONS, CollectionId } from './floraCollections'
+import { titleCase, TRAIT_KEYS } from './data'
 
 const RARITY_COLORS: Record<string, Color4> = {
   common: Color4.create(0.6, 0.6, 0.6, 1), uncommon: Color4.create(0.2, 0.8, 0.3, 1), rare: Color4.create(0.2, 0.5, 1, 1),
@@ -19,7 +20,6 @@ export function setFloraSelectCallback(cb: (flora: any) => void): void { onFlora
 
 let catalogData: any[] = []
 const details: Record<string, any> = {}
-function capitalize(s: string): string { return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }
 
 async function loadCatalog(): Promise<void> {
   const catalog = await api.getCatalog()
@@ -31,13 +31,13 @@ async function loadCatalog(): Promise<void> {
 function announce(entry: any, detail: any, loading: boolean): void {
   selectBody(null)
   const d: Record<string, string> = {}
-  d['Rarity'] = capitalize(entry.rarity || 'unknown')
+  d['Rarity'] = titleCase(entry.rarity || 'unknown')
   if (entry.count) d['Specimens'] = `${entry.count}`
   d['Location'] = entry.body_name || entry.planet_name || 'Unknown'
   d['System'] = entry.system_name || 'Unknown'
   if (loading) d['Traits'] = 'Loading...'
   else if (detail) {
-    for (const k of ['atmosphere', 'temperature', 'gravity', 'moisture', 'radiation', 'soil']) if (detail[k]) d[capitalize(k)] = capitalize(detail[k])
+    for (const k of TRAIT_KEYS) if (detail[k]) d[titleCase(k)] = titleCase(detail[k])
     if (detail.discovered_by) d['Discovered By'] = detail.discovered_by
   }
   if (onFloraSelect) onFloraSelect({ type: 'flora', name: entry.name, id: entry.id, imageUrl: entry.image_url, details: d, canDeploy: false })
@@ -60,38 +60,38 @@ function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon
     if (page >= totalPages) page = totalPages - 1
     if (page < 0) page = 0
     // Left: list
-    frame(paneBag, low, -1.85, -0.15, 1.75, 1.75)
+    frame(paneBag, low, -1.85, -0.125, 1.75, 1.65)
     if (entries.length === 0) {
-      text(paneBag, low, -1.85, -0.15, emptyText, 0.3, MUTED)
+      text(paneBag, low, -1.85, -0.125, emptyText, 0.3, MUTED)
     }
     entries.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE).forEach((e, i) => {
-      listRow(paneBag, low, -1.85, 0.5 - i * 0.34, 1.6, 0.3, { label: showCount ? `${e.name} (x${e.count})` : e.name, selected: e.id === selectedId, hover: e.name, onClick: () => select(e), imageSrc: e.image_url })
+      listRow(paneBag, low, -1.85, 0.5 - i * 0.3, 1.6, 0.26, { label: showCount ? `${e.name} (x${e.count})` : e.name, selected: e.id === selectedId, hover: e.name, onClick: () => select(e), imageSrc: e.image_url })
     })
-    if (page > 0) button(paneBag, low, -2.3, -0.9, 0.7, 0.2, '‹ PREV', 'Previous Page', () => { page--; drawList() }, { size: 0.22 })
-    if (page < totalPages - 1) button(paneBag, low, -1.4, -0.9, 0.7, 0.2, 'NEXT ›', 'Next Page', () => { page++; drawList() }, { size: 0.22 })
+    if (page > 0) button(paneBag, low, -0.6, -1.08, 0.7, 0.22, '‹ PREV', 'Previous Page', () => { page--; drawList() }, { size: 0.22 })
+    if (page < totalPages - 1) button(paneBag, low, 0.3, -1.08, 0.7, 0.22, 'NEXT ›', 'Next Page', () => { page++; drawList() }, { size: 0.22 })
     // Center: image
-    frame(paneBag, low, 0, -0.15, 1.6, 1.75)
+    frame(paneBag, low, 0, -0.125, 1.6, 1.65)
     const sel = entries.find(e => e.id === selectedId)
-    if (sel?.image_url) image(paneBag, low, 0, -0.1, 1.3, 1.3, sel.image_url)
-    else text(paneBag, low, 0, -0.15, sel ? 'NO IMAGE' : '', 0.26, MUTED)
+    if (sel?.image_url) image(paneBag, low, 0, -0.125, 1.25, 1.25, sel.image_url)
+    else text(paneBag, low, 0, -0.125, sel ? 'NO IMAGE' : '', 0.26, MUTED)
     // Right: details
-    frame(paneBag, low, 1.85, -0.15, 1.75, 1.75)
+    frame(paneBag, low, 1.85, -0.125, 1.75, 1.65)
     if (sel) {
-      text(paneBag, low, 1.1, 0.55, sel.name.toUpperCase(), 0.4, CYAN, TextAlignMode.TAM_MIDDLE_LEFT)
+      text(paneBag, low, 1.1, 0.45, sel.name.toUpperCase(), 0.4, CYAN, TextAlignMode.TAM_MIDDLE_LEFT)
       const det = details[sel.id]
-      const rows: [string, string, Color4][] = [['Rarity', capitalize(sel.rarity || 'unknown'), RARITY_COLORS[sel.rarity] || WHITE]]
+      const rows: [string, string, Color4][] = [['Rarity', titleCase(sel.rarity || 'unknown'), RARITY_COLORS[sel.rarity] || WHITE]]
       if (sel.count) rows.push(['Specimens', `${sel.count}`, WHITE])
       rows.push(['Location', sel.body_name || sel.planet_name || 'Unknown', WHITE])
       rows.push(['System', sel.system_name || 'Unknown', WHITE])
       if (det === undefined) rows.push(['Traits', 'Loading...', DIM])
-      else if (det) for (const k of ['atmosphere', 'temperature', 'gravity', 'moisture', 'radiation', 'soil']) if (det[k]) rows.push([capitalize(k), capitalize(det[k]), CYAN])
+      else if (det) for (const k of TRAIT_KEYS) if (det[k]) rows.push([titleCase(k), titleCase(det[k]), CYAN])
       rows.slice(0, 7).forEach(([k, v, c], i) => {
-        const y = 0.25 - i * 0.18
+        const y = 0.18 - i * 0.16
         text(paneBag, low, 1.1, y, k, 0.24, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
         text(paneBag, low, 2.6, y, v, 0.24, c, TextAlignMode.TAM_MIDDLE_RIGHT)
       })
     } else {
-      text(paneBag, low, 1.85, -0.15, entries.length ? 'Select a species' : '', 0.28, MUTED)
+      text(paneBag, low, 1.85, -0.125, entries.length ? 'Select a species' : '', 0.28, MUTED)
     }
   }
 
@@ -133,8 +133,8 @@ export const catalogView = makeSpeciesView('catalog', 'FLORA CATALOG', 'plants &
 export const vaultView = makeSpeciesView('vault', 'SPECIMEN VAULT', 'captured life forms', ICONS.vault,
   'No specimens in vault.\nComplete exploration expeditions\nto collect samples!',
   async (ctx) => {
-    if (catalogData.length === 0) await loadCatalog()
     if (!ctx.dashboard) throw new Error('no dashboard')
+    await loadCatalog()
     const samples: any[] = ctx.dashboard.specimenSamples || []
     const counts: Record<string, number> = {}
     for (const s of samples) counts[s.species_id] = (counts[s.species_id] || 0) + 1

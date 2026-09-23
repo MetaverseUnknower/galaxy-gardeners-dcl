@@ -7,6 +7,7 @@ import * as api from '../api'
 import { openRefineryDialog, openPurchaseDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, hologram, WHITE, DIM, MUTED, GREEN } from './draw'
+import { cargoUsed } from './data'
 
 export const SHIP_HOLOGRAM = { src: 'assets/models/DaisyClass_Exterior.glb', scale: 0.012 }
 
@@ -33,8 +34,6 @@ const ICONS: Record<string, string | undefined> = {
   missions: 'assets/icons/missions-icon.png', resources: 'assets/icons/resources-icon.png',
   refine: 'assets/icons/refinery-icon.png', buy: 'assets/icons/fuel-purchase-icon.png',
 }
-
-function cargoUsed(d: any): number { return (d?.inventory || []).reduce((s: number, r: any) => s + (r.quantity ?? 0), 0) }
 
 function drawTop(top: Entity, ctx: StationContext): void {
   clearBag(topBag)

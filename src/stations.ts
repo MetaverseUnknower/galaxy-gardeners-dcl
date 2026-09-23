@@ -14,6 +14,7 @@ export interface StationContext {
   setView(id: string): Promise<void>
 }
 export interface Screens { top: Entity; low: Entity }
+/** A view object holds its own drawing state and may be used by only one station. */
 export interface ViewDefinition {
   id: string
   render(screens: Screens, ctx: StationContext): Promise<void>
@@ -110,6 +111,7 @@ export function createStation(config: StationConfig): Station {
       const v = config.views.find(x => x.id === id)
       if (!v) return
       pendingView = v
+      needFetch = true
       await pump()
     },
     async refresh() {

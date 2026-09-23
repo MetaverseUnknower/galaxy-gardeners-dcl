@@ -123,7 +123,7 @@ export async function main() {
       views: [shipOverviewView, shipSystemsView],
       notify: showNotification,
     })
-    await Promise.all([floraStation.refresh(), shipStation.refresh()])
+    void Promise.all([floraStation.refresh(), shipStation.refresh()])
 
     setSelectionCallback(async (system: StarSystem | null) => {
       clearSelectedFlora()

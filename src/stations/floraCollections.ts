@@ -1,8 +1,10 @@
 // Flora station — shared top screen (category tiles), Summary view and Inventory view
 // (see references/flora-station-concept.png).
 import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
+import * as api from '../api'
 import { ViewDefinition, StationContext, Screens, TOP, LOW } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, tile, button, WHITE, DIM, MUTED } from './draw'
+import { cargoUsed, titleCase } from './data'
 
 export const ICONS: { catalog: string; vault: string; resources?: string } = {
   catalog: 'assets/icons/catalog-icon.png',
@@ -12,7 +14,6 @@ export const ICONS: { catalog: string; vault: string; resources?: string } = {
 
 let speciesCount = 0
 export function setSpeciesCount(n: number): void { speciesCount = n }
-export function getSpeciesCount(): number { return speciesCount }
 
 export type CollectionId = 'summary' | 'catalog' | 'vault' | 'inventory'
 
@@ -32,9 +33,6 @@ export function drawCollectionsTop(bag: Bag, top: Entity, ctx: StationContext, c
   text(bag, top, 2.6, -1.25, 'SELECT A CATEGORY', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
 }
 
-function cargoUsed(d: any): number { return (d?.inventory || []).reduce((s: number, r: any) => s + (r.quantity ?? 0), 0) }
-function pretty(s: string): string { return s.replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase()) }
-
 // ---- Summary view: counters with bars ----
 const summaryBag: Bag = []
 export const summaryView: ViewDefinition = {
@@ -45,6 +43,8 @@ export const summaryView: ViewDefinition = {
     header(summaryBag, low, -2.6, 0.9, { icon: ICONS.catalog, title: 'COLLECTIONS', subtitle: 'select a category above', size: 0.6 })
     const d = ctx.dashboard
     if (!d) throw new Error('no dashboard')
+    const catalog = await api.getCatalog()
+    setSpeciesCount(catalog.length)
     const jars = (d.specimenSamples || []).length
     const vault = d.ship?.specimen_vault ?? 0
     const used = cargoUsed(d), cap = d.ship?.resource_storage ?? 0
@@ -84,8 +84,8 @@ export const inventoryView: ViewDefinition = {
     rows.slice(0, 12).forEach((r: any, i: number) => {
       const col = i < 6 ? 0 : 1
       const x = col === 0 ? -1.45 : 1.45
-      const y = 0.45 - (i % 6) * 0.3
-      text(invBag, low, x - 1.3, y + 0.06, pretty(r.resource_type), 0.3, WHITE, TextAlignMode.TAM_MIDDLE_LEFT)
+      const y = 0.5 - (i % 6) * 0.26
+      text(invBag, low, x - 1.3, y + 0.06, titleCase(r.resource_type), 0.3, WHITE, TextAlignMode.TAM_MIDDLE_LEFT)
       text(invBag, low, x + 1.3, y + 0.06, `${r.quantity}`, 0.3, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
       bar(invBag, low, x, y - 0.1, 2.6, cap ? r.quantity / cap : 0, { h: 0.06 })
     })

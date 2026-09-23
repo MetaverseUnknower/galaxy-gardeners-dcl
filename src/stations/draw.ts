@@ -2,7 +2,7 @@
 // Implements the concept art's visual language once: dark glass frames with thin cyan borders,
 // icon + title + subtitle headers, cyan bars, outline/primary buttons, category tiles, list rows.
 // All helpers draw children of a screen root in screen coordinates (x right, y up, -z toward viewer).
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem, ColliderLayer, GltfContainer } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem, GltfContainer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 
 export type Bag = Entity[]
