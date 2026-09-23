@@ -5,7 +5,7 @@ import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { selectBody } from '../systemView'
 import { ViewDefinition, StationContext, Screens, LOW } from '../stations'
-import { Bag, clearBag, text, frame, header, bar, button, listRow, image, WHITE, DIM, MUTED, CYAN, GREEN } from './draw'
+import { Bag, clearBag, text, frame, header, bar, button, listRow, image, WHITE, DIM, MUTED, CYAN } from './draw'
 import { drawCollectionsTop, setSpeciesCount, ICONS, CollectionId } from './floraCollections'
 
 const RARITY_COLORS: Record<string, Color4> = {
@@ -84,9 +84,9 @@ function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon
       rows.push(['Location', sel.body_name || sel.planet_name || 'Unknown', WHITE])
       rows.push(['System', sel.system_name || 'Unknown', WHITE])
       if (det === undefined) rows.push(['Traits', 'Loading...', DIM])
-      else if (det) for (const k of ['atmosphere', 'temperature', 'gravity', 'moisture', 'radiation', 'soil']) if (det[k]) rows.push([capitalize(k), capitalize(det[k]), GREEN])
-      rows.slice(0, 8).forEach(([k, v, c], i) => {
-        const y = 0.25 - i * 0.2
+      else if (det) for (const k of ['atmosphere', 'temperature', 'gravity', 'moisture', 'radiation', 'soil']) if (det[k]) rows.push([capitalize(k), capitalize(det[k]), CYAN])
+      rows.slice(0, 7).forEach(([k, v, c], i) => {
+        const y = 0.25 - i * 0.18
         text(paneBag, low, 1.1, y, k, 0.24, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
         text(paneBag, low, 2.6, y, v, 0.24, c, TextAlignMode.TAM_MIDDLE_RIGHT)
       })
