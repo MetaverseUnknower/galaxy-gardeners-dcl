@@ -43,7 +43,6 @@ function drawTop(): void {
   if (!screens || !ctxRef) return
   clearBag(topBag)
   const top = screens.top
-  frame(topBag, top, 0, 0, TOP.halfW * 2, TOP.halfH * 2)
   header(topBag, top, -2.6, 1.05, { icon: 'assets/icons/systems-icon.png', title: 'SHIP SYSTEMS', subtitle: 'upgrade and maintain your vessel' })
   text(topBag, top, 2.6, 1.05, 'EXPLORATION  //  RESEARCH  //  DISCOVERY', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
   if (holoBag.length === 0) image(holoBag, top, 0, -0.25, 1.7, 1.7, SHIP_BLUEPRINT)

@@ -21,9 +21,8 @@ export const RED = Color4.create(1, 0.35, 0.35, 1)
 const GLASS_FILL = Color4.create(0.02, 0.05, 0.12, 0.55)
 const TRACK_FILL = Color4.create(0.05, 0.12, 0.2, 0.9)
 
-// Textured planes: the old ship display rotated its icons 180° to read from -z. If images render
-// mirrored in the preview, change this to fromEulerDegrees(0, 0, 0).
-const IMAGE_ROT = Quaternion.fromEulerDegrees(0, 180, 0)
+// Textured planes read correctly from -z unrotated (the 180° yaw the old ship display used mirrors them).
+const IMAGE_ROT = Quaternion.fromEulerDegrees(0, 0, 0)
 
 export function clearBag(bag: Bag): void { for (const e of bag) engine.removeEntity(e); bag.length = 0 }
 
@@ -34,7 +33,7 @@ export function clickable(e: Entity, hover: string, onClick: () => void): void {
 }
 
 // Every panel string is multiplied by this. Layout sizes in the views are authored at scale 1.
-export const TEXT_SCALE = 1.5
+export const TEXT_SCALE = 3
 
 export function text(into: Bag, root: Entity, x: number, y: number, str: string, size: number, color: Color4 = WHITE, align: TextAlignMode = TextAlignMode.TAM_MIDDLE_CENTER, z: number = -0.04): Entity {
   const e = engine.addEntity()
@@ -144,8 +143,58 @@ export function image(into: Bag, root: Entity, x: number, y: number, w: number, 
   const e = engine.addEntity()
   Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.04), scale: Vector3.create(w, h, 1), rotation: IMAGE_ROT, parent: root })
   MeshRenderer.setPlane(e)
-  Material.setBasicMaterial(e, { texture: Material.Texture.Common({ src }) })
+  // PBR with alpha blending: the basic material ignores the PNG's alpha and shows it as black.
+  const tex = Material.Texture.Common({ src })
+  Material.setPbrMaterial(e, {
+    texture: tex,
+    alphaTexture: tex,
+    emissiveTexture: tex,
+    albedoColor: Color4.White(),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 1,
+    roughness: 1,
+    metallic: 0,
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
+  })
   into.push(e)
+  return e
+}
+
+/** Thin emissive line between two screen points. */
+export function line(into: Bag, root: Entity, x1: number, y1: number, x2: number, y2: number, color: Color3, opts: { thickness?: number; z?: number; alpha?: number } = {}): Entity {
+  const dx = x2 - x1, dy = y2 - y1
+  const len = Math.max(0.001, Math.hypot(dx, dy))
+  const e = engine.addEntity()
+  Transform.create(e, {
+    position: Vector3.create((x1 + x2) / 2, (y1 + y2) / 2, opts.z ?? -0.03),
+    scale: Vector3.create(len, opts.thickness ?? 0.012, 0.005),
+    rotation: Quaternion.fromEulerDegrees(0, 0, Math.atan2(dy, dx) * 180 / Math.PI),
+    parent: root,
+  })
+  MeshRenderer.setBox(e)
+  Material.setPbrMaterial(e, { albedoColor: Color4.create(color.r, color.g, color.b, opts.alpha ?? 1), emissiveColor: color, emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND })
+  into.push(e)
+  return e
+}
+
+/** Circle outline made of line segments (rings, orbits). `dashed` draws every other segment. */
+export function ring(into: Bag, root: Entity, cx: number, cy: number, r: number, color: Color3, opts: { segments?: number; dashed?: boolean; thickness?: number; z?: number; alpha?: number } = {}): void {
+  const n = opts.segments ?? 28
+  for (let i = 0; i < n; i++) {
+    if (opts.dashed && i % 2 === 1) continue
+    const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2
+    line(into, root, cx + Math.cos(a0) * r, cy + Math.sin(a0) * r, cx + Math.cos(a1) * r, cy + Math.sin(a1) * r, color, { thickness: opts.thickness ?? 0.008, z: opts.z, alpha: opts.alpha })
+  }
+}
+
+/** Small glowing square marker; clickable when `hover`/`onClick` are given. */
+export function dot(into: Bag, root: Entity, x: number, y: number, size: number, color: Color3, opts: { z?: number; hover?: string; onClick?: () => void } = {}): Entity {
+  const e = engine.addEntity()
+  Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.035), scale: Vector3.create(size, size, 0.01), rotation: Quaternion.fromEulerDegrees(0, 0, 45), parent: root })
+  MeshRenderer.setBox(e)
+  Material.setPbrMaterial(e, { albedoColor: Color4.create(color.r, color.g, color.b, 1), emissiveColor: color, emissiveIntensity: 3 })
+  into.push(e)
+  if (opts.hover && opts.onClick) clickable(e, opts.hover, opts.onClick)
   return e
 }
 

@@ -18,7 +18,6 @@ export function setSpeciesCount(n: number): void { speciesCount = n }
 export type CollectionId = 'summary' | 'catalog' | 'vault' | 'inventory'
 
 export function drawCollectionsTop(bag: Bag, top: Entity, ctx: StationContext, current: CollectionId): void {
-  frame(bag, top, 0, 0, TOP.halfW * 2, TOP.halfH * 2)
   header(bag, top, -2.6, 1.05, { icon: ICONS.catalog, title: 'SHIP COLLECTIONS', subtitle: 'explore // study // preserve' })
   text(bag, top, 2.6, 1.12, '"ALL LIFE EXPANDS THE MAP."', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
   text(bag, top, 2.6, 0.92, '— THE UNFOUND', 0.22, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)

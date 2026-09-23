@@ -7,6 +7,8 @@ import { DECK_Y } from './environment'
 
 const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
 const DESK_TILT = Quaternion.fromEulerDegrees(-50, 0, 0)
+// Multiplies every text size on this panel; layout offsets are authored at scale 1.
+const DISCOVERY_TEXT_SCALE = 2
 
 const displayEntities: Entity[] = []
 let miniMapEntities: Entity[] = []
@@ -64,23 +66,23 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
 
   const sysLabel = engine.addEntity()
   Transform.create(sysLabel, { position: Vector3.create(DISPLAY_CENTER.x - 1.2, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(sysLabel, { text: 'CURRENT STAR SYSTEM', fontSize: 0.4, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
+  TextShape.create(sysLabel, { text: 'CURRENT STAR SYSTEM', fontSize: 0.4 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
   displayEntities.push(sysLabel)
 
   const sysName = engine.addEntity()
   Transform.create(sysName, { position: Vector3.create(DISPLAY_CENTER.x - 1.2, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(sysName, { text: currentSystem?.name || 'Unknown', fontSize: 0.8, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
+  TextShape.create(sysName, { text: currentSystem?.name || 'Unknown', fontSize: 0.8 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
   displayEntities.push(sysName)
 
   const coordLabel = engine.addEntity()
   Transform.create(coordLabel, { position: Vector3.create(DISPLAY_CENTER.x + 1.2, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(coordLabel, { text: 'GALACTIC COORDINATES', fontSize: 0.4, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
+  TextShape.create(coordLabel, { text: 'GALACTIC COORDINATES', fontSize: 0.4 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
   displayEntities.push(coordLabel)
 
   const coordText = currentSystem ? `R: ${currentSystem.coord_r.toFixed(1)}  Θ: ${(currentSystem.coord_theta * 180 / Math.PI).toFixed(1)}°  Z: ${currentSystem.coord_z.toFixed(1)}` : 'R: ?  Θ: ?  Z: ?'
   const coords = engine.addEntity()
   Transform.create(coords, { position: Vector3.create(DISPLAY_CENTER.x + 1.2, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(coords, { text: coordText, fontSize: 0.6, textColor: Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
+  TextShape.create(coords, { text: coordText, fontSize: 0.6 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
   displayEntities.push(coords)
 
   // Mini galaxy map
@@ -144,7 +146,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   // DISCOVERY title
   const title = engine.addEntity()
   Transform.create(title, { position: Vector3.create(buttonsX, 2.0, 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0), parent: panelRoot })
-  TextShape.create(title, { text: 'DISCOVERY', fontSize: 1.2, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+  TextShape.create(title, { text: 'DISCOVERY', fontSize: 1.2 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
   displayEntities.push(title)
 
   if (activeDiscovery) {
@@ -152,7 +154,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
     const isReady = timeLeft <= 0
     const st = engine.addEntity()
     Transform.create(st, { position: Vector3.create(buttonsX, 1.5, 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0), parent: panelRoot })
-    TextShape.create(st, { text: isReady ? `Discovery ${activeDiscovery.direction} — READY` : `Discovering ${activeDiscovery.direction}... ${timeLeft}m`, fontSize: 0.7, textColor: isReady ? Color4.create(1, 1, 0, 1) : Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+    TextShape.create(st, { text: isReady ? `Discovery ${activeDiscovery.direction} — READY` : `Discovering ${activeDiscovery.direction}... ${timeLeft}m`, fontSize: 0.7 * DISCOVERY_TEXT_SCALE, textColor: isReady ? Color4.create(1, 1, 0, 1) : Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
     displayEntities.push(st)
     if (isReady) {
       const cb = engine.addEntity()
@@ -162,7 +164,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
       displayEntities.push(cb)
       const cbl = engine.addEntity()
       Transform.create(cbl, { position: Vector3.create(buttonsX, 1.0, 0.05), rotation: Quaternion.fromEulerDegrees(0, 180, 0), parent: panelRoot })
-      TextShape.create(cbl, { text: 'COMPLETE', fontSize: 0.7, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+      TextShape.create(cbl, { text: 'COMPLETE', fontSize: 0.7 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
       displayEntities.push(cbl)
       pointerEventsSystem.onPointerDown({ entity: cb, opts: { button: InputAction.IA_POINTER, hoverText: 'Complete Discovery', maxDistance: 10 } }, () => handleCompleteDiscovery(activeDiscovery.id))
     }
@@ -195,7 +197,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
 
     const label = engine.addEntity()
     Transform.create(label, { position: Vector3.create(buttonsX, d.yOff, 0.23), rotation: Quaternion.fromEulerDegrees(0, 180, 0), parent: panelRoot })
-    TextShape.create(label, { text: d.label, fontSize: 0.6, textColor: Color4.create(d.color.r, d.color.g, d.color.b, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
+    TextShape.create(label, { text: d.label, fontSize: 0.6 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(d.color.r, d.color.g, d.color.b, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
     displayEntities.push(label)
 
     pointerEventsSystem.onPointerHoverEnter({ entity: btn }, () => {

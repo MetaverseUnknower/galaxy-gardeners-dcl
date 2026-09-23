@@ -17,7 +17,7 @@ export function setSolarRechargeRate(rate: number): void { solarRechargeRate = r
 
 // Cosmetic bar scaling for the stats panel (the concept shows bars; the API has no maxima).
 const STAT_SCALE: Record<string, number> = { fuel_efficiency: 3, resource_storage: 500, specimen_vault: 50, expedition_speed: 3, hull_reinforcement: 1, pod_shielding: 1 }
-const MISSIONS_PER_PAGE = 5
+const MISSIONS_PER_PAGE = 4   // leaves room for the Pod Operations button under the list
 
 const topBag: Bag = []
 const lowBag: Bag = []
@@ -40,7 +40,6 @@ function drawTop(top: Entity, ctx: StationContext): void {
   clearBag(topBag)
   const d = ctx.dashboard
   const ship = d?.ship
-  frame(topBag, top, 0, 0, TOP.halfW * 2, TOP.halfH * 2)
   header(topBag, top, -2.6, 1.05, { title: 'SHIP OVERVIEW', subtitle: 'keep exploring' })
   // Resources readout, top right
   const used = cargoUsed(d), cap = ship?.resource_storage ?? 0
@@ -100,6 +99,8 @@ function drawMissions(): void {
   if (page >= totalPages) page = totalPages - 1
   if (page < 0) page = 0
   header(missionBag, low, 0.2, 0.9, { icon: icons('missions'), title: totalPages > 1 ? `ACTIVE MISSIONS ${page + 1}/${totalPages}` : 'ACTIVE MISSIONS', size: 0.6 })
+  // Entry to the Pod Operations view, under the list (as in the concept).
+  button(missionBag, low, 1.4, -0.92, 2.2, 0.3, 'POD OPERATIONS »', 'Pod Operations', () => ctxRef?.setView('pods'), { icon: icons('missions'), size: 0.34 })
   if (expeditions.length === 0) {
     text(missionBag, low, 1.4, 0.05, 'No active missions', 0.42, WHITE)
     text(missionBag, low, 1.4, -0.25, 'CHART A COURSE. MAKE IT COUNT.', 0.26, MUTED)
@@ -119,8 +120,8 @@ function drawMissions(): void {
     text(missionBag, low, 1.75, y, timeText, 0.34, isComplete ? Color4.create(1, 1, 0.3, 1) : DIM, TextAlignMode.TAM_MIDDLE_RIGHT)
     if (isComplete && !status) button(missionBag, low, 2.25, y, 0.75, 0.24, 'COLLECT', 'Complete Mission', () => collect(exp.id), { size: 0.26 })
   })
-  if (page > 0) button(missionBag, low, 0.7, -1.0, 0.7, 0.22, '‹ PREV', 'Previous Page', () => { page--; drawMissions() }, { size: 0.24 })
-  if (page < totalPages - 1) button(missionBag, low, 2.1, -1.0, 0.7, 0.22, 'NEXT ›', 'Next Page', () => { page++; drawMissions() }, { size: 0.24 })
+  if (page > 0) button(missionBag, low, 0.7, -0.62, 0.7, 0.22, '‹ PREV', 'Previous Page', () => { page--; drawMissions() }, { size: 0.24 })
+  if (page < totalPages - 1) button(missionBag, low, 2.1, -0.62, 0.7, 0.22, 'NEXT ›', 'Next Page', () => { page++; drawMissions() }, { size: 0.24 })
 }
 
 async function collect(expeditionId: string): Promise<void> {
