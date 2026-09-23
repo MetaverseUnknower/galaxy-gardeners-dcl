@@ -36,7 +36,7 @@ let installing = false
 let screens: Screens | null = null
 let ctxRef: StationContext | null = null
 
-const CARD_W = 1.75, CARD_H = 0.5
+const CARD_W = 1.75, CARD_H = 0.34
 
 function drawTop(): void {
   if (!screens || !ctxRef) return
@@ -52,12 +52,12 @@ function drawTop(): void {
     const col = i < 5 ? 0 : 1
     const row = i < 5 ? i : i - 5
     const x = col === 0 ? -1.85 : 1.85
-    const y = 0.55 - row * (CARD_H + 0.08)
+    const y = 0.6 - row * 0.4
     const isSel = u.category === selected
     const f = frame(topBag, top, x, y, CARD_W, CARD_H, { border: isSel ? MAGENTA3 : undefined, borderWidth: isSel ? 0.03 : 0.02, fill: isSel ? Color4.create(0.15, 0.02, 0.12, 0.8) : undefined })
-    text(topBag, top, x - CARD_W / 2 + 0.1, y + 0.08, `${labelFor(u.category)} T${u.tier}`, 0.34, isSel ? MAGENTA : WHITE, TextAlignMode.TAM_MIDDLE_LEFT)
+    text(topBag, top, x - CARD_W / 2 + 0.1, y + 0.06, `${labelFor(u.category)} T${u.tier}`, 0.3, isSel ? MAGENTA : WHITE, TextAlignMode.TAM_MIDDLE_LEFT)
     const costs = Object.entries(u.resourceCosts as Record<string, number>).map(([k, v]) => `${v} ${pretty(k)}`).join(', ')
-    text(topBag, top, x - CARD_W / 2 + 0.1, y - 0.1, costs, 0.24, u.canAfford ? DIM : Color4.create(0.8, 0.4, 0.4, 1), TextAlignMode.TAM_MIDDLE_LEFT)
+    text(topBag, top, x - CARD_W / 2 + 0.1, y - 0.09, costs, 0.22, u.canAfford ? DIM : Color4.create(0.8, 0.4, 0.4, 1), TextAlignMode.TAM_MIDDLE_LEFT)
     text(topBag, top, x + CARD_W / 2 - 0.1, y, '›', 0.5, isSel ? MAGENTA : CYAN, TextAlignMode.TAM_MIDDLE_RIGHT)
     clickable(f, `Select ${labelFor(u.category)}`, () => { selected = u.category; drawTop(); drawLow() })
   })
@@ -80,7 +80,7 @@ function drawLow(): void {
     text(lowBag, low, -2.6, 0.42, CATEGORY_DESCRIPTIONS[u.category] || '', 0.26, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
     const rows: [string, string][] = [['CURRENT LEVEL', u.tier > 1 ? `T${u.tier - 1}` : 'None'], ['NEXT LEVEL', `T${u.tier}`]]
     for (const [k, v] of Object.entries((u.statModifier || {}) as Record<string, any>)) rows.push([pretty(k).toUpperCase() + ' (NEXT)', `${v}`])
-    rows.slice(0, 6).forEach(([k, v], i) => {
+    rows.slice(0, 5).forEach(([k, v], i) => {
       const y = 0.1 - i * 0.22
       text(lowBag, low, -2.6, y, k, 0.24, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
       text(lowBag, low, -1.1, y, v, 0.26, i >= 2 ? GREEN : WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
