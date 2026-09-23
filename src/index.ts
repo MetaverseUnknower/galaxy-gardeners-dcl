@@ -20,8 +20,9 @@ import { shipSystemsView } from './stations/shipSystems'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { createUpgradesPanel, setUpgradeNotifyCallback } from './upgradesPanel'
-import { createCatalogPanel, setFloraSelectCallback } from './catalogPanel'
+import { createCatalogPanel } from './catalogPanel'
 import { summaryView, inventoryView } from './stations/floraCollections'
+import { catalogView, vaultView, setFloraSelectCallback } from './stations/floraSpecies'
 import { setSelectedFlora, clearSelectedFlora, setCloseDetailCallback } from './ui'
 import { selectBody } from './systemView'
 
@@ -149,7 +150,7 @@ export async function main() {
         clear() { clearBag(bag) },
       }
     }
-    const west = createStation({ id: 'flora', position: Vector3.create(117.2, DECK_Y, 121.3), yaw: -32 + 90, views: [summaryView, stubView('catalog'), stubView('vault'), inventoryView], notify: showNotification })
+    const west = createStation({ id: 'flora', position: Vector3.create(117.2, DECK_Y, 121.3), yaw: -32 + 90, views: [summaryView, catalogView, vaultView, inventoryView], notify: showNotification })
     const east = createStation({ id: 'ship', position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3), yaw: -(-32 + 90), views: [shipOverviewView, shipSystemsView], notify: showNotification })
     await Promise.all([west.refresh(), east.refresh()])
 
