@@ -10,7 +10,7 @@ export function setSelectedFlora(flora: any): void { selectedFlora = flora }
 export function clearSelectedFlora(): void { selectedFlora = null }
 export function setCloseDetailCallback(cb: () => void): void { onCloseDetailPanel = cb }
 import { isCurrentlyTraveling } from './navigation'
-import { refreshMissions, createShipDisplay } from './shipDisplay'
+import { refreshStation } from './stations'
 import { selectSystem } from './interaction'
 import { requirePayment } from '~system/EthereumController'
 import * as api from './api'
@@ -63,7 +63,7 @@ async function handleRefine(resourceType: string): Promise<void> {
     const result = await api.refineFuel(resourceType, 1)
     refineryStatus = `+${result.fuelGained.toFixed(0)} fuel!`
     await loadRefineryInventory()
-    createShipDisplay()
+    refreshStation('ship')
   } catch (err: any) { refineryStatus = err.message || 'Refine failed' }
 }
 
@@ -73,7 +73,7 @@ async function handleManaPurchase(tierId: string, manaAmount: number): Promise<v
     await requirePayment({ toAddress: BENEFICIARY_WALLET, amount: manaAmount, currency: 'MANA' })
     const result = await api.purchaseFuelCellsMana(tierId)
     purchaseStatus = `Purchased! Total cells: ${result.fuelCells}`
-    createShipDisplay()
+    refreshStation('ship')
   } catch (err: any) { purchaseStatus = err.message || 'Purchase cancelled' }
 }
 
@@ -91,7 +91,7 @@ async function deployPod(body: BodyInfo): Promise<void> {
     if (body.type === 'belt') { await api.deployMiningPod(body.id); deployStatus = 'Mining pod deployed!' }
     else if (body.type === 'moon') { await api.deployExplorationPodToMoon(body.id); deployStatus = 'Exploration pod deployed!' }
     else { await api.deployExplorationPod(body.id); deployStatus = 'Exploration pod deployed!' }
-    refreshMissions()
+    refreshStation('ship')
   } catch (err: any) { deployStatus = err.message || 'Deploy failed' }
 }
 
