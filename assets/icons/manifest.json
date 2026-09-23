@@ -1,0 +1,66 @@
+{
+  "purpose": "Icon glyphs for the Galaxy Gardeners Decentraland scene station screens. The files listed under 'icons' are transparent placeholders to be replaced with real artwork.",
+  "style": {
+    "format": "PNG with alpha (RGBA), 512 x 512 pixels",
+    "look": "A single flat white (#FFFFFF, fully opaque) glyph on a fully transparent background. No colour, no gradients, no outline, no drop shadow, no background shape. The scene tints the white glyph cyan at runtime, so any colour in the file is wrong.",
+    "geometry": "Glyph centred, filling roughly 70-80% of the canvas, with even padding. Minimum stroke thickness about 24 px at 512 px so it stays legible when rendered 20-40 cm tall in 3D. Simple geometric shapes; readable as a silhouette.",
+    "reference_files": [
+      "assets/icons/catalog-icon.png",
+      "assets/icons/specimen-icon.png",
+      "assets/icons/refinery-icon.png",
+      "assets/icons/fuel-purchase-icon.png"
+    ],
+    "reference_note": "Match the weight and simplicity of the existing icons above. The concept art these belong to is a dark navy sci-fi interface with thin cyan lines (see docs/superpowers/specs/references/*.png)."
+  },
+  "icons": [
+    {
+      "file": "assets/icons/fuel-icon.png",
+      "name": "Fuel",
+      "glyph": "A single liquid drop / fuel droplet, solid silhouette.",
+      "used_for": "Ship station Overview: FUEL frame header."
+    },
+    {
+      "file": "assets/icons/upgrades-icon.png",
+      "name": "Upgrades",
+      "glyph": "A wrench, angled about 45 degrees, solid silhouette.",
+      "used_for": "Ship station Overview: UPGRADES button; Systems view header."
+    },
+    {
+      "file": "assets/icons/systems-icon.png",
+      "name": "Ship Systems",
+      "glyph": "A small angular emblem: two or three slanted parallel bars forming a chevron-like mark (like a stylised ship insignia).",
+      "used_for": "Ship station Systems view header (top-left of the screen)."
+    },
+    {
+      "file": "assets/icons/stats-icon.png",
+      "name": "Ship Stats",
+      "glyph": "A bar chart: three or four vertical bars of different heights on a baseline.",
+      "used_for": "Ship station low screen: SHIP STATS header."
+    },
+    {
+      "file": "assets/icons/missions-icon.png",
+      "name": "Active Missions",
+      "glyph": "A target / crosshair: a circle with a centre dot and four short tick marks.",
+      "used_for": "Ship station low screen: ACTIVE MISSIONS header."
+    },
+    {
+      "file": "assets/icons/resources-icon.png",
+      "name": "Resource Inventory",
+      "glyph": "A cluster of three crystal shards / gems, solid silhouette.",
+      "used_for": "Flora station: RESOURCE INVENTORY tile and view header."
+    },
+    {
+      "file": "assets/icons/check-icon.png",
+      "name": "Check",
+      "glyph": "A bold check mark.",
+      "used_for": "Ship Systems view: required resource satisfied."
+    },
+    {
+      "file": "assets/icons/cross-icon.png",
+      "name": "Cross",
+      "glyph": "A bold X / cross mark.",
+      "used_for": "Ship Systems view: required resource missing."
+    }
+  ],
+  "deliverable": "Return one PNG per entry, named exactly as 'file' (path relative to the project root), overwriting the placeholder."
+}

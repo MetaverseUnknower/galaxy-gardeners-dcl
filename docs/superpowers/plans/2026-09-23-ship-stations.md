@@ -19,7 +19,7 @@
 - Screen coordinates: x to the viewer's right, y up, **negative z toward the viewer**. `TextShape` with identity rotation reads correctly from -z. Children sit at z between -0.01 and -0.06 so they float just off the glass; things that must be in front of other things use the more negative z.
 - Usable areas: top screen x ±2.8, y ±1.4; low screen x ±2.8, y ±1.2.
 - Colors (from `draw.ts`): CYAN for lines, titles, bars, outline buttons; MAGENTA for the selected card; WHITE for values; DIM for subtitles; MUTED for footers and empty states. Title text size 0.9, subtitle 0.32, body 0.42, small 0.32.
-- Icons are optional everywhere. Use only files that exist in `assets/icons/` at implementation time (`ls assets/icons`). Wanted-but-missing icons are listed in the spec; pass `undefined` for them.
+- Icons are optional everywhere in the helpers, but every icon the plan names now exists in `assets/icons/` (the eight new ones are transparent placeholders until real art replaces them; see `assets/icons/manifest.json`). Wire the paths as written; a placeholder simply renders nothing.
 - The galaxy map, its control panel, the display-screen desk north of center, the discovery desk and panel, `src/ui.tsx` overlays and `src/api.ts` are not modified except where a task names an exact line.
 - Never commit `scene.json`, `.dclignore`, or `bin/`. Commit only the files each task lists.
 
@@ -490,9 +490,10 @@ let screens: Screens | null = null
 let ctxRef: StationContext | null = null
 
 function icons(name: string): string | undefined { return ICONS[name] }
-// Fill in any of these once the PNG exists in assets/icons (see spec "Icons"); undefined draws no glyph.
+// Glyph files (white on transparent, tinted in-scene). The first five are placeholders until real art lands.
 const ICONS: Record<string, string | undefined> = {
-  fuel: undefined, upgrades: undefined, stats: undefined, missions: undefined, resources: undefined,
+  fuel: 'assets/icons/fuel-icon.png', upgrades: 'assets/icons/upgrades-icon.png', stats: 'assets/icons/stats-icon.png',
+  missions: 'assets/icons/missions-icon.png', resources: 'assets/icons/resources-icon.png',
   refine: 'assets/icons/refinery-icon.png', buy: 'assets/icons/fuel-purchase-icon.png',
 }
 
@@ -676,7 +677,7 @@ import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { ViewDefinition, StationContext, Screens, TOP, LOW } from '../stations'
-import { Bag, clearBag, text, frame, header, bar, button, hologram, clickable, CYAN, MAGENTA3, MAGENTA, WHITE, DIM, MUTED, GREEN, RED, RED3 } from './draw'
+import { Bag, clearBag, text, frame, header, bar, button, hologram, clickable, icon, CYAN, MAGENTA3, MAGENTA, WHITE, DIM, MUTED, GREEN, RED, GREEN3, RED3 } from './draw'
 import { SHIP_HOLOGRAM } from './shipOverview'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -714,7 +715,7 @@ function drawTop(): void {
   clearBag(topBag)
   const top = screens.top
   frame(topBag, top, 0, 0, TOP.halfW * 2, TOP.halfH * 2)
-  header(topBag, top, -2.6, 1.05, { title: 'SHIP SYSTEMS', subtitle: 'upgrade and maintain your vessel' })
+  header(topBag, top, -2.6, 1.05, { icon: 'assets/icons/systems-icon.png', title: 'SHIP SYSTEMS', subtitle: 'upgrade and maintain your vessel' })
   text(topBag, top, 2.6, 1.05, 'EXPLORATION  //  RESEARCH  //  DISCOVERY', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
   hologram(topBag, top, 0, -0.25, SHIP_HOLOGRAM.src, SHIP_HOLOGRAM.scale)
   text(topBag, top, 0, -1.25, '— A DEEPER UNIVERSE AWAITS —', 0.24, MUTED)
@@ -770,7 +771,7 @@ function drawLow(): void {
       frame(lowBag, low, 0, y, 1.55, 0.26, { border: ok ? undefined : RED3, fill: Color4.create(0.02, 0.05, 0.12, 0.8) })
       text(lowBag, low, -0.7, y, pretty(r), 0.28, WHITE, TextAlignMode.TAM_MIDDLE_LEFT)
       text(lowBag, low, 0.5, y, `${have(r)} / ${need}`, 0.28, ok ? GREEN : RED, TextAlignMode.TAM_MIDDLE_RIGHT)
-      text(lowBag, low, 0.68, y, ok ? '✓' : '✗', 0.32, ok ? GREEN : RED, TextAlignMode.TAM_MIDDLE_RIGHT)
+      icon(lowBag, low, 0.62, y, 0.2, ok ? 'assets/icons/check-icon.png' : 'assets/icons/cross-icon.png', { color: ok ? GREEN3 : RED3 })
     })
     if (installing) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'UPGRADING…', 'Upgrading', () => {}, { variant: 'disabled', size: 0.4 })
     else if (u.canAfford) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'UPGRADE', `Upgrade ${labelFor(u.category)}`, () => install(u.category), { variant: 'primary', size: 0.44 })
@@ -844,7 +845,7 @@ Expected: `Type checking completed without errors`
 
 - [ ] **Step 4: Preview check against `references/ship-upgrades-concept.png`**
 
-Click UPGRADES » on the Overview. Top: cards in two columns around the turning hologram, first card magenta. Click another card: it turns magenta, the low screen's SELECTED MODULE and REQUIRED RESOURCES follow. Rows show "have / need" with ✓ or ✗ (if ✓/✗ render as boxes, replace them with "OK" and "--"). UPGRADE is bright only when affordable; do not click it unless you intend to spend the resources. SYSTEM STATUS shows five bars. ‹ BACK TO OVERVIEW returns and nothing from Systems remains. With no upgrades available the top shows "All upgrades maxed!".
+Click UPGRADES » on the Overview. Top: cards in two columns around the turning hologram, first card magenta. Click another card: it turns magenta, the low screen's SELECTED MODULE and REQUIRED RESOURCES follow. Rows show "have / need" with a green check or red cross glyph (blank until the real check/cross icons replace the placeholders). UPGRADE is bright only when affordable; do not click it unless you intend to spend the resources. SYSTEM STATUS shows five bars. ‹ BACK TO OVERVIEW returns and nothing from Systems remains. With no upgrades available the top shows "All upgrades maxed!".
 
 - [ ] **Step 5: Commit**
 
@@ -881,11 +882,10 @@ import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
 import { ViewDefinition, StationContext, Screens, TOP, LOW } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, tile, button, WHITE, DIM, MUTED, CYAN } from './draw'
 
-// Fill in 'resources' once assets/icons/resources-icon.png exists.
 export const ICONS: { catalog: string; vault: string; resources?: string } = {
   catalog: 'assets/icons/catalog-icon.png',
   vault: 'assets/icons/specimen-icon.png',
-  resources: undefined,
+  resources: 'assets/icons/resources-icon.png',   // placeholder until real art lands
 }
 
 let speciesCount = 0
