@@ -165,7 +165,7 @@ function getStarTypeColor(starType: string | null): { color: Color4; emissive: C
 }
 
 function orbitPeriod(slot: number): number { return 60 * Math.pow(slot, 1.3) }
-function orbitalRadius(slot: number, starType: string | null): number {
+export function orbitalRadius(slot: number, starType: string | null): number {
   const baseRadius = starType === 'black_hole' ? 3.5 : 1.5
   return baseRadius + (slot - 1) * 1.8
 }

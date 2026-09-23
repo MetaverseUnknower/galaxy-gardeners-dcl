@@ -174,3 +174,15 @@ export async function purchaseFuelCellsMana(tier: string): Promise<{ fuelCells: 
 export async function refineFuel(resourceType: string, quantity: number = 1): Promise<{ fuelGained: number; fuelCurrent: number; resourceRemaining: number }> {
   return apiPost('/api/ship/refine', { resource_type: resourceType, quantity })
 }
+
+export async function buildPod(podType: 'mining' | 'exploration'): Promise<any> {
+  return apiPost('/api/ship/repair-pod', { pod_type: podType })
+}
+
+export async function getFabricationStatus(): Promise<any> {
+  return apiGet('/api/ship/fabrication-status')
+}
+
+export async function emergencyPod(podType: 'mining' | 'exploration'): Promise<any> {
+  return apiPost('/api/ships/emergency-pod', { podType })
+}

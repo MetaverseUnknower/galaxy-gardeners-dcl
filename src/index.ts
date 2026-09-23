@@ -13,6 +13,7 @@ import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './
 import { createEnvironment, respawnSystem, twinkleSystem, DECK_Y } from './environment'
 import { shipOverviewView, setSolarRechargeRate } from './stations/shipOverview'
 import { shipSystemsView } from './stations/shipSystems'
+import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -120,7 +121,7 @@ export async function main() {
       id: 'ship',
       position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3),
       yaw: -(-32 + 90),
-      views: [shipOverviewView, shipSystemsView],
+      views: [shipOverviewView, shipSystemsView, podOperationsView],
       notify: showNotification,
     })
     void Promise.all([floraStation.refresh(), shipStation.refresh()])
@@ -162,6 +163,8 @@ export async function main() {
     })
 
     setCurrentSystemId(playerInfo.current_system_id)
+
+    setPodOpsSystemId(playerInfo.current_system_id)
     setCurrentSystemForTravel(playerInfo.current_system_id)
     setCanSwitchCheck(() => !isCurrentlyTraveling())
     setViewSystemCallback(() => {
@@ -220,6 +223,7 @@ export async function main() {
 async function reloadMap(): Promise<void> {
   clearMap()
   playerInfo = await api.getPlayerMe()
+  setPodOpsSystemId(playerInfo.current_system_id)
   systems = await api.getSystems(playerInfo.galaxy_id)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
