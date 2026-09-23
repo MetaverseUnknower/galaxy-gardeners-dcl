@@ -2,12 +2,25 @@ import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, Materi
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { selectBody } from './systemView'
+import { DECK_Y } from './environment'
 
-// West edge of platform, facing +X
-const DISPLAY_CENTER = Vector3.create(110, 42.0, 128)
-const TEXT_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
-const PLANE_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
-const ICON_ROT = Quaternion.fromEulerDegrees(0, -90, 0)
+// 1 o'clock position, rotated 32° from original 3 o'clock
+const DISPLAY_CENTER = Vector3.create(117.4, DECK_Y + 2.0, 121.4)
+const TEXT_ROT = Quaternion.fromEulerDegrees(0, -122, 0)
+const PLANE_ROT = Quaternion.fromEulerDegrees(0, -122, 0)
+const ICON_ROT = Quaternion.fromEulerDegrees(0, -122, 0)
+const POS_RAD = 32 * Math.PI / 180
+const POS_COS = Math.cos(POS_RAD)
+const POS_SIN = Math.sin(POS_RAD)
+function rotPos(x: number, y: number, z: number): Vector3 {
+  const dx = x - DISPLAY_CENTER.x
+  const dz = z - DISPLAY_CENTER.z
+  return Vector3.create(
+    DISPLAY_CENTER.x + dx * POS_COS - dz * POS_SIN,
+    y,
+    DISPLAY_CENTER.z + dx * POS_SIN + dz * POS_COS
+  )
+}
 
 const displayEntities: Entity[] = []
 let catalogData: any[] = []
@@ -65,8 +78,9 @@ function renderPage(): void {
   // Main glass panel
   const mainPanel = engine.addEntity()
   Transform.create(mainPanel, {
-    position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z),
-    scale: Vector3.create(0.03, panelHeight, panelWidth)
+    position: rotPos(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z),
+    scale: Vector3.create(0.03, panelHeight, panelWidth),
+    rotation: Quaternion.fromEulerDegrees(0, -32, 0)
   })
   MeshRenderer.setBox(mainPanel)
   Material.setPbrMaterial(mainPanel, {
@@ -81,8 +95,9 @@ function renderPage(): void {
   // Catalog button
   const catalogBtn = engine.addEntity()
   Transform.create(catalogBtn, {
-    position: Vector3.create(DISPLAY_CENTER.x + 0.02, titleY, DISPLAY_CENTER.z + 1.2),
-    scale: Vector3.create(0.04, 0.6, 0.6)
+    position: rotPos(DISPLAY_CENTER.x + 0.02, titleY, DISPLAY_CENTER.z + 1.2),
+    scale: Vector3.create(0.04, 0.6, 0.6),
+    rotation: Quaternion.fromEulerDegrees(0, -32, 0)
   })
   MeshRenderer.setBox(catalogBtn); MeshCollider.setBox(catalogBtn)
   Material.setPbrMaterial(catalogBtn, {
@@ -99,7 +114,7 @@ function renderPage(): void {
   // Catalog icon
   const catalogIcon = engine.addEntity()
   Transform.create(catalogIcon, {
-    position: Vector3.create(DISPLAY_CENTER.x + 0.05, titleY, DISPLAY_CENTER.z + 1.2),
+    position: rotPos(DISPLAY_CENTER.x + 0.05, titleY, DISPLAY_CENTER.z + 1.2),
     scale: Vector3.create(0.45, 0.45, 1), rotation: ICON_ROT
   })
   MeshRenderer.setPlane(catalogIcon)
@@ -114,8 +129,9 @@ function renderPage(): void {
   // Vault button
   const vaultBtn = engine.addEntity()
   Transform.create(vaultBtn, {
-    position: Vector3.create(DISPLAY_CENTER.x + 0.02, titleY, DISPLAY_CENTER.z - 1.2),
-    scale: Vector3.create(0.04, 0.6, 0.6)
+    position: rotPos(DISPLAY_CENTER.x + 0.02, titleY, DISPLAY_CENTER.z - 1.2),
+    scale: Vector3.create(0.04, 0.6, 0.6),
+    rotation: Quaternion.fromEulerDegrees(0, -32, 0)
   })
   MeshRenderer.setBox(vaultBtn); MeshCollider.setBox(vaultBtn)
   Material.setPbrMaterial(vaultBtn, {
@@ -132,7 +148,7 @@ function renderPage(): void {
   // Vault icon
   const vaultIcon = engine.addEntity()
   Transform.create(vaultIcon, {
-    position: Vector3.create(DISPLAY_CENTER.x + 0.05, titleY, DISPLAY_CENTER.z - 1.2),
+    position: rotPos(DISPLAY_CENTER.x + 0.05, titleY, DISPLAY_CENTER.z - 1.2),
     scale: Vector3.create(0.45, 0.45, 1), rotation: ICON_ROT
   })
   MeshRenderer.setPlane(vaultIcon)
@@ -146,7 +162,7 @@ function renderPage(): void {
 
   // Title text between buttons
   const title = engine.addEntity()
-  Transform.create(title, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, titleY, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(title, { position: rotPos(DISPLAY_CENTER.x + 0.03, titleY, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(title, {
     text: viewMode === 'catalog' ? 'FLORA CATALOG' : 'SPECIMEN VAULT',
     fontSize: 1.2, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -167,7 +183,7 @@ function renderCatalogGrid(panelWidth: number, panelHeight: number): void {
 
   // Count
   const countText = engine.addEntity()
-  Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(countText, { position: rotPos(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(countText, {
     text: `${catalogData.length} species cataloged${totalPages > 1 ? ` — Page ${catalogPage + 1}/${totalPages}` : ''}`,
     fontSize: 0.6, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -176,7 +192,7 @@ function renderCatalogGrid(panelWidth: number, panelHeight: number): void {
 
   if (catalogData.length === 0) {
     const emptyText = engine.addEntity()
-    Transform.create(emptyText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+    Transform.create(emptyText, { position: rotPos(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
     TextShape.create(emptyText, {
       text: 'No species discovered yet.\nExplore life-bearing planets\nto discover alien flora!',
       fontSize: 0.6, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -222,7 +238,7 @@ function renderVaultGrid(panelWidth: number, panelHeight: number): void {
   if (catalogPage < 0) catalogPage = 0
 
   const countText = engine.addEntity()
-  Transform.create(countText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+  Transform.create(countText, { position: rotPos(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + panelHeight / 2 - 0.25, DISPLAY_CENTER.z), rotation: TEXT_ROT })
   TextShape.create(countText, {
     text: `${specimenData.length} specimens stored${totalPages > 1 ? ` — Page ${catalogPage + 1}/${totalPages}` : ''}`,
     fontSize: 0.6, textColor: Color4.create(0.5, 0.5, 0.5, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -231,7 +247,7 @@ function renderVaultGrid(panelWidth: number, panelHeight: number): void {
 
   if (vaultEntries.length === 0) {
     const emptyText = engine.addEntity()
-    Transform.create(emptyText, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
+    Transform.create(emptyText, { position: rotPos(DISPLAY_CENTER.x + 0.03, DISPLAY_CENTER.y + 0.5, DISPLAY_CENTER.z), rotation: TEXT_ROT })
     TextShape.create(emptyText, {
       text: 'No specimens in vault.\nComplete exploration expeditions\nto collect samples!',
       fontSize: 0.6, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER
@@ -266,7 +282,7 @@ function renderTileGrid(entries: any[], panelWidth: number, panelHeight: number,
     // Thumbnail background
     const tileBg = engine.addEntity()
     Transform.create(tileBg, {
-      position: Vector3.create(DISPLAY_CENTER.x + 0.02, tileY + 0.1, tileZ),
+      position: rotPos(DISPLAY_CENTER.x + 0.02, tileY + 0.1, tileZ),
       scale: Vector3.create(TILE_SIZE, TILE_SIZE, 1), rotation: PLANE_ROT
     })
     MeshRenderer.setPlane(tileBg)
@@ -280,7 +296,7 @@ function renderTileGrid(entries: any[], panelWidth: number, panelHeight: number,
     if (entry.image_url) {
       const img = engine.addEntity()
       Transform.create(img, {
-        position: Vector3.create(DISPLAY_CENTER.x + 0.025, tileY + 0.1, tileZ),
+        position: rotPos(DISPLAY_CENTER.x + 0.025, tileY + 0.1, tileZ),
         scale: Vector3.create(TILE_SIZE - 0.05, TILE_SIZE - 0.05, 1), rotation: PLANE_ROT
       })
       MeshRenderer.setPlane(img)
@@ -299,7 +315,7 @@ function renderTileGrid(entries: any[], panelWidth: number, panelHeight: number,
 
     // Name below
     const nameEntity = engine.addEntity()
-    Transform.create(nameEntity, { position: Vector3.create(DISPLAY_CENTER.x + 0.03, tileY - 0.4, tileZ), rotation: TEXT_ROT })
+    Transform.create(nameEntity, { position: rotPos(DISPLAY_CENTER.x + 0.03, tileY - 0.4, tileZ), rotation: TEXT_ROT })
     TextShape.create(nameEntity, {
       text: showCount ? `${entry.name} (x${entry.count})` : entry.name,
       fontSize: 0.6,
@@ -318,15 +334,15 @@ function renderPageNav(totalPages: number, panelWidth: number, panelHeight: numb
 
   if (catalogPage > 0) {
     const prevBtn = engine.addEntity()
-    Transform.create(prevBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z - btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
+    Transform.create(prevBtn, { position: rotPos(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z - btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35), rotation: Quaternion.fromEulerDegrees(0, -32, 0) })
     MeshRenderer.setBox(prevBtn); MeshCollider.setBox(prevBtn)
     Material.setPbrMaterial(prevBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
     displayEntities.push(prevBtn)
 
     const prevIcon = engine.addEntity()
     Transform.create(prevIcon, {
-      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z - btnSpacing),
-      scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -90, 180)
+      position: rotPos(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z - btnSpacing),
+      scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -122, 180)
     })
     MeshRenderer.setPlane(prevIcon)
     Material.setPbrMaterial(prevIcon, {
@@ -342,15 +358,15 @@ function renderPageNav(totalPages: number, panelWidth: number, panelHeight: numb
 
   if (catalogPage < totalPages - 1) {
     const nextBtn = engine.addEntity()
-    Transform.create(nextBtn, { position: Vector3.create(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z + btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35) })
+    Transform.create(nextBtn, { position: rotPos(DISPLAY_CENTER.x + 0.02, navY, DISPLAY_CENTER.z + btnSpacing), scale: Vector3.create(0.04, 0.35, 0.35), rotation: Quaternion.fromEulerDegrees(0, -32, 0) })
     MeshRenderer.setBox(nextBtn); MeshCollider.setBox(nextBtn)
     Material.setPbrMaterial(nextBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
     displayEntities.push(nextBtn)
 
     const nextIcon = engine.addEntity()
     Transform.create(nextIcon, {
-      position: Vector3.create(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z + btnSpacing),
-      scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -90, 0)
+      position: rotPos(DISPLAY_CENTER.x + 0.05, navY, DISPLAY_CENTER.z + btnSpacing),
+      scale: Vector3.create(0.25, 0.25, 1), rotation: Quaternion.fromEulerDegrees(0, -122, 0)
     })
     MeshRenderer.setPlane(nextIcon)
     Material.setPbrMaterial(nextIcon, {

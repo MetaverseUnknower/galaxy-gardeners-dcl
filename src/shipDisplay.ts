@@ -1,9 +1,10 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { refreshCatalog } from './catalogPanel'
+import { DECK_Y } from './environment'
 
-const DISPLAY_CENTER = Vector3.create(128, 41.3, 146)
+const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 1.3, 140.5)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, 0, 0)
 const STATS_OFFSET_X = -1.75
 const MISSIONS_OFFSET_X = 1.6
@@ -18,6 +19,11 @@ let missionPage = 0
 const MISSIONS_PER_PAGE = 4
 
 export function setMissionNotifyCallback(cb: (text: string, color: Color4) => void): void { onMissionNotify = cb }
+
+let onOpenRefinery: (() => void) | null = null
+let onOpenPurchase: (() => void) | null = null
+export function setOpenRefineryCallback(cb: () => void): void { onOpenRefinery = cb }
+export function setOpenPurchaseCallback(cb: () => void): void { onOpenPurchase = cb }
 
 let solarRechargeRate = 0
 
@@ -77,6 +83,53 @@ export async function createShipDisplay(): Promise<void> {
     TextShape.create(rechargeText, { text: `Solar Recharge: +${solarRechargeRate.toFixed(1)} fuel/hr`, fontSize: 0.6, textColor: Color4.create(1, 0.9, 0.3, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
     displayEntities.push(rechargeText)
   }
+
+  // Refine / Purchase icon buttons above fuel gauge
+  const iconBtnY = fuelY + 0.35
+  const iconBtnSize = Vector3.create(0.3, 0.3, 0.06)
+  const iconBtnSpacing = 0.4
+  const iconBtnBaseX = DISPLAY_CENTER.x
+  const iconRotation = Quaternion.fromEulerDegrees(0, 180, 0)
+  const iconMat = {
+    albedoColor: Color4.create(0, 0.08, 0.25, 0.9),
+    emissiveColor: Color3.create(0, 0.08, 0.25),
+    emissiveIntensity: 2,
+    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+  }
+
+  // Refine Fuel button
+  const refineBtn = engine.addEntity()
+  Transform.create(refineBtn, { position: Vector3.create(iconBtnBaseX - iconBtnSpacing / 2, iconBtnY, DISPLAY_CENTER.z - 0.02), scale: iconBtnSize })
+  MeshRenderer.setBox(refineBtn); MeshCollider.setBox(refineBtn)
+  Material.setPbrMaterial(refineBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
+  displayEntities.push(refineBtn)
+  pointerEventsSystem.onPointerDown(
+    { entity: refineBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Refine Fuel', maxDistance: 10 } },
+    () => { if (onOpenRefinery) onOpenRefinery() }
+  )
+
+  const refineIcon = engine.addEntity()
+  Transform.create(refineIcon, { position: Vector3.create(iconBtnBaseX - iconBtnSpacing / 2, iconBtnY, DISPLAY_CENTER.z - 0.06), scale: Vector3.create(0.22, 0.22, 1), rotation: iconRotation })
+  MeshRenderer.setPlane(refineIcon)
+  Material.setPbrMaterial(refineIcon, { ...iconMat, texture: Material.Texture.Common({ src: 'assets/icons/refinery-icon.png' }), emissiveTexture: Material.Texture.Common({ src: 'assets/icons/refinery-icon.png' }) })
+  displayEntities.push(refineIcon)
+
+  // Purchase Fuel Cells button
+  const purchaseBtn = engine.addEntity()
+  Transform.create(purchaseBtn, { position: Vector3.create(iconBtnBaseX + iconBtnSpacing / 2, iconBtnY, DISPLAY_CENTER.z - 0.02), scale: iconBtnSize })
+  MeshRenderer.setBox(purchaseBtn); MeshCollider.setBox(purchaseBtn)
+  Material.setPbrMaterial(purchaseBtn, { albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
+  displayEntities.push(purchaseBtn)
+  pointerEventsSystem.onPointerDown(
+    { entity: purchaseBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Purchase Fuel Cells', maxDistance: 10 } },
+    () => { if (onOpenPurchase) onOpenPurchase() }
+  )
+
+  const purchaseIcon = engine.addEntity()
+  Transform.create(purchaseIcon, { position: Vector3.create(iconBtnBaseX + iconBtnSpacing / 2, iconBtnY, DISPLAY_CENTER.z - 0.06), scale: Vector3.create(0.22, 0.22, 1), rotation: iconRotation })
+  MeshRenderer.setPlane(purchaseIcon)
+  Material.setPbrMaterial(purchaseIcon, { ...iconMat, texture: Material.Texture.Common({ src: 'assets/icons/fuel-purchase-icon.png' }), emissiveTexture: Material.Texture.Common({ src: 'assets/icons/fuel-purchase-icon.png' }) })
+  displayEntities.push(purchaseIcon)
 
   // Ship Stats panel
   const statsX = DISPLAY_CENTER.x + STATS_OFFSET_X

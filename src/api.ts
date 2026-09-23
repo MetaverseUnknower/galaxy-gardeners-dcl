@@ -2,7 +2,7 @@ import { signedFetch } from '~system/SignedFetch'
 import { getToken, authenticate } from './auth'
 import { StarSystem, PlayerInfo, TravelStatus, FuelCostResponse, NearestSystem } from './types'
 
-const API_BASE = 'http://localhost:3000'
+const API_BASE = 'https://galaxygardeners.app'
 
 async function makeRequest(url: string, init: { method: string; headers: Record<string, string>; body?: string }): Promise<{ ok: boolean; status: number; body: string }> {
   const response = await signedFetch({ url, init })
@@ -165,4 +165,12 @@ export async function deployExplorationPod(planetId: string): Promise<any> {
 
 export async function deployExplorationPodToMoon(moonId: string): Promise<any> {
   return apiPost('/api/expeditions/explore-moon', { moonId })
+}
+
+export async function purchaseFuelCellsMana(tier: string): Promise<{ fuelCells: number }> {
+  return apiPost<{ fuelCells: number }>('/api/store/purchase-fuel-cells-mana', { tier })
+}
+
+export async function refineFuel(resourceType: string, quantity: number = 1): Promise<{ fuelGained: number; fuelCurrent: number; resourceRemaining: number }> {
+  return apiPost('/api/ship/refine', { resource_type: resourceType, quantity })
 }

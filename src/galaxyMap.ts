@@ -2,6 +2,7 @@ import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, Materi
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { StarSystem } from './types'
 import { getSystemRoot, getSystemAutoScale } from './systemView'
+import { DECK_Y } from './environment'
 
 const FLOOR_Y = 40
 const MAP_CENTER = Vector3.create(128, FLOOR_Y + 1, 128)
@@ -39,15 +40,15 @@ const NEBULA_EXTENT = MAP_RADIUS * 1.5
 
 // Exported for station panel alignment
 export const PANEL_Z = () => MAP_CENTER.z + NEBULA_EXTENT + 0.5
-export const PANEL_Y = () => FLOOR_Y + 0.45
-export const PANEL_TILT = () => Quaternion.fromEulerDegrees(-10, 0, 0)
+export const PANEL_Y = () => DECK_Y + 0.625
+export const PANEL_TILT = () => Quaternion.fromEulerDegrees(-82.5, 0, 0)
 export const PANEL_CENTER_X = () => MAP_CENTER.x
-const VIEW_ROW_OFFSET_Z = -0.35 * Math.sin(10 * Math.PI / 180)
-const VIEW_ROW_OFFSET_Y = 0.35 * Math.cos(10 * Math.PI / 180)
+const VIEW_ROW_OFFSET_Z = -0.35 * Math.sin(82.5 * Math.PI / 180)
+const VIEW_ROW_OFFSET_Y = 0.35 * Math.cos(82.5 * Math.PI / 180)
 export const GLASS_PANEL_Z = () => MAP_CENTER.z + NEBULA_EXTENT + 0.5 + VIEW_ROW_OFFSET_Z / 2
-export const GLASS_PANEL_Y = () => FLOOR_Y + 0.45 + VIEW_ROW_OFFSET_Y / 2
+export const GLASS_PANEL_Y = () => DECK_Y + 0.625 + VIEW_ROW_OFFSET_Y / 2
 
-const PANEL_ANGLE = 10 // degrees
+const PANEL_ANGLE = 82.5 // degrees
 
 // View mode
 export type ViewMode = 'galaxy' | 'system'
@@ -129,22 +130,6 @@ function updateBeamShape(): void {
 }
 
 export function createProjectorBase(): void {
-  // Silver metallic base
-  const base = engine.addEntity()
-  Transform.create(base, {
-    position: Vector3.create(MAP_CENTER.x, FLOOR_Y + PROJECTOR_HEIGHT * 0.35, MAP_CENTER.z),
-    scale: Vector3.create(PROJECTOR_RADIUS * 2, PROJECTOR_HEIGHT * 0.7, PROJECTOR_RADIUS * 2)
-  })
-  MeshRenderer.setCylinder(base)
-  MeshCollider.setCylinder(base)
-  Material.setPbrMaterial(base, {
-    albedoColor: Color4.create(0.6, 0.6, 0.65, 1),
-    emissiveColor: Color3.create(0.1, 0.1, 0.12),
-    emissiveIntensity: 0.3,
-    metallic: 1.0,
-    roughness: 0.15
-  })
-
   // Translucent cyan top
   const top = engine.addEntity()
   Transform.create(top, {
@@ -175,8 +160,8 @@ export function createProjectorBase(): void {
   })
 
   // Control panel
-  const panelZ = MAP_CENTER.z + NEBULA_EXTENT + 0.5
-  const panelY = FLOOR_Y + 0.45
+  const panelZ = MAP_CENTER.z + NEBULA_EXTENT + 0.71
+  const panelY = DECK_Y + 0.625
   const panelTilt = Quaternion.fromEulerDegrees(-PANEL_ANGLE, 0, 0)
   const btnSize = Vector3.create(0.22, 0.22, 0.08)
   const spacing = 0.3
@@ -205,8 +190,8 @@ export function createProjectorBase(): void {
 
   // Galaxy icon
   const iconRotation = Quaternion.fromEulerDegrees(PANEL_ANGLE, 180, 0)
-  const iconOffY = 0.025 * Math.cos(PANEL_ANGLE * Math.PI / 180)
-  const iconOffZ = -0.025 * Math.sin(PANEL_ANGLE * Math.PI / 180)
+  const iconOffY = 0.12 * Math.cos(PANEL_ANGLE * Math.PI / 180)
+  const iconOffZ = -0.12 * Math.sin(PANEL_ANGLE * Math.PI / 180)
   const iconStyle = {
     albedoColor: Color4.create(0, 0.08, 0.25, 0.9),
     emissiveColor: Color3.create(0, 0.08, 0.25),
@@ -216,7 +201,7 @@ export function createProjectorBase(): void {
 
   const galaxyIcon = engine.addEntity()
   Transform.create(galaxyIcon, {
-    position: Vector3.create(MAP_CENTER.x + viewSpacing / 2, panelY + viewRowOffsetY + iconOffY, panelZ + viewRowOffsetZ + 0.05 + iconOffZ),
+    position: Vector3.create(MAP_CENTER.x + viewSpacing / 2, panelY + viewRowOffsetY + 0.045, panelZ + viewRowOffsetZ - 0.01),
     scale: Vector3.create(0.18, 0.18, 1), rotation: iconRotation
   })
   MeshRenderer.setPlane(galaxyIcon)
@@ -241,23 +226,13 @@ export function createProjectorBase(): void {
 
   const systemIcon = engine.addEntity()
   Transform.create(systemIcon, {
-    position: Vector3.create(MAP_CENTER.x - viewSpacing / 2, panelY + viewRowOffsetY + iconOffY, panelZ + viewRowOffsetZ + 0.05 + iconOffZ),
+    position: Vector3.create(MAP_CENTER.x - viewSpacing / 2, panelY + viewRowOffsetY + 0.045, panelZ + viewRowOffsetZ - 0.01),
     scale: Vector3.create(0.18, 0.18, 1), rotation: iconRotation
   })
   MeshRenderer.setPlane(systemIcon)
   Material.setPbrMaterial(systemIcon, { ...iconStyle, texture: Material.Texture.Common({ src: 'assets/icons/system-icon.png' }), emissiveTexture: Material.Texture.Common({ src: 'assets/icons/system-icon.png' }) })
 
-  // Glass panel backing
-  const panel = engine.addEntity()
-  Transform.create(panel, {
-    position: Vector3.create(MAP_CENTER.x, panelY + viewRowOffsetY / 2, panelZ + viewRowOffsetZ / 2),
-    scale: Vector3.create(spacing * 6 + 0.15, 0.7, 0.03), rotation: panelTilt
-  })
-  MeshRenderer.setBox(panel)
-  Material.setPbrMaterial(panel, {
-    albedoColor: Color4.create(0.05, 0.15, 0.25, 0.25), emissiveColor: Color3.create(0, 0.2, 0.4),
-    emissiveIntensity: 0.5, metallic: 0.9, roughness: 0.1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-  })
+
 
   // Control buttons (reversed for player perspective)
   const buttons: { hoverText: string; icon: string; flipX?: boolean; flipY?: boolean; callback: () => void }[] = [
@@ -272,7 +247,7 @@ export function createProjectorBase(): void {
   for (let i = 0; i < buttons.length; i++) {
     const btn = engine.addEntity()
     Transform.create(btn, {
-      position: Vector3.create(startX + i * spacing, panelY, panelZ),
+      position: Vector3.create(startX + i * spacing, panelY + 0.01, panelZ - 0.08),
       scale: btnSize, rotation: panelTilt
     })
     MeshRenderer.setBox(btn)
@@ -289,7 +264,7 @@ export function createProjectorBase(): void {
     const flipScaleX = buttons[i].flipX ? -1 : 1
     const flipScaleY = buttons[i].flipY ? -1 : 1
     Transform.create(icon, {
-      position: Vector3.create(startX + i * spacing, panelY + iconOffY, panelZ + 0.05 + iconOffZ),
+      position: Vector3.create(startX + i * spacing, panelY + 0.01 + 0.045, panelZ - 0.08 - 0.01),
       scale: Vector3.create(0.18 * flipScaleX, 0.18 * flipScaleY, 1), rotation: iconRotation
     })
     MeshRenderer.setPlane(icon)

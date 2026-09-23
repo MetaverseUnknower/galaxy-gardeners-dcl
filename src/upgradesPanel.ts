@@ -1,9 +1,10 @@
 import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
+import { DECK_Y } from './environment'
 
 // East edge of platform, facing -X (inward toward center)
-const DISPLAY_CENTER = Vector3.create(146, 42.0, 128)
+const DISPLAY_CENTER = Vector3.create(140.5, DECK_Y + 2.0, 128)
 const TEXT_ROT = Quaternion.fromEulerDegrees(0, 90, 0) // faces -X (toward center)
 
 const displayEntities: Entity[] = []

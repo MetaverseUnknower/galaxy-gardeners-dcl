@@ -6,11 +6,11 @@ import { createProjectorBase, renderStarSystems, clearMap, starEntities, galaxyA
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
-import { setupUi, setSelectedSystemUI, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification } from './ui'
+import { setupUi, setSelectedSystemUI, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification, openPurchaseDialog, openRefineryDialog } from './ui'
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './systemView'
 import { createEnvironment, respawnSystem, twinkleSystem } from './environment'
-import { createShipDisplay, setMissionNotifyCallback, setSolarRechargeRate } from './shipDisplay'
+import { createShipDisplay, setMissionNotifyCallback, setSolarRechargeRate, setOpenRefineryCallback, setOpenPurchaseCallback } from './shipDisplay'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { createUpgradesPanel, setUpgradeNotifyCallback } from './upgradesPanel'
@@ -56,6 +56,8 @@ export async function main() {
     setupInteraction()
 
     setMissionNotifyCallback((text, color) => showNotification(text, color))
+    setOpenRefineryCallback(() => openRefineryDialog())
+    setOpenPurchaseCallback(() => openPurchaseDialog())
     const currentSys = systems.find(s => s.id === playerInfo!.current_system_id)
     if (currentSys) setSolarRechargeRate(currentSys.solar_recharge_rate)
     createShipDisplay()

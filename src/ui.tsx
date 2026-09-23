@@ -10,8 +10,12 @@ export function setSelectedFlora(flora: any): void { selectedFlora = flora }
 export function clearSelectedFlora(): void { selectedFlora = null }
 export function setCloseDetailCallback(cb: () => void): void { onCloseDetailPanel = cb }
 import { isCurrentlyTraveling } from './navigation'
-import { refreshMissions } from './shipDisplay'
+import { refreshMissions, createShipDisplay } from './shipDisplay'
+import { selectSystem } from './interaction'
+import { requirePayment } from '~system/EthereumController'
 import * as api from './api'
+
+const BENEFICIARY_WALLET = '0x49489CDEB4f2cA8a8F37bb47092D60eAF8F17cA8'
 
 let selectedSystem: StarSystem | null = null
 let fuelInfo: FuelCostResponse | null = null
@@ -25,6 +29,53 @@ let deployStatus: string | null = null
 let lastSelectedBodyId: string | null = null
 let discoveryDescription: string | null = null
 let notification: { text: string; color: Color4; timer: number } | null = null
+
+// Fuel dialogs
+let showPurchaseDialog = false
+let showRefineryDialog = false
+let purchaseStatus: string | null = null
+let refineryStatus: string | null = null
+let refineryInventory: { helium_3: number; plasma_crystals: number; fuel_cells: number } = { helium_3: 0, plasma_crystals: 0, fuel_cells: 0 }
+
+export function openPurchaseDialog(): void { showPurchaseDialog = true; showRefineryDialog = false; purchaseStatus = null }
+export function closePurchaseDialog(): void { showPurchaseDialog = false; purchaseStatus = null }
+export function openRefineryDialog(): void {
+  showRefineryDialog = true; showPurchaseDialog = false; refineryStatus = null
+  loadRefineryInventory()
+}
+export function closeRefineryDialog(): void { showRefineryDialog = false; refineryStatus = null }
+
+async function loadRefineryInventory(): Promise<void> {
+  try {
+    const dashboard = await api.getShipDashboard()
+    const inv = dashboard.inventory || []
+    refineryInventory = { helium_3: 0, plasma_crystals: 0, fuel_cells: dashboard.ship?.fuel_cells ?? 0 }
+    for (const item of inv) {
+      if (item.resource_type === 'helium_3') refineryInventory.helium_3 = item.quantity
+      if (item.resource_type === 'plasma_crystals') refineryInventory.plasma_crystals = item.quantity
+    }
+  } catch {}
+}
+
+async function handleRefine(resourceType: string): Promise<void> {
+  refineryStatus = 'Refining...'
+  try {
+    const result = await api.refineFuel(resourceType, 1)
+    refineryStatus = `+${result.fuelGained.toFixed(0)} fuel!`
+    await loadRefineryInventory()
+    createShipDisplay()
+  } catch (err: any) { refineryStatus = err.message || 'Refine failed' }
+}
+
+async function handleManaPurchase(tierId: string, manaAmount: number): Promise<void> {
+  purchaseStatus = 'Requesting payment...'
+  try {
+    await requirePayment({ toAddress: BENEFICIARY_WALLET, amount: manaAmount, currency: 'MANA' })
+    const result = await api.purchaseFuelCellsMana(tierId)
+    purchaseStatus = `Purchased! Total cells: ${result.fuelCells}`
+    createShipDisplay()
+  } catch (err: any) { purchaseStatus = err.message || 'Purchase cancelled' }
+}
 
 export function updateNotification(dt: number): void {
   if (notification) { notification.timer -= dt; if (notification.timer <= 0) notification = null }
@@ -59,7 +110,15 @@ const SystemInfoPanel = () => {
   return (
     <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { bottom: 40 }, justifyContent: 'center' }}>
       <UiEntity uiTransform={{ width: 620, flexDirection: 'column', padding: { top: 24, bottom: 24, left: 24, right: 24 } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.92) }}>
-        <UiEntity uiTransform={{ width: '100%', height: 44, margin: { bottom: 8 } }} uiText={{ value: selectedSystem.name, fontSize: 36, color: Color4.create(0, 1, 1, 1), textAlign: 'middle-center' }} />
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'center', margin: { bottom: 8 } }}>
+          <UiEntity uiTransform={{ height: 44, flex: 1 }} uiText={{ value: selectedSystem.name, fontSize: 36, color: Color4.create(0, 1, 1, 1), textAlign: 'middle-center' }} />
+          <UiEntity
+            uiTransform={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0.3, 0.1, 0.1, 1) }}
+            uiText={{ value: 'X', fontSize: 20, color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { selectSystem(null) }}
+          />
+        </UiEntity>
         <UiEntity uiTransform={{ width: '100%', height: 28, margin: { bottom: 6 } }} uiText={{ value: (selectedSystem.star_type || 'unknown').replace(/_/g, ' ').toUpperCase(), fontSize: 20, color: Color4.create(0.6, 0.6, 0.6, 1), textAlign: 'middle-center' }} />
         <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'center', margin: { bottom: 8 } }}>
           {selectedSystem.has_station ? <UiEntity uiTransform={{ height: 24, margin: { right: 16 } }} uiText={{ value: 'STATION', fontSize: 18, color: Color4.create(0, 1, 1, 1) }} /> : null}
@@ -187,6 +246,85 @@ const StatusBar = () => {
   )
 }
 
+const PurchaseDialog = () => {
+  if (!showPurchaseDialog) return null
+  const tiers = [
+    { id: 'mana_single', name: 'Quick Top-Up', cells: 1, mana: 10, image: 'assets/images/QuickTopUp.png' },
+    { id: 'mana_triple', name: 'Explorer Pack', cells: 3, mana: 20, image: 'assets/images/ExplorerPack.png' },
+    { id: 'mana_bulk', name: 'Deep Space Expedition', cells: 10, mana: 50, image: 'assets/images/DeepSpaceExpedition.png' },
+  ]
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', justifyContent: 'center', alignItems: 'center' }}>
+      <UiEntity uiTransform={{ width: 700, flexDirection: 'column', padding: { top: 24, bottom: 24, left: 24, right: 24 } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.95) }}>
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', margin: { bottom: 16 } }}>
+          <UiEntity uiTransform={{ height: 40, flex: 1 }} uiText={{ value: 'PURCHASE FUEL CELLS', fontSize: 28, color: Color4.create(0, 1, 1, 1), textAlign: 'middle-center' }} />
+          <UiEntity
+            uiTransform={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0.3, 0.1, 0.1, 1) }}
+            uiText={{ value: 'X', fontSize: 20, color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { closePurchaseDialog() }}
+          />
+        </UiEntity>
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between' }}>
+          {tiers.map(tier => (
+            <UiEntity key={tier.id} uiTransform={{ width: 200, flexDirection: 'column', alignItems: 'center' }}>
+              <UiEntity uiTransform={{ width: 180, height: 180, margin: { bottom: 8 } }} uiBackground={{ texture: { src: tier.image }, textureMode: 'stretch', color: Color4.White() }} />
+              <UiEntity uiTransform={{ height: 24, margin: { bottom: 4 } }} uiText={{ value: tier.name, fontSize: 18, color: Color4.White(), textAlign: 'middle-center' }} />
+              <UiEntity uiTransform={{ height: 20, margin: { bottom: 8 } }} uiText={{ value: `${tier.cells} cell${tier.cells > 1 ? 's' : ''} = ${tier.cells * 50} fuel`, fontSize: 14, color: Color4.create(0.6, 0.6, 0.6, 1), textAlign: 'middle-center' }} />
+              <UiEntity
+                uiTransform={{ width: 160, height: 44, justifyContent: 'center', alignItems: 'center' }}
+                uiBackground={{ color: Color4.create(0, 0.4, 0.5, 1) }}
+                uiText={{ value: `${tier.mana} MANA`, fontSize: 20, color: Color4.White(), textAlign: 'middle-center' }}
+                onMouseDown={() => { handleManaPurchase(tier.id, tier.mana) }}
+              />
+            </UiEntity>
+          ))}
+        </UiEntity>
+        {purchaseStatus ? <UiEntity uiTransform={{ width: '100%', height: 28, margin: { top: 12 } }} uiText={{ value: purchaseStatus, fontSize: 18, color: Color4.create(0.8, 0.8, 0.3, 1), textAlign: 'middle-center' }} /> : null}
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+const RefineryDialog = () => {
+  if (!showRefineryDialog) return null
+  const resources = [
+    { type: 'helium_3', name: 'Helium-3', fuel: 20, quantity: refineryInventory.helium_3, color: Color4.create(0.3, 0.8, 1, 1) },
+    { type: 'plasma_crystals', name: 'Plasma Crystals', fuel: 50, quantity: refineryInventory.plasma_crystals, color: Color4.create(0.8, 0.3, 1, 1) },
+    { type: 'fuel_cell', name: 'Fuel Cells', fuel: 50, quantity: refineryInventory.fuel_cells, color: Color4.create(0, 1, 0.5, 1) },
+  ]
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', justifyContent: 'center', alignItems: 'center' }}>
+      <UiEntity uiTransform={{ width: 500, flexDirection: 'column', padding: { top: 24, bottom: 24, left: 24, right: 24 } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.95) }}>
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', margin: { bottom: 16 } }}>
+          <UiEntity uiTransform={{ height: 40, flex: 1 }} uiText={{ value: 'FUEL REFINERY', fontSize: 28, color: Color4.create(0, 1, 1, 1), textAlign: 'middle-center' }} />
+          <UiEntity
+            uiTransform={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0.3, 0.1, 0.1, 1) }}
+            uiText={{ value: 'X', fontSize: 20, color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { closeRefineryDialog() }}
+          />
+        </UiEntity>
+        {resources.map(res => (
+          <UiEntity key={res.type} uiTransform={{ width: '100%', flexDirection: 'row', alignItems: 'center', margin: { bottom: 12 }, padding: { top: 10, bottom: 10, left: 12, right: 12 } }} uiBackground={{ color: Color4.create(0.05, 0.08, 0.15, 0.8) }}>
+            <UiEntity uiTransform={{ flex: 1, flexDirection: 'column' }}>
+              <UiEntity uiTransform={{ height: 26 }} uiText={{ value: res.name, fontSize: 22, color: res.color, textAlign: 'middle-left' }} />
+              <UiEntity uiTransform={{ height: 20 }} uiText={{ value: `${res.quantity} available  |  +${res.fuel} fuel each`, fontSize: 14, color: Color4.create(0.5, 0.5, 0.5, 1), textAlign: 'middle-left' }} />
+            </UiEntity>
+            <UiEntity
+              uiTransform={{ width: 100, height: 40, justifyContent: 'center', alignItems: 'center' }}
+              uiBackground={{ color: res.quantity > 0 ? Color4.create(0, 0.4, 0.5, 1) : Color4.create(0.15, 0.15, 0.15, 1) }}
+              uiText={{ value: 'REFINE', fontSize: 18, color: res.quantity > 0 ? Color4.White() : Color4.create(0.4, 0.4, 0.4, 1), textAlign: 'middle-center' }}
+              onMouseDown={() => { if (res.quantity > 0) handleRefine(res.type) }}
+            />
+          </UiEntity>
+        ))}
+        {refineryStatus ? <UiEntity uiTransform={{ width: '100%', height: 28, margin: { top: 8 } }} uiText={{ value: refineryStatus, fontSize: 18, color: Color4.create(0.8, 0.8, 0.3, 1), textAlign: 'middle-center' }} /> : null}
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
 const uiComponent = () => (
   <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
     <SystemInfoPanel />
@@ -195,6 +333,8 @@ const uiComponent = () => (
     <NotificationBanner />
     <DiscoveryDescriptionBar />
     <StatusBar />
+    <PurchaseDialog />
+    <RefineryDialog />
   </UiEntity>
 )
 

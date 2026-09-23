@@ -3,8 +3,9 @@ import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { StarSystem } from './types'
 import { setDiscoveryDescription } from './ui'
+import { DECK_Y } from './environment'
 
-const DISPLAY_CENTER = Vector3.create(128, 40.5, 112)
+const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
 const DESK_TILT = Quaternion.fromEulerDegrees(-50, 0, 0)
 
 const displayEntities: Entity[] = []
@@ -39,29 +40,24 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   } catch { return }
 
   panelRoot = engine.addEntity()
-  Transform.create(panelRoot, { position: DISPLAY_CENTER, rotation: DESK_TILT })
+  Transform.create(panelRoot, { position: DISPLAY_CENTER, rotation: DESK_TILT, scale: Vector3.create(0.9, 0.9, 0.9) })
 
   const panelWidth = 6.0; const panelHeight = 2.8
   const mapX = -1.5; const mapZ = 0; const buttonsX = 1.5
 
-  // Main panel
-  const mainPanel = engine.addEntity()
-  Transform.create(mainPanel, { position: Vector3.create(0, 1.0, 0), scale: Vector3.create(panelWidth, panelHeight + 0.5, 0.03), parent: panelRoot })
-  MeshRenderer.setBox(mainPanel)
-  Material.setPbrMaterial(mainPanel, { albedoColor: Color4.create(0.05, 0.15, 0.25, 0.3), emissiveColor: Color3.create(0, 0.2, 0.4), emissiveIntensity: 0.5, metallic: 0.9, roughness: 0.1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND })
-  displayEntities.push(mainPanel)
+
 
   // Coord panel (vertical, world space)
   const cos50 = Math.cos(50 * Math.PI / 180); const sin50 = Math.sin(50 * Math.PI / 180)
   const panelTopLocalY = 1.0 + (panelHeight + 0.5) / 2
   const topWorldY = DISPLAY_CENTER.y + panelTopLocalY * cos50
   const topWorldZ = DISPLAY_CENTER.z + panelTopLocalY * sin50
-  const coordPanelZ = topWorldZ - 4.1
+  const coordPanelZ = topWorldZ - 4.1 + 0.25
   const coordPanelHeight = 1.2
-  const coordPanelY = topWorldY + coordPanelHeight / 2
+  const coordPanelY = topWorldY + coordPanelHeight / 2 - 0.4
 
   const coordPanel = engine.addEntity()
-  Transform.create(coordPanel, { position: Vector3.create(DISPLAY_CENTER.x, coordPanelY, coordPanelZ), scale: Vector3.create(panelWidth, coordPanelHeight, 0.03) })
+  Transform.create(coordPanel, { position: Vector3.create(DISPLAY_CENTER.x, coordPanelY, coordPanelZ), scale: Vector3.create(5.5, coordPanelHeight, 0.03) })
   MeshRenderer.setBox(coordPanel)
   Material.setPbrMaterial(coordPanel, { albedoColor: Color4.create(0.03, 0.1, 0.2, 0.4), emissiveColor: Color3.create(0, 0.15, 0.3), emissiveIntensity: 0.5, metallic: 0.9, roughness: 0.1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND })
   displayEntities.push(coordPanel)
@@ -91,13 +87,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   const mapCenterY = 1.0
   mapCenterYStored = mapCenterY; mapZStored = mapZ; mapXStored = mapX
 
-  const mapScreen = engine.addEntity()
-  Transform.create(mapScreen, { position: Vector3.create(mapX, mapCenterY, 0.015 + mapZ), scale: Vector3.create(2.6, 2.6, 0.01), parent: panelRoot })
-  MeshRenderer.setBox(mapScreen)
-  Material.setPbrMaterial(mapScreen, { albedoColor: Color4.create(0.02, 0.03, 0.08, 1), emissiveColor: Color3.create(0.01, 0.02, 0.05), emissiveIntensity: 0.3 })
-  displayEntities.push(mapScreen)
-
-  const mapRadius = 0.85
+  const mapRadius = 0.765
   let maxR = 1
   for (const s of allSystems) { const dist = Math.sqrt(s.coord_x ** 2 + s.coord_y ** 2); if (dist > maxR) maxR = dist }
   const mapScale = mapRadius / maxR
@@ -182,10 +172,10 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   // Direction buttons
   const hoverTexts: Record<string, string> = { inward: 'Search Inwards', lateral: 'Search Laterally', outward: 'Search Outwards', vertical: 'Search Vertically' }
   const directions = [
-    { dir: 'inward', label: 'INWARD', color: Color3.create(0.6, 0.1, 0.25), glowColor: Color3.create(0.8, 0.1, 0.3), yOff: 1.5 },
-    { dir: 'lateral', label: 'LATERAL', color: Color3.create(0, 0.4, 0.6), glowColor: Color3.create(0, 0.5, 0.8), yOff: 1.05 },
-    { dir: 'vertical', label: 'VERTICAL', color: Color3.create(0.35, 0.1, 0.6), glowColor: Color3.create(0.5, 0.1, 0.8), yOff: 0.6 },
-    { dir: 'outward', label: 'OUTWARD', color: Color3.create(0, 0.5, 0.3), glowColor: Color3.create(0, 0.7, 0.4), yOff: 0.15 },
+    { dir: 'inward', label: 'INWARD', color: Color3.create(0.6, 0.1, 0.25), glowColor: Color3.create(0.8, 0.1, 0.3), yOff: 1.65 },
+    { dir: 'lateral', label: 'LATERAL', color: Color3.create(0, 0.4, 0.6), glowColor: Color3.create(0, 0.5, 0.8), yOff: 1.2 },
+    { dir: 'vertical', label: 'VERTICAL', color: Color3.create(0.35, 0.1, 0.6), glowColor: Color3.create(0.5, 0.1, 0.8), yOff: 0.75 },
+    { dir: 'outward', label: 'OUTWARD', color: Color3.create(0, 0.5, 0.3), glowColor: Color3.create(0, 0.7, 0.4), yOff: 0.3 },
   ]
 
   for (const d of directions) {
@@ -196,7 +186,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
     const description = option?.description || ''
 
     const btn = engine.addEntity()
-    Transform.create(btn, { position: Vector3.create(buttonsX, d.yOff, 0.02), scale: Vector3.create(2.0, 0.3, 0.04), parent: panelRoot })
+    Transform.create(btn, { position: Vector3.create(buttonsX, d.yOff, 0.2), scale: Vector3.create(2.0, 0.3, 0.04), parent: panelRoot })
     MeshRenderer.setBox(btn); MeshCollider.setBox(btn)
     Material.setPbrMaterial(btn, { albedoColor: Color4.create(0.02, 0.02, 0.05, 1), emissiveColor: d.glowColor, emissiveIntensity: 2 })
     displayEntities.push(btn)
@@ -204,7 +194,7 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
     pointerEventsSystem.onPointerDown({ entity: btn, opts: { button: InputAction.IA_POINTER, hoverText: hoverTexts[d.dir] || d.label, maxDistance: 10 } }, () => handleStartDiscovery(d.dir))
 
     const label = engine.addEntity()
-    Transform.create(label, { position: Vector3.create(buttonsX, d.yOff, 0.05), rotation: Quaternion.fromEulerDegrees(0, 180, 0), parent: panelRoot })
+    Transform.create(label, { position: Vector3.create(buttonsX, d.yOff, 0.23), rotation: Quaternion.fromEulerDegrees(0, 180, 0), parent: panelRoot })
     TextShape.create(label, { text: d.label, fontSize: 0.6, textColor: Color4.create(d.color.r, d.color.g, d.color.b, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
     displayEntities.push(label)
 
@@ -236,7 +226,7 @@ function showDirectionArrows(direction: string, color: Color3): void {
   if (!currentSystem || !panelRoot) return
   let maxR = 1
   for (const s of allSystems) { const dist = Math.sqrt(s.coord_x ** 2 + s.coord_y ** 2); if (dist > maxR) maxR = dist }
-  const mapScale = 0.85 / maxR
+  const mapScale = 0.765 / maxR
   const rotA = -Math.atan2(currentSystem.coord_y, currentSystem.coord_x) - Math.PI / 2
   const c = Math.cos(rotA), sn = Math.sin(rotA)
   const sx = currentSystem.coord_x * mapScale, sy = currentSystem.coord_y * mapScale

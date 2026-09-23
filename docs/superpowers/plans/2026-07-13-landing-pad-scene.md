@@ -12,7 +12,8 @@
 
 ## Global Constraints
 
-- Scene footprint: 2 parcels (`0,0` + `0,1`) = 16m (x) × 32m (z); height limit ≈ 31.7m; triangle budget ≈ 20,000 total.
+- Scene footprint: 2 parcels (`0,0` + `0,1`) = 16m (x) × 32m (z); height limit ≈ 31.7m.
+- Triangle budget: WAIVED by user decision (2026-07-13) — Genesis limits are not enforced in practice; the original 36,331-triangle ship GLB is used as-is. Do not flag triangle counts as an issue.
 - Source repo (read-only reference & asset source): `/Users/unknower/Git/galaxy-gardeners-dcl`. New project: `/Users/unknower/Git/galaxy-gardeners-landing`.
 - Prettier style from main repo: no semicolons, single quotes, print width 120 (`package.json` carries the config).
 - Console log prefixes: `[auth]`, `[api]`, `[fern]` matching the main scene's `[api]` style.

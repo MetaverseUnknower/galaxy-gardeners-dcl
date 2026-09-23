@@ -1,13 +1,16 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, GltfContainer } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, Material, GltfContainer, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
 
 const CENTER = Vector3.create(128, 80, 128)
-const BOX_SIZE = 120
-const PLATFORM_RADIUS = 20
+const BOX_SIZE = 150
 
+// Top of the ship's raised central dais (the galaxy projector stands here).
 export const PLATFORM_Y = 40
+// The main deck around the dais is 1.09m lower; the station panels stand on it.
+export const DECK_Y = PLATFORM_Y - 1.09
+// Hull walls start ~14.5m from center, so the panels sit at ~12.5m.
 
 let seed = 777
 function seededRandom(): number {
@@ -18,100 +21,91 @@ function seededRandom(): number {
 export function createEnvironment(): void {
   seed = 777
 
-  const half = BOX_SIZE / 2
-  const black = {
-    albedoColor: Color4.create(0.005, 0.005, 0.01, 1),
-    emissiveColor: Color3.create(0, 0, 0),
-    emissiveIntensity: 0,
-    metallic: 0,
-    roughness: 1,
-    castShadows: false
-  }
-
-  const t = 0.1
-
-  // Floor
-  const floor = engine.addEntity()
-  Transform.create(floor, { position: Vector3.create(CENTER.x, CENTER.y - half, CENTER.z), scale: Vector3.create(BOX_SIZE, t, BOX_SIZE) })
-  MeshRenderer.setBox(floor)
-  Material.setPbrMaterial(floor, black)
-
-  // Ceiling
-  const ceiling = engine.addEntity()
-  Transform.create(ceiling, { position: Vector3.create(CENTER.x, CENTER.y + half, CENTER.z), scale: Vector3.create(BOX_SIZE, t, BOX_SIZE) })
-  MeshRenderer.setBox(ceiling)
-  Material.setPbrMaterial(ceiling, black)
-
-  // North (-Z)
-  const north = engine.addEntity()
-  Transform.create(north, { position: Vector3.create(CENTER.x, CENTER.y, CENTER.z - half), scale: Vector3.create(BOX_SIZE, BOX_SIZE, t) })
-  MeshRenderer.setBox(north)
-  Material.setPbrMaterial(north, black)
-
-  // South (+Z)
-  const south = engine.addEntity()
-  Transform.create(south, { position: Vector3.create(CENTER.x, CENTER.y, CENTER.z + half), scale: Vector3.create(BOX_SIZE, BOX_SIZE, t) })
-  MeshRenderer.setBox(south)
-  Material.setPbrMaterial(south, black)
-
-  // East (+X)
-  const east = engine.addEntity()
-  Transform.create(east, { position: Vector3.create(CENTER.x + half, CENTER.y, CENTER.z), scale: Vector3.create(t, BOX_SIZE, BOX_SIZE) })
-  MeshRenderer.setBox(east)
-  Material.setPbrMaterial(east, black)
-
-  // West (-X)
-  const west = engine.addEntity()
-  Transform.create(west, { position: Vector3.create(CENTER.x - half, CENTER.y, CENTER.z), scale: Vector3.create(t, BOX_SIZE, BOX_SIZE) })
-  MeshRenderer.setBox(west)
-  Material.setPbrMaterial(west, black)
-
-  // Player platform
-  const platform = engine.addEntity()
-  Transform.create(platform, {
-    position: Vector3.create(CENTER.x, PLATFORM_Y - 0.05, CENTER.z),
-    scale: Vector3.create(PLATFORM_RADIUS * 2, 0.1, PLATFORM_RADIUS * 2)
+  // Skybox GLB
+  const skybox = engine.addEntity()
+  Transform.create(skybox, {
+    position: Vector3.create(CENTER.x, CENTER.y, CENTER.z),
+    scale: Vector3.create(1.833, 1.833, 1.833),
+    rotation: Quaternion.fromEulerDegrees(0, 0, 0)
   })
-  MeshRenderer.setCylinder(platform)
-  MeshCollider.setCylinder(platform)
-  Material.setPbrMaterial(platform, {
-    albedoColor: Color4.create(0.03, 0.03, 0.06, 1),
-    emissiveColor: Color3.create(0, 0.05, 0.1),
-    emissiveIntensity: 0.5,
-    metallic: 0.9,
-    roughness: 0.2
+  GltfContainer.create(skybox, { src: 'assets/models/skybox.glb' })
+
+  // Nav panel model (under discovery panel)
+  const navPanel = engine.addEntity()
+  Transform.create(navPanel, {
+    position: Vector3.create(128, DECK_Y, 113.8),
+    scale: Vector3.create(1, 1, 1),
+    rotation: Quaternion.fromEulerDegrees(180, 0, 180)
   })
+  GltfContainer.create(navPanel, { src: 'assets/models/nav_panel_low_1.glb' })
+
+  // Nav panel model (under catalog panel)
+  const catalogNavPanel = engine.addEntity()
+  Transform.create(catalogNavPanel, {
+    position: Vector3.create(117.2, DECK_Y, 121.3),
+    scale: Vector3.create(1, 1, 1),
+    rotation: Quaternion.fromEulerDegrees(180, -32 + 90, 180)
+  })
+  GltfContainer.create(catalogNavPanel, { src: 'assets/models/nav_panel_high_1.glb' })
+
+  // Low nav panel (in front of catalog high panel)
+  const catalogNavLow = engine.addEntity()
+  Transform.create(catalogNavLow, {
+    position: Vector3.create(117.2, DECK_Y, 121.3),
+    scale: Vector3.create(1, 1, 1),
+    rotation: Quaternion.fromEulerDegrees(180, -32 + 90, 180)
+  })
+  GltfContainer.create(catalogNavLow, { src: 'assets/models/nav_panel_low_1.glb' })
+
+  // Mirror of the catalog desk pair on the east side (reflected across the ship's centerline: x mirrored
+  // about 128, yaw negated) so the two flank the discovery desk symmetrically.
+  const mirrorNavPanel = engine.addEntity()
+  Transform.create(mirrorNavPanel, {
+    position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3),
+    scale: Vector3.create(1, 1, 1),
+    rotation: Quaternion.fromEulerDegrees(180, -(-32 + 90), 180)
+  })
+  GltfContainer.create(mirrorNavPanel, { src: 'assets/models/nav_panel_high_1.glb' })
+
+  const mirrorNavLow = engine.addEntity()
+  Transform.create(mirrorNavLow, {
+    position: Vector3.create(128 + (128 - 117.2), DECK_Y, 121.3),
+    scale: Vector3.create(1, 1, 1),
+    rotation: Quaternion.fromEulerDegrees(180, -(-32 + 90), 180)
+  })
+  GltfContainer.create(mirrorNavLow, { src: 'assets/models/nav_panel_low_1.glb' })
 
   // Test model
   const testModel = engine.addEntity()
   Transform.create(testModel, {
-    position: Vector3.create(128, PLATFORM_Y, 137.5),
+    position: Vector3.create(128, DECK_Y, 137.5),
     scale: Vector3.create(0.5, 0.5, 0.5),
     rotation: Quaternion.fromEulerDegrees(-90, 180, 0)
   })
   GltfContainer.create(testModel, { src: 'assets/models/display_screen_low_poly.glb' })
 
-  // Platform edge ring glow
-  const edgeSegments = 48
-  for (let i = 0; i < edgeSegments; i++) {
-    const angle = (i / edgeSegments) * Math.PI * 2
-    const dot = engine.addEntity()
-    Transform.create(dot, {
-      position: Vector3.create(
-        CENTER.x + Math.cos(angle) * PLATFORM_RADIUS,
-        PLATFORM_Y + 0.02,
-        CENTER.z + Math.sin(angle) * PLATFORM_RADIUS
-      ),
-      scale: Vector3.create(0.08, 0.03, 0.08)
-    })
-    MeshRenderer.setSphere(dot)
-    Material.setPbrMaterial(dot, {
-      albedoColor: Color4.create(0, 0.5, 0.8, 0.6),
-      emissiveColor: Color3.create(0, 0.4, 0.6),
-      emissiveIntensity: 2,
-      transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-    })
-  }
+  // Galaxy projector base model
+  const projectorModel = engine.addEntity()
+  Transform.create(projectorModel, {
+    position: Vector3.create(128, PLATFORM_Y, 128),
+    scale: Vector3.create(1, 1, 0.7),
+    rotation: Quaternion.fromEulerDegrees(-90, 0, 0)
+  })
+  GltfContainer.create(projectorModel, { src: 'assets/models/galaxy_projector_base.glb' })
+
+  // Ship interior. DaisyClass_Interior.glb is a Y-up export (no axis-fix rotation needed). Its central
+  // dais tops out at model y 1.33 and the main deck at 0.24, so it is lowered by 1.33 to put the dais
+  // top exactly at PLATFORM_Y and the deck at DECK_Y.
+  const INTERIOR_SCALE = 1
+  const interior = engine.addEntity()
+  Transform.create(interior, {
+    position: Vector3.create(128, PLATFORM_Y - 1.33 * INTERIOR_SCALE, 128),
+    scale: Vector3.create(INTERIOR_SCALE, INTERIOR_SCALE, INTERIOR_SCALE)
+  })
+  GltfContainer.create(interior, {
+    src: 'assets/models/DaisyClass_Interior.glb',
+    visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS
+  })
 
   // Starfield
   const starCount = 600
@@ -124,14 +118,17 @@ export function createEnvironment(): void {
     twinklePhase: number
   }
 
+  starfieldRoot = engine.addEntity()
+  Transform.create(starfieldRoot, { position: CENTER })
+
   for (let i = 0; i < starCount; i++) {
     const theta = seededRandom() * Math.PI * 2
     const phi = Math.acos(2 * seededRandom() - 1)
     const r = (BOX_SIZE / 2) * 0.95
 
-    const x = CENTER.x + r * Math.sin(phi) * Math.cos(theta)
-    const y = CENTER.y + r * Math.sin(phi) * Math.sin(theta)
-    const z = CENTER.z + r * Math.cos(phi)
+    const x = r * Math.sin(phi) * Math.cos(theta)
+    const y = r * Math.sin(phi) * Math.sin(theta)
+    const z = r * Math.cos(phi)
 
     const brightness = 0.3 + seededRandom() * 0.7
     const baseSize = 0.06 + seededRandom() * 0.18
@@ -153,7 +150,8 @@ export function createEnvironment(): void {
     const star = engine.addEntity()
     Transform.create(star, {
       position: Vector3.create(x, y, z),
-      scale: Vector3.create(baseSize, baseSize, baseSize)
+      scale: Vector3.create(baseSize, baseSize, baseSize),
+      parent: starfieldRoot!
     })
     MeshRenderer.setSphere(star)
     Material.setPbrMaterial(star, {
@@ -176,11 +174,27 @@ interface SkyboxStar {
 }
 
 const skyboxStars: SkyboxStar[] = []
+let starfieldRoot: Entity | null = null
+let starfieldRotX = 0
+let starfieldRotY = 0
+let starfieldRotZ = 0
+const DRIFT_SPEED_X = 0.15
+const DRIFT_SPEED_Y = 0.25
+const DRIFT_SPEED_Z = 0.1
 let twinkleTime = 0
 let twinkleIndex = 0
 
 export function twinkleSystem(dt: number): void {
   twinkleTime += dt
+
+  // Slowly drift the starfield rotation
+  if (starfieldRoot) {
+    starfieldRotX += DRIFT_SPEED_X * dt
+    starfieldRotY += DRIFT_SPEED_Y * dt
+    starfieldRotZ += DRIFT_SPEED_Z * dt
+    const transform = Transform.getMutable(starfieldRoot)
+    transform.rotation = Quaternion.fromEulerDegrees(starfieldRotX, starfieldRotY, starfieldRotZ)
+  }
 
   const batchSize = 30
   for (let i = 0; i < batchSize; i++) {
