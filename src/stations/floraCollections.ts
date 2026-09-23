@@ -2,7 +2,7 @@
 // (see references/flora-station-concept.png).
 import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
 import { ViewDefinition, StationContext, Screens, TOP, LOW } from '../stations'
-import { Bag, clearBag, text, frame, header, bar, tile, button, WHITE, DIM, MUTED, CYAN } from './draw'
+import { Bag, clearBag, text, frame, header, bar, tile, button, WHITE, DIM, MUTED } from './draw'
 
 export const ICONS: { catalog: string; vault: string; resources?: string } = {
   catalog: 'assets/icons/catalog-icon.png',
@@ -42,7 +42,7 @@ export const summaryView: ViewDefinition = {
   async render({ top, low }: Screens, ctx: StationContext): Promise<void> {
     drawCollectionsTop(summaryBag, top, ctx, 'summary')
     frame(summaryBag, low, 0, 0, LOW.halfW * 2, LOW.halfH * 2)
-    header(summaryBag, low, -2.6, 0.9, { icon: ICONS.catalog, title: 'COLLECTIONS', subtitle: 'select a category above' })
+    header(summaryBag, low, -2.6, 0.9, { icon: ICONS.catalog, title: 'COLLECTIONS', subtitle: 'select a category above', size: 0.6 })
     const d = ctx.dashboard
     if (!d) throw new Error('no dashboard')
     const jars = (d.specimenSamples || []).length
@@ -70,7 +70,7 @@ export const inventoryView: ViewDefinition = {
   async render({ top, low }: Screens, ctx: StationContext): Promise<void> {
     drawCollectionsTop(invBag, top, ctx, 'inventory')
     frame(invBag, low, 0, 0, LOW.halfW * 2, LOW.halfH * 2)
-    header(invBag, low, -2.6, 0.9, { icon: ICONS.resources, title: 'RESOURCE INVENTORY', subtitle: 'materials & resources' })
+    header(invBag, low, -2.6, 0.9, { icon: ICONS.resources, title: 'RESOURCE INVENTORY', subtitle: 'materials & resources', size: 0.6 })
     const d = ctx.dashboard
     if (!d) throw new Error('no dashboard')
     const used = cargoUsed(d), cap = d.ship?.resource_storage ?? 0
@@ -86,7 +86,7 @@ export const inventoryView: ViewDefinition = {
       const x = col === 0 ? -1.45 : 1.45
       const y = 0.45 - (i % 6) * 0.3
       text(invBag, low, x - 1.3, y + 0.06, pretty(r.resource_type), 0.3, WHITE, TextAlignMode.TAM_MIDDLE_LEFT)
-      text(invBag, low, x + 1.3, y + 0.06, `${r.quantity}`, 0.3, CYAN, TextAlignMode.TAM_MIDDLE_RIGHT)
+      text(invBag, low, x + 1.3, y + 0.06, `${r.quantity}`, 0.3, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
       bar(invBag, low, x, y - 0.1, 2.6, cap ? r.quantity / cap : 0, { h: 0.06 })
     })
     button(invBag, low, -1.85, -1.08, 1.5, 0.24, '‹ BACK TO COLLECTIONS', 'Back to Collections', () => ctx.setView('summary'), { size: 0.24 })
