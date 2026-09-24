@@ -14,6 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
+import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, NEBULAE, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds } from './sleepMode'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
@@ -385,7 +386,49 @@ const MusicBar = () => {
   )
 }
 
-const uiComponent = () => (
+const WHITE = Color4.White()
+const tex = (src: string, tint?: [number, number, number]) => ({ texture: { src }, textureMode: 'stretch' as const, color: tint ? Color4.create(tint[0], tint[1], tint[2], 1) : WHITE })
+
+/** Full-screen bedroom window: black space, drifting nebula layers, the system's star, distant specks, then the room on top. */
+const SleepOverlay = () => {
+  if (!isSleeping()) return null
+  const star = starSprite()
+  const so = starOffset()
+  const starW = star.size * 100 * so.scale
+  return (
+    <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0.005, 0.005, 0.02, 1) }}>
+      {sleepSpecks().map((sp, i) => {
+        const x = ((sp.x - layerOffset(driftSpeeds.speck * sp.depth) + 200) % 200) - 50
+        return <UiEntity key={`sp${i}`} uiTransform={{ positionType: 'absolute', position: { left: `${x}%`, top: `${sp.y}%` }, width: `${sp.size}%`, height: `${sp.size * 1.78}%` }} uiBackground={tex(sp.src)} />
+      })}
+      {NEBULAE.map((src, i) => {
+        const d = layerOffset(driftSpeeds.nebula[i])
+        const bob = Math.sin((i + 1) * 0.7 + d * 0.02) * 3
+        return [0, 1].map(copy => (
+          <UiEntity key={`neb${i}-${copy}`} uiTransform={{ positionType: 'absolute', position: { left: `${-100 + d - copy * 200}%`, top: `${-25 + bob + i * 6}%` }, width: '200%', height: '150%' }} uiBackground={tex(src)} />
+        ))
+      })}
+      <UiEntity uiTransform={{ positionType: 'absolute', position: { left: `${50 - starW / 2 + so.x - layerOffset(driftSpeeds.star) * 0.1}%`, top: `${26 + so.y - starW * 0.89}%` }, width: `${starW}%`, height: `${starW * 1.78}%` }} uiBackground={tex(star.src, star.tint)} />
+      <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%' }} uiBackground={tex(sleepView())} />
+      <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 24, left: 30 }, flexDirection: 'row', alignItems: 'center', padding: 4 }} uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.7) }}>
+        <Label value="QUARTERS" fontSize={12} color={Color4.create(0.45, 0.65, 0.75, 1)} uiTransform={{ margin: { left: 8, right: 8 } }} />
+        {SLEEP_VIEWS.map((_, i) => (
+          <UiEntity key={`view${i}`} uiTransform={{ width: 32, height: 26, margin: { right: 4 }, justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: i === sleepViewIndex() ? Color4.create(0, 0.9, 1, 1) : Color4.create(0.05, 0.12, 0.2, 1) }}
+            onMouseDown={() => { setSleepView(i) }}>
+            <Label value={`${i + 1}`} fontSize={12} color={i === sleepViewIndex() ? Color4.create(0.02, 0.05, 0.1, 1) : Color4.create(0, 0.9, 1, 1)} />
+          </UiEntity>
+        ))}
+      </UiEntity>
+      <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 24, right: 30 }, width: 110, height: 34, justifyContent: 'center', alignItems: 'center' }}
+        uiBackground={{ color: Color4.create(0, 0.9, 1, 1) }} onMouseDown={() => { wake() }}>
+        <Label value="WAKE" fontSize={14} color={Color4.create(0.02, 0.05, 0.1, 1)} />
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
+const uiComponent = () => isSleeping() ? <SleepOverlay /> : (
   <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
     <SystemInfoPanel />
     <BodyDetailPanel />

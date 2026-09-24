@@ -5,6 +5,7 @@ import { engine, Entity, Transform, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { playSfx, playMiningFanfare } from '../sfx'
+import { enterSleepMode } from '../sleepMode'
 import { openRefineryDialog, openPurchaseDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN } from './draw'
@@ -71,6 +72,7 @@ function drawTop(top: Entity, ctx: StationContext): void {
   frame(topBag, top, 1.4, -0.35, 2.6, 1.85)
   image(topBag, top, 1.4, -0.35, 2.4, 1.35, SHIP_BLUEPRINT_WIDE, { z: -0.02 })   // 16:9, behind the button
   button(topBag, top, 2.05, -0.35, 1.1, 0.42, 'UPGRADES »', 'Ship Systems', () => ctx.setView('systems'), { icon: icons('upgrades'), size: 0.34 })
+  button(topBag, top, 2.05, -0.95, 1.1, 0.36, 'SLEEP MODE', 'Sleep Mode', () => enterSleepMode(), { size: 0.3 })
   text(topBag, top, 2.6, -1.15, 'EXPLORE  //  UPGRADE  //  GO FURTHER', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
 }
 
