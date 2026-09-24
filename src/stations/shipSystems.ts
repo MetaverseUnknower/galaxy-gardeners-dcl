@@ -8,6 +8,8 @@ import { ViewDefinition, StationContext, Screens, TOP } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, clickable, icon, CYAN, MAGENTA3, MAGENTA, WHITE, DIM, MUTED, GREEN, RED, GREEN3, RED3 } from './draw'
 // 4:3 blueprint whose connector lines run to the image edges, meeting the upgrade cards' inner edges.
 const SHIP_BLUEPRINT_SYSTEMS = 'assets/images/ship-blueprint-systems.png'
+const CARD_FILL = Color4.create(0.02, 0.05, 0.12, 1)
+const CARD_FILL_SELECTED = Color4.create(0.15, 0.02, 0.12, 1)
 import { cargoUsed, titleCase } from './data'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -56,7 +58,8 @@ function drawTop(): void {
     const x = col === 0 ? -1.85 : 1.85
     const y = 0.6 - row * 0.4
     const isSel = u.category === selected
-    const f = frame(topBag, top, x, y, CARD_W, CARD_H, { border: isSel ? MAGENTA3 : undefined, borderWidth: isSel ? 0.03 : 0.02, fill: isSel ? Color4.create(0.15, 0.02, 0.12, 0.8) : undefined })
+    // Opaque fills: the blueprint's edges run behind these cards, so glass would show it through.
+    const f = frame(topBag, top, x, y, CARD_W, CARD_H, { border: isSel ? MAGENTA3 : undefined, borderWidth: isSel ? 0.03 : 0.02, fill: isSel ? CARD_FILL_SELECTED : CARD_FILL })
     text(topBag, top, x - CARD_W / 2 + 0.1, y + 0.06, `${labelFor(u.category)} T${u.tier}`, 0.3, isSel ? MAGENTA : WHITE, TextAlignMode.TAM_MIDDLE_LEFT)
     const costs = Object.entries(u.resourceCosts as Record<string, number>).map(([k, v]) => `${v} ${titleCase(k)}`).join(', ')
     text(topBag, top, x - CARD_W / 2 + 0.1, y - 0.09, costs, 0.22, u.canAfford ? DIM : Color4.create(0.8, 0.4, 0.4, 1), TextAlignMode.TAM_MIDDLE_LEFT)
