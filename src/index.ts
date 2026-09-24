@@ -16,6 +16,7 @@ import { shipSystemsView } from './stations/shipSystems'
 import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
 import { createNavConsole, setNavConsoleSystem } from './navConsole'
 import { setupConsoleCamera } from './consoleCamera'
+import { loadPrefs } from './prefs'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -52,6 +53,7 @@ export async function main() {
 
     setStatusMessage('Loading player data...')
     playerInfo = await api.getPlayerMe()
+    await loadPrefs()
 
     // Apply solar recharge on scene load
     try { await api.solarRecharge() } catch {}

@@ -5,6 +5,13 @@ import { engine, Transform, VirtualCamera, MainCamera } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { DECK_Y } from './environment'
+import { getPref, setPref } from './prefs'
+
+export type CameraMode = 'fixed' | 'free'
+const PREF_KEY = 'consoleCamera'
+/** 'fixed' lifts the camera over the console when you step up to it; 'free' leaves the player's camera alone. */
+export function getCameraMode(): CameraMode { return getPref<CameraMode>(PREF_KEY, 'fixed') }
+export function setCameraMode(mode: CameraMode): void { setPref(PREF_KEY, mode) }
 
 // The player stands on the north side of the console (z 138.6..141.2) to use it.
 const ZONE = { minX: 125.8, maxX: 130.2, minZ: 138.6, maxZ: 141.2 }
@@ -30,7 +37,7 @@ function consoleCameraSystem(dt: number): void {
   timer = 0
   const p = getPlayer()?.position
   if (!p || !cameraEntity) return
-  const inZone = p.x >= ZONE.minX && p.x <= ZONE.maxX && p.z >= ZONE.minZ && p.z <= ZONE.maxZ
+  const inZone = getCameraMode() === 'fixed' && p.x >= ZONE.minX && p.x <= ZONE.maxX && p.z >= ZONE.minZ && p.z <= ZONE.maxZ
   if (inZone && !active) {
     MainCamera.createOrReplace(engine.CameraEntity, { virtualCameraEntity: cameraEntity })
     active = true

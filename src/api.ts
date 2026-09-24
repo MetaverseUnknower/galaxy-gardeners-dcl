@@ -57,6 +57,27 @@ async function apiPost<T>(path: string, body?: Record<string, unknown>): Promise
   return JSON.parse(response.body) as T
 }
 
+async function apiPut<T>(path: string, body?: Record<string, unknown>): Promise<T> {
+  const token = getToken()
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await makeRequest(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  })
+
+  if (!response.ok) {
+    throw new Error(`API error ${response.status}: ${response.body}`)
+  }
+
+  if (!response.body) return undefined as T
+  return JSON.parse(response.body) as T
+}
+
 export async function getPlayerMe(): Promise<PlayerInfo> {
   return apiGet<PlayerInfo>('/api/galaxy/player/me')
 }
@@ -185,4 +206,12 @@ export async function getFabricationStatus(): Promise<any> {
 
 export async function emergencyPod(podType: 'mining' | 'exploration'): Promise<any> {
   return apiPost('/api/ships/emergency-pod', { podType })
+}
+
+export async function getPreferences(): Promise<Record<string, any>> {
+  return apiGet('/api/galaxy/player/me/preferences')
+}
+
+export async function savePreferences(patch: Record<string, string | number | boolean | null>): Promise<Record<string, any>> {
+  return apiPut('/api/galaxy/player/me/preferences', patch)
 }
