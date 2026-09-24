@@ -80,6 +80,13 @@ export function rotateMap(dir: 1 | -1): void { targetRotationY += dir * ROTATE_S
 export function tiltMap(dir: 1 | -1): void { targetHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, targetHeight + dir * HEIGHT_STEP)); clampScaleToHeight() }
 export function zoomMap(dir: 1 | -1): void { targetScale = Math.max(MIN_SCALE, Math.min(maxScaleForHeight(targetHeight), targetScale + dir * SCALE_STEP)) }
 export function resetMapView(): void { targetRotationY = 0; targetHeight = FLOOR_Y + 1.0; targetScale = 1.0 }
+export function getMapView(): { height: number; scale: number } { return { height: targetHeight, scale: targetScale } }
+export function setMapView(view: { height?: number; scale?: number }): void {
+  if (view.height !== undefined) targetHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, view.height))
+  if (view.scale !== undefined) targetScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, view.scale))
+  clampScaleToHeight()
+}
+export const MAP_LOWEST_HEIGHT = MIN_HEIGHT
 
 export function switchViewMode(mode: ViewMode): void {
   if (mode === currentViewMode || transitionPhase !== 'idle') return

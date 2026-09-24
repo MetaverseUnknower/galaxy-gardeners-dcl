@@ -11,6 +11,11 @@ import { getCameraMode, setCameraMode } from './consoleCamera'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
+// This desk is scaled down (0.85), so its text gets a local boost on top of the global scale.
+const T = 1.3
+const txt: typeof text = (into, root, x, y, str, size, color?, align?, z?) => text(into, root, x, y, str, size * T, color, align, z)
+const hdr: typeof header = (into, root, x, y, opts) => header(into, root, x, y, { ...opts, size: (opts.size ?? 0.9) * T })
+const btn: typeof button = (into, root, x, y, w, h, label, hover, onClick, opts = {}) => button(into, root, x, y, w, h, label, hover, onClick, { ...opts, size: (opts.size ?? 0.42) * T })
 const CONSOLE_POSITION = Vector3.create(128, DECK_Y, 137.5)   // where the old display screen stood
 const CONSOLE_SCALE = 0.85
 // Same face geometry as the station low desks (model front is -z; here that faces the projector).
@@ -62,7 +67,7 @@ function iconButton(root: Entity, x: number, y: number, iconSrc: string, label: 
   const w = 0.42, h = 0.42
   const f = frame(bag, root, x, y, w, h, { fill: Color4.create(0.02, 0.06, 0.12, 1), z: -0.02 })
   icon(bag, root, x, y + 0.08, 0.2, iconSrc, { z: -0.04, flipX: flip.x, flipY: flip.y })
-  text(bag, root, x, y - 0.13, label, 0.11, CYAN, TextAlignMode.TAM_MIDDLE_CENTER, -0.04)
+  txt(bag, root, x, y - 0.13, label, 0.11, CYAN, TextAlignMode.TAM_MIDDLE_CENTER, -0.04)
   clickable(f, hover, onClick)
 }
 
@@ -77,42 +82,42 @@ export function refreshNavConsole(): void {
   lastCanSwitch = canSwitch; lastPaused = paused
 
   // Header + top-right cells
-  header(bag, root, -2.65, 1.0, { icon: ICONS.galaxy, title: 'STELLAR NAVIGATION', subtitle: 'galactic cartography', size: 0.5 })
+  hdr(bag, root, -2.65, 1.0, { icon: ICONS.galaxy, title: 'STELLAR NAVIGATION', subtitle: 'galactic cartography', size: 0.5 })
   frame(bag, root, 1.55, 1.0, 2.4, 0.42)
   line(bag, root, 1.55, 1.18, 1.55, 0.82, CYAN3, { thickness: 0.008, alpha: 0.6 })
   icon(bag, root, 0.5, 1.0, 0.24, ICONS.galaxy)
-  text(bag, root, 0.68, 1.08, 'CURRENT SYSTEM', 0.13, DIM, LEFT)
-  text(bag, root, 0.68, 0.92, systemName || 'Unknown', 0.22, CYAN, LEFT)
+  txt(bag, root, 0.68, 1.08, 'CURRENT SYSTEM', 0.13, DIM, LEFT)
+  txt(bag, root, 0.68, 0.92, systemName || 'Unknown', 0.22, CYAN, LEFT)
   icon(bag, root, 1.75, 1.0, 0.24, ICONS.station)
   if (station) {
-    text(bag, root, 1.93, 1.08, 'STELLAR STATION', 0.13, DIM, LEFT)
+    txt(bag, root, 1.93, 1.08, 'STELLAR STATION', 0.13, DIM, LEFT)
     dot(bag, root, 1.98, 0.92, 0.05, GREEN3)
-    text(bag, root, 2.06, 0.92, 'DOCKING AVAILABLE', 0.13, GREEN, LEFT)
+    txt(bag, root, 2.06, 0.92, 'DOCKING AVAILABLE', 0.13, GREEN, LEFT)
   } else {
-    text(bag, root, 1.93, 1.12, 'STATION STATUS', 0.12, DIM, LEFT)
-    text(bag, root, 1.93, 1.0, 'NO STATION PRESENT', 0.13, MAGENTA, LEFT)
+    txt(bag, root, 1.93, 1.12, 'STATION STATUS', 0.12, DIM, LEFT)
+    txt(bag, root, 1.93, 1.0, 'NO STATION PRESENT', 0.13, MAGENTA, LEFT)
     dot(bag, root, 1.98, 0.88, 0.04, GREEN3)
-    text(bag, root, 2.06, 0.88, 'STATION SLOT AVAILABLE', 0.1, GREEN, LEFT)
+    txt(bag, root, 2.06, 0.88, 'STATION SLOT AVAILABLE', 0.1, GREEN, LEFT)
   }
 
   // View tabs
   const galaxyActive = mode === 'galaxy'
-  button(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
-  button(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })
+  btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
+  btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })
 
   // Left: pause orbits + galaxy thumbnail
   const pauseFill = frame(bag, root, -1.95, -0.05, 1.5, 0.9, { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) })
   icon(bag, root, -1.95, 0.2, 0.34, ICONS.pause, { color: MAGENTA3 })
-  text(bag, root, -1.95, -0.15, paused ? 'RESUME ORBITS' : 'PAUSE ORBITS', 0.24, MAGENTA)
-  text(bag, root, -1.95, -0.33, paused ? 'RESUME CELESTIAL MOTION' : 'FREEZE CELESTIAL MOTION', 0.11, DIM)
+  txt(bag, root, -1.95, -0.15, paused ? 'RESUME ORBITS' : 'PAUSE ORBITS', 0.24, MAGENTA)
+  txt(bag, root, -1.95, -0.33, paused ? 'RESUME CELESTIAL MOTION' : 'FREEZE CELESTIAL MOTION', 0.11, DIM)
   clickable(pauseFill, paused ? 'Resume Orbits' : 'Pause Orbits', () => { toggleOrbits(); refreshNavConsole() })
   frame(bag, root, -1.95, -0.8, 1.5, 0.5)
   image(bag, root, -1.95, -0.8, 1.4, 0.42, IMAGES.galaxy)
 
   // Center: map navigation
   frame(bag, root, 0.05, -0.35, 2.3, 1.6)   // spans -1.1..1.2; the station column starts at 1.45
-  text(bag, root, -1.0, 0.33, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
-  text(bag, root, 1.1, 0.33, 'EXPLORE THE GALAXY', 0.1, MUTED, RIGHT)
+  txt(bag, root, -1.0, 0.33, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
+  txt(bag, root, 1.1, 0.33, 'EXPLORE THE GALAXY', 0.1, MUTED, RIGHT)
   iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
   iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
   iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
@@ -124,34 +129,34 @@ export function refreshNavConsole(): void {
   // Right: station card + thumbnail (dock when a station exists, build when the slot is free)
   if (station) {
     dot(bag, root, 1.55, 0.33, 0.05, GREEN3)
-    text(bag, root, 1.63, 0.36, 'STELLAR STATION', 0.14, DIM, LEFT)
-    text(bag, root, 1.63, 0.22, 'DOCKING AVAILABLE', 0.12, GREEN, LEFT)
+    txt(bag, root, 1.63, 0.36, 'STELLAR STATION', 0.14, DIM, LEFT)
+    txt(bag, root, 1.63, 0.22, 'DOCKING AVAILABLE', 0.12, GREEN, LEFT)
     const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, { fill: Color4.create(0.02, 0.1, 0.16, 1) })
     icon(bag, root, 2.1, -0.05, 0.3, ICONS.station)
-    text(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
-    text(bag, root, 2.1, -0.5, 'APPROACH & DOCK  »', 0.11, DIM)
+    txt(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
+    txt(bag, root, 2.1, -0.5, 'APPROACH & DOCK  »', 0.11, DIM)
     clickable(dockFill, `Dock at ${station.name}`, () => { console.log('Dock'); showNotification(`Docking at ${station.name} coming soon`, CYAN) })
     frame(bag, root, 2.1, -0.88, 1.3, 0.42)
     image(bag, root, 2.1, -0.88, 1.2, 0.36, IMAGES.stationOrbit)
   } else {
     dot(bag, root, 1.55, 0.36, 0.05, GREEN3)
-    text(bag, root, 1.63, 0.36, 'STATION SLOT AVAILABLE', 0.11, GREEN, LEFT)
-    text(bag, root, 2.1, 0.2, 'NO STATION PRESENT', 0.16, WHITE)
-    text(bag, root, 2.1, 0.07, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
+    txt(bag, root, 1.63, 0.36, 'STATION SLOT AVAILABLE', 0.11, GREEN, LEFT)
+    txt(bag, root, 2.1, 0.2, 'NO STATION PRESENT', 0.16, WHITE)
+    txt(bag, root, 2.1, 0.07, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
     const buildFill = frame(bag, root, 2.1, -0.32, 1.3, 0.62, { border: GREEN3, fill: Color4.create(0.02, 0.16, 0.08, 1) })
     icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: GREEN3 })
-    text(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
+    txt(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
     clickable(buildFill, 'Build Station', () => { console.log('Build'); showNotification('Station construction coming soon', GREEN) })
     frame(bag, root, 2.1, -0.88, 1.3, 0.42)
-    text(bag, root, 1.5, -0.72, 'SYSTEM PREVIEW', 0.09, CYAN, LEFT)
-    text(bag, root, 2.7, -0.72, 'STATION LOCATION', 0.09, DIM, RIGHT)
+    txt(bag, root, 1.5, -0.72, 'SYSTEM PREVIEW', 0.09, CYAN, LEFT)
+    txt(bag, root, 2.7, -0.72, 'STATION LOCATION', 0.09, DIM, RIGHT)
     image(bag, root, 2.1, -0.92, 1.2, 0.3, IMAGES.stationSlot)
   }
 
   // Footer, with the console camera toggle in the middle
   const fixedCam = getCameraMode() === 'fixed'
-  button(bag, root, 0.05, -1.1, 1.5, 0.2, fixedCam ? 'CAMERA: FIXED' : 'CAMERA: FREE', fixedCam ? 'Switch to free camera' : 'Switch to fixed console camera', () => { setCameraMode(fixedCam ? 'free' : 'fixed'); refreshNavConsole() }, { size: 0.12, variant: fixedCam ? 'outline' : 'magenta' })
-  text(bag, root, -2.65, -1.12, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
-  text(bag, root, 2.65, -1.12, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
+  btn(bag, root, 0.05, -1.1, 1.5, 0.2, fixedCam ? 'CAMERA: FIXED' : 'CAMERA: FREE', fixedCam ? 'Switch to free camera' : 'Switch to fixed console camera', () => { setCameraMode(fixedCam ? 'free' : 'fixed'); refreshNavConsole() }, { size: 0.12, variant: fixedCam ? 'outline' : 'magenta' })
+  txt(bag, root, -2.65, -1.12, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
+  txt(bag, root, 2.65, -1.12, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 
 }
