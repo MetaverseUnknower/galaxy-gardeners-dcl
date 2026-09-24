@@ -490,7 +490,8 @@ function createStationPanel(): void {
     stationPanelEntities.push(dockBtn)
 
     const dockLabel = engine.addEntity()
-    Transform.create(dockLabel, { position: Vector3.create(panelX, panelY, btnZ + 0.04), rotation: textRotation })
+    // Lifted above the flat button's top face so the label is not half-buried in the box.
+    Transform.create(dockLabel, { position: Vector3.create(panelX, panelY + 0.07, btnZ + 0.04), rotation: textRotation })
     TextShape.create(dockLabel, { text: 'DOCK', fontSize: 1, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
     stationPanelEntities.push(dockLabel)
   } else {
@@ -522,7 +523,7 @@ function createStationPanel(): void {
   stationPanelEntities.push(pauseButtonEntity)
 
   pauseTextEntity = engine.addEntity()
-  Transform.create(pauseTextEntity, { position: Vector3.create(pauseBtnX, PANEL_Y(), PANEL_Z() + 0.04), rotation: textRotation })
+  Transform.create(pauseTextEntity, { position: Vector3.create(pauseBtnX, PANEL_Y() + 0.07, PANEL_Z() + 0.04), rotation: textRotation })
   TextShape.create(pauseTextEntity, { text: 'PAUSE', fontSize: 1, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
   stationPanelEntities.push(pauseTextEntity)
 }
