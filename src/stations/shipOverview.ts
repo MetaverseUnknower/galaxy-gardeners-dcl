@@ -66,7 +66,7 @@ function drawTop(top: Entity, ctx: StationContext): void {
   frame(topBag, top, 1.4, -0.35, 2.6, 1.85)
   image(topBag, top, 0.9, -0.35, 1.3, 1.3, SHIP_BLUEPRINT)
   button(topBag, top, 2.05, -0.35, 1.1, 0.42, 'UPGRADES »', 'Ship Systems', () => ctx.setView('systems'), { icon: icons('upgrades'), size: 0.34 })
-  text(topBag, top, 2.6, -1.25, 'EXPLORE  //  UPGRADE  //  GO FURTHER', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
+  text(topBag, top, 2.6, -1.15, 'EXPLORE  //  UPGRADE  //  GO FURTHER', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
 }
 
 function drawStats(low: Entity, ctx: StationContext): void {
