@@ -60,6 +60,42 @@
       "name": "Cross",
       "glyph": "A bold X / cross mark.",
       "used_for": "Ship Systems view: required resource missing."
+    },
+    {
+      "file": "assets/icons/coordinates-icon.png",
+      "name": "Galactic Coordinates",
+      "glyph": "A crosshair / target: a circle with a centre dot and four tick marks through the rim.",
+      "used_for": "Discovery desk: GALACTIC COORDINATES cell and the STELLAR CARTOGRAPHY badge."
+    },
+    {
+      "file": "assets/icons/travel-icon.png",
+      "name": "Travel Vector",
+      "glyph": "A stylised ship / arrowhead pointing up, with two small swept fins (like a paper-plane glyph).",
+      "used_for": "Discovery desk: TRAVEL VECTOR header."
+    },
+    {
+      "file": "assets/icons/direction-inward-icon.png",
+      "name": "Inward",
+      "glyph": "Two concentric rings with a solid centre dot (a target / bullseye).",
+      "used_for": "Discovery desk: INWARD direction button."
+    },
+    {
+      "file": "assets/icons/direction-lateral-icon.png",
+      "name": "Lateral",
+      "glyph": "A horizontal double-headed arrow.",
+      "used_for": "Discovery desk: LATERAL direction button."
+    },
+    {
+      "file": "assets/icons/direction-vertical-icon.png",
+      "name": "Vertical",
+      "glyph": "A vertical double-headed arrow.",
+      "used_for": "Discovery desk: VERTICAL direction button."
+    },
+    {
+      "file": "assets/icons/direction-outward-icon.png",
+      "name": "Outward",
+      "glyph": "A small centre dot with two concentric rings and four short radiating dashes outside the outer ring.",
+      "used_for": "Discovery desk: OUTWARD direction button."
     }
   ],
   "deliverable": "Return one PNG per entry, named exactly as 'file' (path relative to the project root), overwriting the placeholder.",
