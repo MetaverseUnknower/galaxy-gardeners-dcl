@@ -418,14 +418,6 @@ const SleepOverlay = () => {
   return (
     <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(0), left: px(0) }, width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0.005, 0.005, 0.02, 1) }}>
       <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(0), left }, width: w, height: h, overflow: 'hidden' }}>
-        {(() => {
-          // Enters from the right, drifts across at native aspect, then is gone for the rest of its cycle.
-          const mw = MILKY_WAY
-          const hPct = mw.width * view.aspect / mw.aspect
-          const d = layerOffset(mw.speed, mw.wrap)
-          const x = ((100 - d + mw.width + mw.wrap) % mw.wrap) - mw.width
-          return <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct((100 - hPct) / 2 - 8) }, width: pct(mw.width), height: pct(hPct) }} uiBackground={tex(mw.src, undefined, mw.alpha)} />
-        })()}
         {BACKDROPS.map((bd, i) => {
           // Tiles at native aspect, BACKDROP_SCALE of the room height, in a grid wide and tall enough to cover while scrolling.
           const hPct = 100 * BACKDROP_SCALE
@@ -439,6 +431,14 @@ const SleepOverlay = () => {
           }
           return tiles
         })}
+        {(() => {
+          // Sits just in front of the opaque star fields (which would hide it), behind every other layer.
+          const mw = MILKY_WAY
+          const hPct = mw.width * view.aspect / mw.aspect
+          const d = layerOffset(mw.speed, mw.wrap)
+          const x = ((100 - d + mw.width + mw.wrap) % mw.wrap) - mw.width
+          return <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct((100 - hPct) / 2 - 8) }, width: pct(mw.width), height: pct(hPct) }} uiBackground={tex(mw.src, undefined, mw.alpha)} />
+        })()}
         {sleepCelestials().map((cb, i) => {
           const x = ((cb.x - layerOffset(driftSpeeds.speck * cb.depth, 200) + 200) % 200) - 50
           return <UiEntity key={`cb${i}`} uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct(cb.y) }, width: pct(cb.size), height: pct(cb.size * view.aspect / ATLAS.cellAspect) }}
