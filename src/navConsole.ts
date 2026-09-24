@@ -160,10 +160,11 @@ export function refreshNavConsole(): void {
   image(bag, root, -1.95, -0.8, 1.4, 0.42, IMAGES.galaxy)
 
   // Center: map navigation
-  frame(bag, root, 0.05, -0.35, 2.3, 1.6)   // spans -1.1..1.2; the station column starts at 1.45
-  txt(bag, root, -1.0, 0.33, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
-  txt(bag, root, 1.12, 0.37, '1 2 3 4   ROTATE L · RAISE · LOWER · ROTATE R', 0.07, MUTED, RIGHT)
-  txt(bag, root, 1.12, 0.28, 'SHIFT + 1 2 3 4   ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.07, MUTED, RIGHT)
+  // Top edge flush with the view tabs (0.4), bottom edge through the camera buttons' centre line (-1.1).
+  frame(bag, root, 0.05, -0.35, 2.3, 1.5)   // spans -1.1..1.2; the station column starts at 1.45
+  txt(bag, root, -1.0, 0.31, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
+  txt(bag, root, 1.12, 0.33, '1 2 3 4  ROTATE L · RAISE · LOWER · ROTATE R', 0.1, DIM, RIGHT)
+  txt(bag, root, 1.12, 0.22, 'SHIFT + 1 2 3 4  ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.1, DIM, RIGHT)
   iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
   iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
   iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
@@ -199,9 +200,9 @@ export function refreshNavConsole(): void {
 
   // Footer, with the console camera toggle in the middle
   const cam = getCameraMode()
-  txt(bag, root, -0.8, -1.1, 'CAMERA', 0.09, DIM, RIGHT)
+  txt(bag, root, -0.92, -1.1, 'CAMERA', 0.09, DIM, RIGHT)
   CAMERA_MODES.forEach((mode, i) => {
-    btn(bag, root, -0.45 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
+    btn(bag, root, -0.57 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })
   txt(bag, root, -2.65, -1.12, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
   txt(bag, root, 2.65, -1.12, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
