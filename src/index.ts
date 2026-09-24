@@ -20,6 +20,7 @@ import { loadPrefs } from './prefs'
 import { setupSoloShip } from './soloShip'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
+import { setSleepSystem } from './sleepMode'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -123,6 +124,7 @@ export async function main() {
     // No docking in the scene yet, so the station theme waits for that feature.
     setSoundtrackContext({ docked: false, system: currentSys ?? null })
     setSfxSystemId(playerInfo.current_system_id)
+    setSleepSystem(currentSys ?? null)
 
     const floraStation = createStation({
       id: 'flora',
@@ -248,6 +250,7 @@ async function reloadMap(): Promise<void> {
   systems = await api.getSystems(playerInfo.galaxy_id)
   setSoundtrackContext({ docked: false, system: systems.find(s => s.id === playerInfo!.current_system_id) ?? null })
   setSfxSystemId(playerInfo.current_system_id)
+  setSleepSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
 }
