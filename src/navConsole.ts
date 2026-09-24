@@ -181,7 +181,7 @@ export function refreshNavConsole(): void {
     icon(bag, root, 2.1, -0.05, 0.3, ICONS.station)
     txt(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
     txt(bag, root, 2.1, -0.5, 'APPROACH & DOCK  »', 0.11, DIM)
-    clickable(dockFill, `Dock at ${station.name}`, () => { console.log('Dock'); showNotification(`Docking at ${station.name} coming soon`, CYAN) })
+    clickable(dockFill, `Dock at ${station.name}`, () => { showNotification("We can't dock yet! There's a problem with our airlock. Don't worry, it's getting fixed soon and then we'll be able to dock at space stations.", CYAN, 8) })
     frame(bag, root, 2.1, -0.88, 1.3, 0.42)
     image(bag, root, 2.1, -0.88, 1.2, 0.36, IMAGES.stationOrbit)
   } else {
