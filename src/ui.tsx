@@ -14,7 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
-import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
+import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 
 // HUD sizes are authored for a 1080-tall canvas and scaled to the actual canvas height, so every
@@ -418,6 +418,14 @@ const SleepOverlay = () => {
   return (
     <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(0), left: px(0) }, width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0.005, 0.005, 0.02, 1) }}>
       <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(0), left }, width: w, height: h, overflow: 'hidden' }}>
+        {(() => {
+          // Enters from the right, drifts across at native aspect, then is gone for the rest of its cycle.
+          const mw = MILKY_WAY
+          const hPct = mw.width * view.aspect / mw.aspect
+          const d = layerOffset(mw.speed, mw.wrap)
+          const x = ((100 - d + mw.width + mw.wrap) % mw.wrap) - mw.width
+          return <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct((100 - hPct) / 2 - 8) }, width: pct(mw.width), height: pct(hPct) }} uiBackground={tex(mw.src, undefined, mw.alpha)} />
+        })()}
         {BACKDROPS.map((bd, i) => {
           // Tiles at native aspect, BACKDROP_SCALE of the room height, in a grid wide and tall enough to cover while scrolling.
           const hPct = 100 * BACKDROP_SCALE
