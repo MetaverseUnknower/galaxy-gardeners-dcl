@@ -13,6 +13,13 @@ export const SLEEP_VIEWS: { src: string; aspect: number }[] = [
   { src: 'assets/images/DaisyClass-SleepView4.png', aspect: 1672 / 940 },
 ]
 const PAN_PERIOD_SECONDS = 300   // one full left-right-left sweep
+/** Star-field backdrops (opaque, native 16:9). Drawn at the room's full height at their own aspect and scrolled
+ *  with two copies so they wrap seamlessly; the dense one sits over the sparse one at partial opacity for depth. */
+export const BACKDROPS: { src: string; aspect: number; alpha: number; speed: number }[] = [
+  { src: 'assets/images/StarTexture1.png', aspect: 1672 / 941, alpha: 1, speed: 0.05 },
+  { src: 'assets/images/StarTexture2.png', aspect: 1672 / 941, alpha: 0.55, speed: 0.08 },
+]
+
 /** Sparse nebula patches: each is a modest cloud that drifts across once per WRAP percent, so most of the time the window is just stars. */
 export const NEBULAE: { src: string; width: number; height: number; top: number; alpha: number }[] = [
   { src: 'assets/images/Stars_Nebula2.png', width: 70, height: 45, top: 8, alpha: 0.55 },
@@ -34,7 +41,7 @@ const DEFAULT_STAR = STAR_SPRITES.yellow_star
 /** A dense field of distant stars behind everything. Positions are fixed per sleep session; the field drifts slowly. */
 export type Speck = { src: string; x: number; y: number; size: number; depth: number; alpha: number }
 const SPECK_SPRITES = ['assets/images/Stars_WhiteStar.png', 'assets/images/Stars_BlueGiant.png', 'assets/images/Stars_YellowStar.png', 'assets/images/Stars_RedDwarf.png', 'assets/images/Stars_WhiteStar.png', 'assets/images/Stars_YellowStar.png']
-const STAR_COUNT = 160
+const STAR_COUNT = 48   // bright near-field stars over the textured backdrops
 
 const VIEW_PREF = 'sleepView'
 const DRIFT = [0.18, 0.25]           // % of width per second per nebula patch
