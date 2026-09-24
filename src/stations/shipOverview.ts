@@ -1,8 +1,8 @@
 // Ship station — Overview view (see references/ship-overview-concept.png).
 // Top: fuel frame with refine/buy buttons, resources readout, ship hologram, Upgrades entry.
 // Low: ship stats with bars, active missions with collect.
-import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
-import { Color4 } from '@dcl/sdk/math'
+import { engine, Entity, Transform, TextAlignMode } from '@dcl/sdk/ecs'
+import { Color4, Vector3 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { openRefineryDialog, openPurchaseDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
@@ -26,6 +26,9 @@ let expeditions: any[] = []
 let actionStatus: Record<string, string> = {}
 let page = 0
 let screens: Screens | null = null
+// Both low-screen sections sit a little further down the face than the root's centre.
+const LOW_SHIFT_Y = -0.06
+let lowShifted: Entity | null = null
 let ctxRef: StationContext | null = null
 
 function icons(name: string): string | undefined { return ICONS[name] }
@@ -92,7 +95,7 @@ function drawStats(low: Entity, ctx: StationContext): void {
 function drawMissions(): void {
   if (!screens || !ctxRef) return
   clearBag(missionBag)
-  const low = screens.low
+  const low = lowShifted ?? screens.low
   frame(missionBag, low, 1.4, 0, 2.6, 2.3)
   const totalPages = Math.max(1, Math.ceil(expeditions.length / MISSIONS_PER_PAGE))
   if (page >= totalPages) page = totalPages - 1
@@ -157,11 +160,14 @@ export const shipOverviewView: ViewDefinition = {
   id: 'overview',
   async render(s: Screens, ctx: StationContext): Promise<void> {
     screens = s; ctxRef = ctx
+    lowShifted = engine.addEntity()
+    Transform.create(lowShifted, { position: Vector3.create(0, LOW_SHIFT_Y, 0), parent: s.low })
+    lowBag.push(lowShifted)
     drawTop(s.top, ctx)
-    drawStats(s.low, ctx)
+    drawStats(lowShifted, ctx)
     const exps = await api.getExpeditions()   // throws -> framework shows "Unable to load"
     expeditions = exps.filter((e: any) => e.status !== 'collected')
     drawMissions()
   },
-  clear(): void { clearBag(topBag); clearBag(lowBag); clearBag(missionBag); screens = null },
+  clear(): void { clearBag(topBag); clearBag(missionBag); clearBag(lowBag); screens = null; lowShifted = null },
 }
