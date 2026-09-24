@@ -129,7 +129,7 @@ export const catalogView = makeSpeciesView('catalog', 'FLORA CATALOG', 'plants &
   async () => { await loadCatalog(); return catalogData },
   (entries) => ({ label: `${entries.length} species discovered`, pct: entries.length > 0 ? 1 : 0 }), false)
 
-export const vaultView = makeSpeciesView('vault', 'SPECIMEN VAULT', 'captured life forms', ICONS.vault,
+export const vaultView = makeSpeciesView('vault', 'SPECIMEN VAULT', 'collected flora samples', ICONS.vault,
   'No specimens in vault.\nComplete exploration expeditions\nto collect samples!',
   async (ctx) => {
     if (!ctx.dashboard) throw new Error('no dashboard')

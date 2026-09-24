@@ -23,7 +23,7 @@ export function drawCollectionsTop(bag: Bag, top: Entity, ctx: StationContext, c
   text(bag, top, 2.6, 0.92, '— THE UNFOUND', 0.22, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
   const tiles: [CollectionId, string, string, string | undefined][] = [
     ['catalog', 'Flora Catalog', 'discovered species', ICONS.catalog],
-    ['vault', 'Specimen Vault', 'captured life forms', ICONS.vault],
+    ['vault', 'Specimen Vault', 'collected flora samples', ICONS.vault],
     ['inventory', 'Resource Inventory', 'materials & resources', ICONS.resources],
   ]
   tiles.forEach(([id, title, subtitle, ic], i) => {
