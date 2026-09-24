@@ -14,16 +14,17 @@ export const SLEEP_VIEWS: { src: string; aspect: number }[] = [
 ]
 const PAN_PERIOD_SECONDS = 300   // one full left-right-left sweep
 /** The galaxy band: faint, huge, behind everything, crossing the window once per cycle like a very slow orbit. */
-export const MILKY_WAY = { src: 'assets/images/MilkyWay_Nebula.png', aspect: 1672 / 941, width: 150, alpha: 0.32, speed: 0.045, wrap: 420 }
+// Starts centred in the window, crosses in about ten minutes, is gone for about five, then comes back around.
+export const MILKY_WAY = { src: 'assets/images/MilkyWay_Nebula.png', aspect: 1672 / 941, width: 150, alpha: 0.4, speed: 0.4, wrap: 370, start: -25 }
 
 /** Star-field backdrops (opaque, native 16:9). Drawn at the room's full height at their own aspect and scrolled
  *  with two copies so they wrap seamlessly; the dense one sits over the sparse one at partial opacity for depth. */
 export const BACKDROPS: { src: string; aspect: number; alpha: number; speed: number }[] = [
   { src: 'assets/images/StarTexture1.png', aspect: 1672 / 941, alpha: 1, speed: 0.05 },
-  { src: 'assets/images/StarTexture2.png', aspect: 1672 / 941, alpha: 0.35, speed: 0.08 },
+  { src: 'assets/images/StarTexture2.png', aspect: 1672 / 941, alpha: 0.25, speed: 0.08 },
 ]
 /** Backdrop tiles are drawn at this fraction of the room height (smaller = finer, more distant-looking stars) and tiled to cover. */
-export const BACKDROP_SCALE = 0.4
+export const BACKDROP_SCALE = 0.28
 
 /** Celestial atlas: a 4x4 grid of galaxies, clusters and nebulae. Cells are scattered small over the backdrop so they read
  *  as distant stars with the odd galaxy among them. Cell UVs: bottom-left first, clockwise (protocol order). */

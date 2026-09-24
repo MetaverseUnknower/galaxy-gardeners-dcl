@@ -436,7 +436,7 @@ const SleepOverlay = () => {
           const mw = MILKY_WAY
           const hPct = mw.width * view.aspect / mw.aspect
           const d = layerOffset(mw.speed, mw.wrap)
-          const x = ((100 - d + mw.width + mw.wrap) % mw.wrap) - mw.width
+          const x = ((mw.start - d + mw.width + mw.wrap) % mw.wrap) - mw.width
           return <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct((100 - hPct) / 2 - 8) }, width: pct(mw.width), height: pct(hPct) }} uiBackground={tex(mw.src, undefined, mw.alpha)} />
         })()}
         {sleepCelestials().map((cb, i) => {
