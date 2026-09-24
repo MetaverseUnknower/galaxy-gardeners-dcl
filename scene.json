@@ -14,9 +14,7 @@
   },
   "main": "bin/index.js",
   "tags": [
-    "space",
-    "exploration",
-    "galaxy"
+    "game"
   ],
   "scene": {
     "parcels": [

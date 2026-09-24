@@ -200,6 +200,11 @@ export async function buildPod(podType: 'mining' | 'exploration'): Promise<any> 
   return apiPost('/api/ship/repair-pod', { pod_type: podType })
 }
 
+/** Docked-aware pricing: `podRepair` (per pod type) and `upgrades`, with instant/available/reason flags. */
+export async function getOperationsPricing(): Promise<any> {
+  return apiGet('/api/ship/operations-pricing')
+}
+
 export async function getFabricationStatus(): Promise<any> {
   return apiGet('/api/ship/fabrication-status')
 }

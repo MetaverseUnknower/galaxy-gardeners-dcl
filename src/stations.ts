@@ -112,7 +112,12 @@ export function createStation(config: StationConfig): Station {
         queued = false
         if (pendingView && pendingView !== active) { clearAll(); active = pendingView }
         pendingView = null
-        if (needFetch) { needFetch = false; try { dashboard = await api.getShipDashboard() } catch { /* keep last dashboard */ } }
+        if (needFetch) {
+          needFetch = false
+          // Pricing rides along on the dashboard; if it alone fails the screens keep working without a BUILD button.
+          const [dash, pricing] = await Promise.all([api.getShipDashboard().catch(() => null), api.getOperationsPricing().catch(() => null)])
+          if (dash) dashboard = { ...dash, podRepair: pricing?.podRepair ?? dashboard?.podRepair ?? [] }
+        }
         await draw()
       } while (queued)
     } finally { busy = false; setLoading(false) }

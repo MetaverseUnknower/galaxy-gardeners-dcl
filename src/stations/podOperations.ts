@@ -90,7 +90,7 @@ function drawLow(): void {
   // Center: build
   frame(lowBag, low, 0, -0.1, 1.75, 1.7)
   text(lowBag, low, -0.75, 0.62, 'BUILD POD', 0.28, DIM, LEFT)
-  const fab = (ctx.dashboard?.podFabrication || []).find((f: any) => f.podType === bay.type)
+  const fab = (ctx.dashboard?.podRepair || []).find((f: any) => f.podType === bay.type)
   const active = ctx.dashboard?.activeFabrication
   const fabricating = active && active.pod_type === bay.type && active.status === 'in_progress'
   if (fabricating) {
