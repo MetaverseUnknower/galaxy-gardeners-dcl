@@ -8,7 +8,8 @@ import * as api from './api'
 import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
 import { showNotification } from './ui'
-import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
+import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, setCameraModeChangedListener } from './consoleCamera'
+import { enterSleepMode } from './sleepMode'
 import { hideInTopView } from './topViewHide'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
@@ -71,6 +72,7 @@ export function createNavConsole(): void {
   screen = engine.addEntity()
   Transform.create(screen, { position: SCREEN_OFFSET, rotation: SCREEN_ROT, parent: desk })
   setViewModeChangedListener(refreshNavConsole)
+  setCameraModeChangedListener(refreshNavConsole)   // keeps the camera buttons in step with the HUD switcher and keys
   setStationChangedListener(refreshNavConsole)
   engine.addSystem(pollSystem)
   engine.addSystem(deskMotionSystem)
@@ -167,13 +169,13 @@ export function refreshNavConsole(): void {
   txt(bag, root, -1.0, 0.31, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
   txt(bag, root, 1.12, 0.3, '1 2 3 4  ROTATE L · RAISE · LOWER · ROTATE R', 0.1, DIM, RIGHT)
   txt(bag, root, 1.12, 0.19, 'SHIFT + 1 2 3 4  ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.1, DIM, RIGHT)
-  iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
-  iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
-  iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
-  iconButton(root, 0.06, -0.45, ICONS.rotate, 'ROTATE RIGHT', 'Rotate Right', () => rotateMap(-1), { x: true })
-  iconButton(root, 0.52, -0.2, ICONS.zoomIn, 'ZOOM IN', 'Zoom In', () => zoomMap(1))
-  iconButton(root, 0.52, -0.7, ICONS.zoomOut, 'ZOOM OUT', 'Zoom Out', () => zoomMap(-1))
-  iconButton(root, 0.98, -0.45, ICONS.recenter, 'RECENTER', 'Recenter Map', () => resetMapView())
+  iconButton(root, -0.86, -0.37, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
+  iconButton(root, -0.4, -0.12, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
+  iconButton(root, -0.4, -0.62, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
+  iconButton(root, 0.06, -0.37, ICONS.rotate, 'ROTATE RIGHT', 'Rotate Right', () => rotateMap(-1), { x: true })
+  iconButton(root, 0.52, -0.12, ICONS.zoomIn, 'ZOOM IN', 'Zoom In', () => zoomMap(1))
+  iconButton(root, 0.52, -0.62, ICONS.zoomOut, 'ZOOM OUT', 'Zoom Out', () => zoomMap(-1))
+  iconButton(root, 0.98, -0.37, ICONS.recenter, 'RECENTER', 'Recenter Map', () => resetMapView())
 
   // Right: station card + thumbnail (dock when a station exists, build when the slot is free)
   if (station) {
@@ -200,10 +202,12 @@ export function refreshNavConsole(): void {
 
   // Footer, with the console camera toggle in the middle
   const cam = getCameraMode()
-  txt(bag, root, -0.92, -1.06, 'CAMERA', 0.09, DIM, RIGHT, -0.02)
+  txt(bag, root, -0.92, -0.95, 'CAMERA', 0.09, DIM, RIGHT, -0.02)
   CAMERA_MODES.forEach((mode, i) => {
-    btn(bag, root, -0.57 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
+    btn(bag, root, -0.57 + i * 0.62, -0.99, 0.58, 0.18, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })
+  // Sleep mode lives under the camera row, on the footer line.
+  btn(bag, root, 0.05, -1.19, 1.2, 0.14, 'SLEEP MODE', 'Sleep Mode', () => enterSleepMode(), { size: 0.09, variant: 'magenta' })
   txt(bag, root, -2.65, -1.19, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
   txt(bag, root, 2.65, -1.19, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 

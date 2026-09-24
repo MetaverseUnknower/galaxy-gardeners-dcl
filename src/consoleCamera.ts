@@ -18,7 +18,10 @@ const PREF_KEY = 'consoleCamera'
 /** 'free': the player's own camera. 'fixed': an overhead camera while standing at the console.
  *  'top': a top-down camera centered on the galaxy map, wherever the player is. Default is 'free'. */
 export function getCameraMode(): CameraMode { const m = getPref<CameraMode>(PREF_KEY, 'free'); return CAMERA_MODES.includes(m) ? m : 'free' }
-export function setCameraMode(mode: CameraMode): void { setPref(PREF_KEY, mode) }
+let modeListener: (() => void) | null = null
+/** Called after any camera mode change (console buttons, HUD switcher, keys) so each UI can redraw its selection. */
+export function setCameraModeChangedListener(fn: (() => void) | null): void { modeListener = fn }
+export function setCameraMode(mode: CameraMode): void { setPref(PREF_KEY, mode); modeListener?.() }
 export function cycleCameraMode(): CameraMode { const next = CAMERA_MODES[(CAMERA_MODES.indexOf(getCameraMode()) + 1) % CAMERA_MODES.length]; setCameraMode(next); return next }
 
 // The player stands on the north side of the console (z 138.6..141.2) to use it.
