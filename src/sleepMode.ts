@@ -4,12 +4,15 @@ import { engine } from '@dcl/sdk/ecs'
 import { getPref, setPref } from './prefs'
 import { StarSystem } from './types'
 
-export const SLEEP_VIEWS = [
-  'assets/images/DaisyClass-SleepView2.png',
-  'assets/images/DaisyClass-SleepView3.png',
-  'assets/images/DaisyClass-SleepView4.png',
-  // SleepView1 is exported without an alpha channel (checkerboard window); add it here once re-exported.
+// Bedrooms are used at their native size and aspect: the overlay fits them to the screen height ("contain")
+// and pans slowly when the fitted image is wider than the screen.
+export const SLEEP_VIEWS: { src: string; aspect: number }[] = [
+  { src: 'assets/images/DaisyClass-SleepView1.png', aspect: 1647 / 955 },
+  { src: 'assets/images/DaisyClass-SleepView2.png', aspect: 1644 / 957 },
+  { src: 'assets/images/DaisyClass-SleepView3.png', aspect: 1644 / 957 },
+  { src: 'assets/images/DaisyClass-SleepView4.png', aspect: 1672 / 940 },
 ]
+const PAN_PERIOD_SECONDS = 120   // one full left-right-left sweep
 export const NEBULAE = ['assets/images/Stars_Nebula.png', 'assets/images/Stars_Nebula2.png', 'assets/images/Stars_Nebula3.png']
 
 /** Star sprite per star type, with a size (fraction of screen width) and tint. Red giants reuse the dwarf, larger and warmer. */
@@ -39,7 +42,9 @@ let system: StarSystem | null = null
 let specks: Speck[] = []
 
 export function isSleeping(): boolean { return active }
-export function sleepView(): string { return SLEEP_VIEWS[viewIndex] ?? SLEEP_VIEWS[0] }
+export function sleepView(): { src: string; aspect: number } { return SLEEP_VIEWS[viewIndex] ?? SLEEP_VIEWS[0] }
+/** 0..1 position along the pan, starting centred and easing back and forth. */
+export function panFraction(): number { return 0.5 + 0.5 * Math.sin((time / PAN_PERIOD_SECONDS) * Math.PI * 2) }
 export function sleepViewIndex(): number { return viewIndex }
 export function sleepTime(): number { return time }
 export function sleepSpecks(): Speck[] { return specks }
