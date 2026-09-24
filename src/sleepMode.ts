@@ -12,7 +12,7 @@ export const SLEEP_VIEWS: { src: string; aspect: number }[] = [
   { src: 'assets/images/DaisyClass-SleepView3.png', aspect: 1644 / 957 },
   { src: 'assets/images/DaisyClass-SleepView4.png', aspect: 1672 / 940 },
 ]
-const PAN_PERIOD_SECONDS = 120   // one full left-right-left sweep
+const PAN_PERIOD_SECONDS = 300   // one full left-right-left sweep
 /** Sparse nebula patches: each is a modest cloud that drifts across once per WRAP percent, so most of the time the window is just stars. */
 export const NEBULAE: { src: string; width: number; height: number; top: number; alpha: number }[] = [
   { src: 'assets/images/Stars_Nebula2.png', width: 70, height: 45, top: 8, alpha: 0.55 },
@@ -37,8 +37,8 @@ const SPECK_SPRITES = ['assets/images/Stars_WhiteStar.png', 'assets/images/Stars
 const STAR_COUNT = 160
 
 const VIEW_PREF = 'sleepView'
-const DRIFT = [0.35, 0.5]            // % of width per second per nebula patch
-const SPECK_DRIFT = 0.3              // the star field creeps
+const DRIFT = [0.18, 0.25]           // % of width per second per nebula patch
+const SPECK_DRIFT = 0.12             // the star field creeps
 
 let active = false
 let viewIndex = 0
