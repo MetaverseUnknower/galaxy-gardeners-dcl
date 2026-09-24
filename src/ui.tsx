@@ -351,7 +351,7 @@ const CameraSwitch = () => {
 const TERMINAL_PARCEL = { x: 35, y: -121 }
 
 const ReturnToTerminal = () => (
-  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 250, left: 24 }, width: 190, height: 30, justifyContent: 'center', alignItems: 'center' }}
+  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 250, left: 60 }, width: 190, height: 30, justifyContent: 'center', alignItems: 'center' }}
     uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.85) }}
     onMouseDown={() => { void teleportTo({ worldCoordinates: TERMINAL_PARCEL }) }}>
     <Label value="RETURN TO TERMINAL" fontSize={12} color={Color4.create(0, 0.9, 1, 1)} />
