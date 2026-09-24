@@ -10,20 +10,27 @@ import { setConsoleLowered, refreshNavConsole } from './navConsole'
 import { rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
 import { toggleOrbits } from './systemView'
 
-export type CameraMode = 'fixed' | 'free'
+export type CameraMode = 'free' | 'fixed' | 'top'
+export const CAMERA_MODES: CameraMode[] = ['free', 'fixed', 'top']
+export const CAMERA_MODE_LABELS: Record<CameraMode, string> = { free: 'FREE', fixed: 'CONSOLE', top: 'TOP' }
 const PREF_KEY = 'consoleCamera'
-/** Stepping up to the console sinks the desk out of the way; 'fixed' additionally lifts the camera over it. Default is 'free'. */
-export function getCameraMode(): CameraMode { return getPref<CameraMode>(PREF_KEY, 'free') }
+/** 'free': the player's own camera. 'fixed': an overhead camera while standing at the console.
+ *  'top': a top-down camera centered on the galaxy map, wherever the player is. Default is 'free'. */
+export function getCameraMode(): CameraMode { const m = getPref<CameraMode>(PREF_KEY, 'free'); return CAMERA_MODES.includes(m) ? m : 'free' }
 export function setCameraMode(mode: CameraMode): void { setPref(PREF_KEY, mode) }
+export function cycleCameraMode(): CameraMode { const next = CAMERA_MODES[(CAMERA_MODES.indexOf(getCameraMode()) + 1) % CAMERA_MODES.length]; setCameraMode(next); return next }
 
 // The player stands on the north side of the console (z 138.6..141.2) to use it.
 const ZONE = { minX: 125.8, maxX: 130.2, minZ: 138.6, maxZ: 141.2 }
 const CAMERA_POS = Vector3.create(128, DECK_Y + 3.4, 142.6)     // above and behind the player
 const LOOK_AT = Vector3.create(128, DECK_Y + 0.9, 134.5)        // between the console face and the projector
+const TOP_CAMERA_POS = Vector3.create(128, DECK_Y + 12, 129.2)  // high over the map, a hair off-axis so 'up' stays defined
+const TOP_LOOK_AT = Vector3.create(128, DECK_Y + 1, 128)        // the galaxy map's center
 
 let cameraEntity: ReturnType<typeof engine.addEntity> | null = null
+let topCameraEntity: ReturnType<typeof engine.addEntity> | null = null
+let appliedCamera: ReturnType<typeof engine.addEntity> | null = null
 let active = false        // player is at the console
-let cameraActive = false  // overhead camera engaged
 let timer = 0
 
 export function setupConsoleCamera(): void {
@@ -32,6 +39,11 @@ export function setupConsoleCamera(): void {
   cameraEntity = engine.addEntity()
   Transform.create(cameraEntity, { position: CAMERA_POS })
   VirtualCamera.create(cameraEntity, { defaultTransition: { transitionMode: VirtualCamera.Transition.Time(0.8) }, lookAtEntity: target })
+  const topTarget = engine.addEntity()
+  Transform.create(topTarget, { position: TOP_LOOK_AT })
+  topCameraEntity = engine.addEntity()
+  Transform.create(topCameraEntity, { position: TOP_CAMERA_POS })
+  VirtualCamera.create(topCameraEntity, { defaultTransition: { transitionMode: VirtualCamera.Transition.Time(1.0) }, lookAtEntity: topTarget })
   engine.addSystem(consoleCameraSystem)
   engine.addSystem(consoleKeysSystem)
 }
@@ -55,10 +67,11 @@ function consoleCameraSystem(dt: number): void {
   const p = getPlayer()?.position
   if (!p || !cameraEntity) return
   const inZone = p.x >= ZONE.minX && p.x <= ZONE.maxX && p.z >= ZONE.minZ && p.z <= ZONE.maxZ
-  const wantCamera = inZone && getCameraMode() === 'fixed'
   if (inZone !== active) { setConsoleLowered(inZone); active = inZone }
-  if (wantCamera !== cameraActive) {
-    MainCamera.createOrReplace(engine.CameraEntity, { virtualCameraEntity: wantCamera ? cameraEntity : undefined })
-    cameraActive = wantCamera
+  const mode = getCameraMode()
+  const want = mode === 'top' ? topCameraEntity : mode === 'fixed' && inZone ? cameraEntity : null
+  if (want !== appliedCamera) {
+    MainCamera.createOrReplace(engine.CameraEntity, { virtualCameraEntity: want ?? undefined })
+    appliedCamera = want
   }
 }

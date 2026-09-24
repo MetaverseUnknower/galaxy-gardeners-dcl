@@ -7,7 +7,7 @@ import { DECK_Y } from './environment'
 import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
 import { showNotification } from './ui'
-import { getCameraMode, setCameraMode } from './consoleCamera'
+import { getCameraMode, cycleCameraMode, CAMERA_MODE_LABELS } from './consoleCamera'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -179,8 +179,8 @@ export function refreshNavConsole(): void {
   }
 
   // Footer, with the console camera toggle in the middle
-  const fixedCam = getCameraMode() === 'fixed'
-  btn(bag, root, 0.05, -1.1, 1.5, 0.2, fixedCam ? 'CAMERA: FIXED' : 'CAMERA: FREE', fixedCam ? 'Switch to free camera' : 'Switch to fixed console camera', () => { setCameraMode(fixedCam ? 'free' : 'fixed'); refreshNavConsole() }, { size: 0.12, variant: fixedCam ? 'outline' : 'magenta' })
+  const cam = getCameraMode()
+  btn(bag, root, 0.05, -1.1, 1.5, 0.2, `CAMERA: ${CAMERA_MODE_LABELS[cam]}`, 'Cycle camera view', () => { cycleCameraMode(); refreshNavConsole() }, { size: 0.12, variant: cam === 'free' ? 'outline' : 'magenta' })
   txt(bag, root, -2.65, -1.12, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
   txt(bag, root, 2.65, -1.12, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 
