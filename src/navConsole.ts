@@ -158,8 +158,8 @@ export function refreshNavConsole(): void {
     txt(bag, root, -1.95, -0.19, 'PAUSE ORBITS', 0.24, MUTED)
     txt(bag, root, -1.95, -0.37, 'AVAILABLE IN STAR SYSTEM VIEW', 0.11, MUTED)
   }
-  frame(bag, root, -1.95, -0.8, 1.5, 0.5)
-  image(bag, root, -1.95, -0.8, 1.4, 0.42, IMAGES.galaxy)
+  frame(bag, root, -1.95, -0.85, 1.5, 0.6)
+  image(bag, root, -1.95, -0.85, 1.16, 0.58, IMAGES.galaxy)   // 2:1, matching the texture
 
   // Center: map navigation
   // Top edge flush with the view tabs (0.4), bottom edge through the camera buttons' centre line (-1.1).
@@ -185,8 +185,8 @@ export function refreshNavConsole(): void {
     txt(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
     txt(bag, root, 2.1, -0.5, 'APPROACH & DOCK  »', 0.11, DIM)
     clickable(dockFill, `Dock at ${station.name}`, () => { showNotification(`Captain, docking clamps are offline. The airlock seal failed its last integrity check and engineering has it on the bench. Holding position off ${station.name} until they clear us to dock.`, CYAN, 9) })
-    frame(bag, root, 2.1, -0.88, 1.3, 0.42)
-    image(bag, root, 2.1, -0.88, 1.2, 0.36, IMAGES.stationOrbit)
+    frame(bag, root, 2.1, -0.87, 1.3, 0.5)
+    image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationOrbit)   // 2:1
   } else {
     txt(bag, root, 2.1, 0.3, 'NO STATION PRESENT', 0.16, WHITE)
     txt(bag, root, 2.1, 0.14, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
@@ -194,10 +194,10 @@ export function refreshNavConsole(): void {
     icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: GREEN3 })
     txt(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
     clickable(buildFill, 'Build Station', () => { console.log('Build'); showNotification('Station construction coming soon', GREEN) })
-    frame(bag, root, 2.1, -0.88, 1.3, 0.42)
-    txt(bag, root, 1.5, -0.72, 'SYSTEM PREVIEW', 0.09, CYAN, LEFT)
-    txt(bag, root, 2.7, -0.72, 'STATION LOCATION', 0.09, DIM, RIGHT)
-    image(bag, root, 2.1, -0.92, 1.2, 0.3, IMAGES.stationSlot)
+    frame(bag, root, 2.1, -0.87, 1.3, 0.5)
+    txt(bag, root, 1.5, -0.68, 'SYSTEM PREVIEW', 0.08, CYAN, LEFT)
+    txt(bag, root, 2.7, -0.68, 'STATION LOCATION', 0.08, DIM, RIGHT)
+    image(bag, root, 2.1, -0.93, 0.72, 0.36, IMAGES.stationSlot)   // 2:1
   }
 
   // Footer, with the console camera toggle in the middle
