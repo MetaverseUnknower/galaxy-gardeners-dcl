@@ -19,6 +19,8 @@ export const BACKDROPS: { src: string; aspect: number; alpha: number; speed: num
   { src: 'assets/images/StarTexture1.png', aspect: 1672 / 941, alpha: 1, speed: 0.05 },
   { src: 'assets/images/StarTexture2.png', aspect: 1672 / 941, alpha: 0.55, speed: 0.08 },
 ]
+/** Backdrop tiles are drawn at this fraction of the room height (smaller = finer, more distant-looking stars) and tiled to cover. */
+export const BACKDROP_SCALE = 0.6
 
 /** Sparse nebula patches: each is a modest cloud that drifts across once per WRAP percent, so most of the time the window is just stars. */
 export const NEBULAE: { src: string; width: number; height: number; top: number; alpha: number }[] = [

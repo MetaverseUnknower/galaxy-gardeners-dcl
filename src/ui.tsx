@@ -14,7 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
-import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, BACKDROPS, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
+import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, BACKDROPS, BACKDROP_SCALE, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 
 // HUD sizes are authored for a 1080-tall canvas and scaled to the actual canvas height, so every
@@ -419,11 +419,17 @@ const SleepOverlay = () => {
     <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(0), left: px(0) }, width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0.005, 0.005, 0.02, 1) }}>
       <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(0), left }, width: w, height: h, overflow: 'hidden' }}>
         {BACKDROPS.map((bd, i) => {
-          const wPct = 100 * bd.aspect / view.aspect          // native aspect at full room height
+          // Tiles at native aspect, BACKDROP_SCALE of the room height, in a grid wide and tall enough to cover while scrolling.
+          const hPct = 100 * BACKDROP_SCALE
+          const wPct = hPct * bd.aspect / view.aspect
+          const cols = Math.ceil(100 / wPct) + 1
+          const rows = Math.ceil(100 / hPct)
           const d = layerOffset(bd.speed, wPct)
-          return [0, 1].map(copy => (
-            <UiEntity key={`bd${i}-${copy}`} uiTransform={{ positionType: 'absolute', position: { left: pct(-d + copy * wPct), top: pct(0) }, width: pct(wPct), height: '100%' }} uiBackground={tex(bd.src, undefined, bd.alpha)} />
-          ))
+          const tiles: ReactEcs.JSX.Element[] = []
+          for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+            tiles.push(<UiEntity key={`bd${i}-${r}-${c}`} uiTransform={{ positionType: 'absolute', position: { left: pct(-d + c * wPct), top: pct(r * hPct) }, width: pct(wPct), height: pct(hPct) }} uiBackground={tex(bd.src, undefined, bd.alpha)} />)
+          }
+          return tiles
         })}
         {sleepSpecks().map((sp, i) => {
           const x = ((sp.x - layerOffset(driftSpeeds.speck * sp.depth, 200) + 200) % 200) - 50
