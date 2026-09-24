@@ -11,6 +11,8 @@ import { cargoUsed } from './data'
 
 // Blueprint line-art of the ship, drawn flat on the glass (see assets/icons/manifest.json for the art spec).
 export const SHIP_BLUEPRINT = 'assets/images/ship-blueprint.png'
+// Wide (16:9) blueprint that fills the Overview's ship frame behind the UPGRADES button.
+const SHIP_BLUEPRINT_WIDE = 'assets/images/ship-blueprint-wide.png'
 
 let solarRechargeRate = 0
 export function setSolarRechargeRate(rate: number): void { solarRechargeRate = rate }
@@ -66,7 +68,7 @@ function drawTop(top: Entity, ctx: StationContext): void {
 
   // Ship frame, right: hologram + Upgrades entry
   frame(topBag, top, 1.4, -0.35, 2.6, 1.85)
-  image(topBag, top, 0.9, -0.35, 1.3, 1.3, SHIP_BLUEPRINT)
+  image(topBag, top, 1.4, -0.35, 2.4, 1.35, SHIP_BLUEPRINT_WIDE, { z: -0.02 })   // 16:9, behind the button
   button(topBag, top, 2.05, -0.35, 1.1, 0.42, 'UPGRADES »', 'Ship Systems', () => ctx.setView('systems'), { icon: icons('upgrades'), size: 0.34 })
   text(topBag, top, 2.6, -1.15, 'EXPLORE  //  UPGRADE  //  GO FURTHER', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
 }
