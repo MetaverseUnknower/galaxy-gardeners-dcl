@@ -423,7 +423,8 @@ const SleepOverlay = () => {
         <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(50 - starW / 2), top: pct(26 - starW * view.aspect / 2) }, width: pct(starW), height: pct(starW * view.aspect) }} uiBackground={tex(star.src, star.tint)} />
         <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%' }} uiBackground={tex(view.src)} />
       </UiEntity>
-      <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 24, left: 30 }, flexDirection: 'row', alignItems: 'center', padding: 4 }} uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.7) }}>
+      {/* Controls sit at the bottom right, above the music bar, clear of the chat window on the left. */}
+      <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 60, right: 30 }, flexDirection: 'row', alignItems: 'center', padding: 4 }} uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.85) }}>
         <Label value="QUARTERS" fontSize={12} color={Color4.create(0.45, 0.65, 0.75, 1)} uiTransform={{ margin: { left: 8, right: 8 } }} />
         {SLEEP_VIEWS.map((_, i) => (
           <UiEntity key={`view${i}`} uiTransform={{ width: 32, height: 26, margin: { right: 4 }, justifyContent: 'center', alignItems: 'center' }}
@@ -432,11 +433,12 @@ const SleepOverlay = () => {
             <Label value={`${i + 1}`} fontSize={12} color={i === sleepViewIndex() ? Color4.create(0.02, 0.05, 0.1, 1) : Color4.create(0, 0.9, 1, 1)} />
           </UiEntity>
         ))}
+        <UiEntity uiTransform={{ width: 76, height: 26, margin: { left: 8 }, justifyContent: 'center', alignItems: 'center' }}
+          uiBackground={{ color: Color4.create(0, 0.9, 1, 1) }} onMouseDown={() => { wake() }}>
+          <Label value="WAKE" fontSize={12} color={Color4.create(0.02, 0.05, 0.1, 1)} />
+        </UiEntity>
       </UiEntity>
-      <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 24, right: 30 }, width: 110, height: 34, justifyContent: 'center', alignItems: 'center' }}
-        uiBackground={{ color: Color4.create(0, 0.9, 1, 1) }} onMouseDown={() => { wake() }}>
-        <Label value="WAKE" fontSize={14} color={Color4.create(0.02, 0.05, 0.1, 1)} />
-      </UiEntity>
+      <MusicBar />
     </UiEntity>
   )
 }
