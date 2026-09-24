@@ -34,11 +34,13 @@ const IMAGES = { galaxy: 'assets/images/galaxy-thumb.png', stationOrbit: 'assets
 let screen: Entity | null = null
 const bag: Bag = []
 let systemName: string | null = null
+let systemHasStation = false
 let lastCanSwitch = true
 let lastPaused = false
 let pollTimer = 0
 
-export function setNavConsoleSystem(name: string | null): void { systemName = name; refreshNavConsole() }
+/** The player's current system, from the galaxy list (has_station is known before the system view loads). */
+export function setNavConsoleSystem(system: { name: string; has_station: boolean } | null): void { systemName = system?.name ?? null; systemHasStation = !!system?.has_station; refreshNavConsole() }
 
 export function createNavConsole(): void {
   const desk = engine.addEntity()
@@ -78,7 +80,8 @@ export function refreshNavConsole(): void {
   const mode = getViewMode()
   const canSwitch = canSwitchToSystemView()
   const paused = areOrbitsPaused()
-  const station = getStationInfo()
+  // Detail (with the station's name) exists once the system view has loaded; otherwise fall back to the list's flag.
+  const station = getStationInfo() ?? (systemHasStation ? { name: 'Space Station', origin: '', founded_by: null } : null)
   lastCanSwitch = canSwitch; lastPaused = paused
 
   // Header + top-right cells

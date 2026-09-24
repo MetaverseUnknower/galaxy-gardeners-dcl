@@ -174,7 +174,7 @@ export async function main() {
 
     const consoleSystemId = playerInfo.current_system_id
 
-    setNavConsoleSystem(systems.find(s => s.id === consoleSystemId)?.name ?? null)
+    setNavConsoleSystem(systems.find(s => s.id === consoleSystemId) ?? null)
     setCurrentSystemForTravel(playerInfo.current_system_id)
     setCanSwitchCheck(() => !isCurrentlyTraveling())
     setViewSystemCallback(() => {
@@ -235,7 +235,7 @@ async function reloadMap(): Promise<void> {
   playerInfo = await api.getPlayerMe()
   setPodOpsSystemId(playerInfo.current_system_id)
   const consoleSystemId = playerInfo.current_system_id
-  setNavConsoleSystem(systems.find(s => s.id === consoleSystemId)?.name ?? null)
+  setNavConsoleSystem(systems.find(s => s.id === consoleSystemId) ?? null)
   systems = await api.getSystems(playerInfo.galaxy_id)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
