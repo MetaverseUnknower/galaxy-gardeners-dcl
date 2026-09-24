@@ -52,7 +52,7 @@ function drawTop(top: Entity, ctx: StationContext): void {
   header(topBag, top, -2.6, 0.3, { icon: icons('fuel'), title: 'FUEL', size: 0.7 })
   if (ship) {
     const pct = ship.fuel_capacity > 0 ? ship.fuel_current / ship.fuel_capacity : 0
-    bar(topBag, top, -1.55, -0.15, 2.0, pct, { h: 0.2 })
+    bar(topBag, top, -1.85, -0.15, 1.5, pct, { h: 0.2 })   // ends at -1.1; the reading sits right of it
     text(topBag, top, -0.15, -0.15, `${ship.fuel_current.toFixed(0)} / ${ship.fuel_capacity.toFixed(0)}`, 0.42, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
     if (solarRechargeRate > 0) text(topBag, top, -2.55, -0.45, `Solar Recharge: +${solarRechargeRate.toFixed(1)} fuel/hr`, 0.32, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
   } else {
@@ -85,8 +85,8 @@ function drawStats(low: Entity, ctx: StationContext): void {
   rows.forEach(([label, value, pct], i) => {
     const y = 0.5 - i * 0.28
     text(lowBag, low, -2.55, y, label, 0.34, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
-    text(lowBag, low, -1.05, y, value, 0.34, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
-    bar(lowBag, low, -0.5, y, 0.9, pct, { h: 0.1 })
+    text(lowBag, low, -1.2, y, value, 0.3, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
+    bar(lowBag, low, -0.62, y, 0.85, pct, { h: 0.1 })   // ends at -0.195, inside the frame edge at -0.1
   })
 }
 

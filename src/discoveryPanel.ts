@@ -75,13 +75,13 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   displayEntities.push(sysName)
 
   const coordLabel = engine.addEntity()
-  Transform.create(coordLabel, { position: Vector3.create(DISPLAY_CENTER.x + 1.2, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
+  Transform.create(coordLabel, { position: Vector3.create(DISPLAY_CENTER.x + 1.5, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
   TextShape.create(coordLabel, { text: 'GALACTIC COORDINATES', fontSize: 0.4 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
   displayEntities.push(coordLabel)
 
   const coordText = currentSystem ? `R: ${currentSystem.coord_r.toFixed(1)}  Θ: ${(currentSystem.coord_theta * 180 / Math.PI).toFixed(1)}°  Z: ${currentSystem.coord_z.toFixed(1)}` : 'R: ?  Θ: ?  Z: ?'
   const coords = engine.addEntity()
-  Transform.create(coords, { position: Vector3.create(DISPLAY_CENTER.x + 1.2, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
+  Transform.create(coords, { position: Vector3.create(DISPLAY_CENTER.x + 1.5, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
   TextShape.create(coords, { text: coordText, fontSize: 0.6 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
   displayEntities.push(coords)
 

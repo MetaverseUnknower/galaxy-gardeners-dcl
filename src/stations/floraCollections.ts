@@ -2,7 +2,7 @@
 // (see references/flora-station-concept.png).
 import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
 import * as api from '../api'
-import { ViewDefinition, StationContext, Screens, TOP, LOW } from '../stations'
+import { ViewDefinition, StationContext, Screens, TOP } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, tile, button, WHITE, DIM, MUTED } from './draw'
 import { cargoUsed, titleCase } from './data'
 
@@ -38,7 +38,6 @@ export const summaryView: ViewDefinition = {
   id: 'summary',
   async render({ top, low }: Screens, ctx: StationContext): Promise<void> {
     drawCollectionsTop(summaryBag, top, ctx, 'summary')
-    frame(summaryBag, low, 0, 0, LOW.halfW * 2, LOW.halfH * 2)
     header(summaryBag, low, -2.6, 0.9, { icon: ICONS.catalog, title: 'COLLECTIONS', subtitle: 'select a category above', size: 0.6 })
     const d = ctx.dashboard
     if (!d) throw new Error('no dashboard')
@@ -68,7 +67,6 @@ export const inventoryView: ViewDefinition = {
   id: 'inventory',
   async render({ top, low }: Screens, ctx: StationContext): Promise<void> {
     drawCollectionsTop(invBag, top, ctx, 'inventory')
-    frame(invBag, low, 0, 0, LOW.halfW * 2, LOW.halfH * 2)
     header(invBag, low, -2.6, 0.9, { icon: ICONS.resources, title: 'RESOURCE INVENTORY', subtitle: 'materials & resources', size: 0.6 })
     const d = ctx.dashboard
     if (!d) throw new Error('no dashboard')

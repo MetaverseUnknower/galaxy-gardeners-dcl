@@ -47,7 +47,9 @@ function box(into: Bag, root: Entity, x: number, y: number, z: number, w: number
   const e = engine.addEntity()
   Transform.create(e, { position: Vector3.create(x, y, z), scale: Vector3.create(w, h, 0.01), parent: root })
   MeshRenderer.setBox(e)
-  Material.setPbrMaterial(e, { albedoColor: fill, emissiveColor: emissive ?? Color3.Black(), emissiveIntensity, metallic: 0.2, roughness: 0.8, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND })
+  // Opaque fills stay out of the transparent sort, so labels and icons drawn over them never flicker.
+  const transparencyMode = fill.a >= 0.99 ? MaterialTransparencyMode.MTM_OPAQUE : MaterialTransparencyMode.MTM_ALPHA_BLEND
+  Material.setPbrMaterial(e, { albedoColor: fill, emissiveColor: emissive ?? Color3.Black(), emissiveIntensity, metallic: 0.2, roughness: 0.8, transparencyMode })
   into.push(e)
   return e
 }
@@ -94,7 +96,7 @@ export function header(into: Bag, root: Entity, x: number, y: number, opts: { ic
   let tx = x
   if (opts.icon) { icon(into, root, x + size * 0.28, y, size * 0.5, opts.icon); tx = x + size * 0.65 }
   text(into, root, tx, y + (opts.subtitle ? 0.06 : 0), opts.title, size, CYAN, TextAlignMode.TAM_MIDDLE_LEFT)
-  if (opts.subtitle) text(into, root, tx, y - size * 0.32, opts.subtitle.toUpperCase(), size * 0.36, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
+  if (opts.subtitle) text(into, root, tx, y - size * 0.22, opts.subtitle.toUpperCase(), size * 0.36, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
 }
 
 /** Clickable button. 'outline' = dark fill + cyan border + cyan text; 'primary' = bright cyan fill + dark text;
@@ -104,12 +106,12 @@ export function button(into: Bag, root: Entity, x: number, y: number, w: number,
   const z = opts.z ?? -0.03
   const size = opts.size ?? 0.42
   const accent = variant === 'magenta' ? MAGENTA3 : variant === 'disabled' ? Color3.create(0.3, 0.38, 0.45) : CYAN3
-  const fill = variant === 'primary' ? Color4.create(accent.r, accent.g, accent.b, 1) : Color4.create(0.02, 0.06, 0.12, 0.95)
+  const fill = variant === 'primary' ? Color4.create(accent.r, accent.g, accent.b, 1) : Color4.create(0.02, 0.06, 0.12, 1)
   const btn = frame(into, root, x, y, w, h, { border: accent, fill, z })
   const labelColor = variant === 'primary' ? Color4.create(0.02, 0.05, 0.1, 1) : variant === 'disabled' ? MUTED : Color4.create(accent.r, accent.g, accent.b, 1)
   let lx = x
-  if (opts.icon) { icon(into, root, x - w / 2 + h * 0.6, y, h * 0.6, opts.icon, { color: variant === 'primary' ? Color3.create(0.02, 0.05, 0.1) : accent, z: z - 0.01 }); lx = x + h * 0.3 }
-  text(into, root, lx, y, label, size, labelColor, TextAlignMode.TAM_MIDDLE_CENTER, z - 0.01)
+  if (opts.icon) { icon(into, root, x - w / 2 + h * 0.6, y, h * 0.6, opts.icon, { color: variant === 'primary' ? Color3.create(0.02, 0.05, 0.1) : accent, z: z - 0.02 }); lx = x + h * 0.3 }
+  text(into, root, lx, y, label, size, labelColor, TextAlignMode.TAM_MIDDLE_CENTER, z - 0.02)
   if (variant !== 'disabled') clickable(btn, hover, onClick)
   return btn
 }
@@ -120,7 +122,7 @@ export function tile(into: Bag, root: Entity, x: number, y: number, w: number, h
   const fill = opts.selected ? Color4.create(0.02, 0.12, 0.2, 0.8) : GLASS_FILL
   const f = frame(into, root, x, y, w, h, { border, borderWidth: opts.selected ? 0.035 : 0.02, fill })
   if (opts.icon) icon(into, root, x, y + h * 0.15, h * 0.42, opts.icon, { color: opts.selected ? CYAN3 : Color3.create(0.2, 0.55, 0.7) })
-  text(into, root, x, y - h * 0.24, opts.title.toUpperCase(), 0.5, opts.selected ? CYAN : DIM)
+  text(into, root, x, y - h * 0.24, opts.title.toUpperCase(), 0.36, opts.selected ? CYAN : DIM)
   if (opts.subtitle) text(into, root, x, y - h * 0.38, opts.subtitle.toUpperCase(), 0.28, opts.selected ? DIM : MUTED)
   clickable(f, opts.hover, opts.onClick)
 }

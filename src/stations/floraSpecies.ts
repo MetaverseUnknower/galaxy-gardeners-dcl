@@ -4,7 +4,7 @@ import { TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { selectBody } from '../systemView'
-import { ViewDefinition, StationContext, Screens, LOW } from '../stations'
+import { ViewDefinition, StationContext, Screens } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, listRow, image, WHITE, DIM, MUTED, CYAN } from './draw'
 import { drawCollectionsTop, setSpeciesCount, ICONS, CollectionId } from './floraCollections'
 import { titleCase, TRAIT_KEYS } from './data'
@@ -110,7 +110,6 @@ function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon
     async render(s: Screens, ctx: StationContext): Promise<void> {
       screens = s; ctxRef = ctx
       drawCollectionsTop(bag, s.top, ctx, id)
-      frame(bag, s.low, 0, 0, LOW.halfW * 2, LOW.halfH * 2)
       header(bag, s.low, -2.6, 0.95, { icon, title, subtitle, size: 0.6 })
       entries = await getEntries(ctx)
       const c = counter(entries, ctx)
