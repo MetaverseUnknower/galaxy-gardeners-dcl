@@ -46,8 +46,8 @@ function drawTop(): void {
   const top = screens.top
   header(topBag, top, -2.6, 1.05, { icon: 'assets/icons/systems-icon.png', title: 'SHIP SYSTEMS', subtitle: 'upgrade and maintain your vessel' })
   text(topBag, top, 2.6, 1.05, 'EXPLORATION  //  RESEARCH  //  DISCOVERY', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
-  // Fills the gap between the card columns (inner edges at x ±0.975) at the image's own 4:3 ratio (1448x1086).
-  if (holoBag.length === 0) image(holoBag, top, 0, -0.2, 1.95, 1.4625, SHIP_BLUEPRINT_SYSTEMS, { z: -0.02 })
+  // Slightly wider than the gap between the card columns, so its edges tuck behind the cards, at the image's 4:3 ratio (1448x1086).
+  if (holoBag.length === 0) image(holoBag, top, 0, -0.2, 2.2, 1.65, SHIP_BLUEPRINT_SYSTEMS, { z: -0.02 })
   text(topBag, top, 0, -1.25, '— A DEEPER UNIVERSE AWAITS —', 0.24, MUTED)
   if (upgrades.length === 0) { text(topBag, top, 0, -0.9, 'All upgrades maxed!', 0.45, DIM); return }
   upgrades.forEach((u, i) => {
