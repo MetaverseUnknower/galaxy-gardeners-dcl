@@ -202,11 +202,11 @@ export function refreshNavConsole(): void {
 
   // Footer, with the console camera toggle in the middle
   const cam = getCameraMode()
-  txt(bag, root, -0.92, -1.06, 'CAMERA', 0.09, DIM, RIGHT)
+  txt(bag, root, -0.92, -1.06, 'CAMERA', 0.09, DIM, RIGHT, -0.02)
   CAMERA_MODES.forEach((mode, i) => {
     btn(bag, root, -0.57 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })
   txt(bag, root, -2.65, -1.12, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
-  txt(bag, root, 2.65, -1.12, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
+  txt(bag, root, 2.65, -1.17, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 
 }
