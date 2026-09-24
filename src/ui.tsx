@@ -15,10 +15,9 @@ import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from '
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
 import { selectSystem } from './interaction'
-import { requirePayment } from '~system/EthereumController'
+import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
 
-const BENEFICIARY_WALLET = '0x49489CDEB4f2cA8a8F37bb47092D60eAF8F17cA8'
 
 let selectedSystem: StarSystem | null = null
 let fuelInfo: FuelCostResponse | null = null
@@ -70,14 +69,19 @@ async function handleRefine(resourceType: string): Promise<void> {
   } catch (err: any) { refineryStatus = err.message || 'Refine failed' }
 }
 
+let purchasing = false
 async function handleManaPurchase(tierId: string, manaAmount: number): Promise<void> {
-  purchaseStatus = 'Requesting payment...'
+  if (purchasing) return
+  purchasing = true
+  purchaseStatus = `Confirm sending ${manaAmount} MANA (Polygon) in your wallet…`
   try {
-    await requirePayment({ toAddress: BENEFICIARY_WALLET, amount: manaAmount, currency: 'MANA' })
-    const result = await api.purchaseFuelCellsMana(tierId)
+    const txHash = await payMana(manaAmount)
+    purchaseStatus = 'Payment sent. Waiting for Polygon to confirm…'
+    const result = await redeemManaPurchase(tierId, txHash, attempt => { purchaseStatus = `Waiting for Polygon to confirm… (${attempt * 3}s)` })
     purchaseStatus = `Purchased! Total cells: ${result.fuelCells}`
     refreshStation('ship')
-  } catch (err: any) { purchaseStatus = err.message || 'Purchase cancelled' }
+  } catch (err: any) { purchaseStatus = paymentErrorMessage(err, 'Purchase failed') }
+  finally { purchasing = false }
 }
 
 export function updateNotification(dt: number): void {

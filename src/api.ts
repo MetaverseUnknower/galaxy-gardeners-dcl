@@ -188,8 +188,9 @@ export async function deployExplorationPodToMoon(moonId: string): Promise<any> {
   return apiPost('/api/expeditions/explore-moon', { moonId })
 }
 
-export async function purchaseFuelCellsMana(tier: string): Promise<{ fuelCells: number }> {
-  return apiPost<{ fuelCells: number }>('/api/store/purchase-fuel-cells-mana', { tier })
+/** Redeem a Polygon MANA payment. 202/pending while the chain has not confirmed it; ok once credited. */
+export async function purchaseFuelCellsMana(tier: string, txHash: string): Promise<{ status: 'ok' | 'pending'; fuelCells?: number }> {
+  return apiPost('/api/store/purchase-fuel-cells-mana', { tier, txHash })
 }
 
 export async function refineFuel(resourceType: string, quantity: number = 1): Promise<{ fuelGained: number; fuelCurrent: number; resourceRemaining: number }> {
