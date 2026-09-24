@@ -200,8 +200,9 @@ export function dot(into: Bag, root: Entity, x: number, y: number, size: number,
   return e
 }
 
-// Slowly yawing GLB "hologram". One shared system drives every live hologram.
+// One shared animation system: holograms yaw slowly about Y, spinners turn about Z on the glass.
 const spinning: Entity[] = []
+const spinners: Entity[] = []
 let spinSystemAdded = false
 function spinSystem(dt: number): void {
   for (let i = spinning.length - 1; i >= 0; i--) {
@@ -209,12 +210,37 @@ function spinSystem(dt: number): void {
     if (!t) { spinning.splice(i, 1); continue }
     t.rotation = Quaternion.multiply(t.rotation, Quaternion.fromEulerDegrees(0, 12 * dt, 0))
   }
+  for (let i = spinners.length - 1; i >= 0; i--) {
+    const t = Transform.getMutableOrNull(spinners[i])
+    if (!t) { spinners.splice(i, 1); continue }
+    t.rotation = Quaternion.multiply(t.rotation, Quaternion.fromEulerDegrees(0, 0, -300 * dt))
+  }
+}
+function ensureSpinSystem(): void { if (!spinSystemAdded) { engine.addSystem(spinSystem); spinSystemAdded = true } }
+
+/** Loading indicator: a ring of eight fading dots that rotates. `size` is the ring diameter. */
+export function spinner(into: Bag, root: Entity, x: number, y: number, size: number): Entity {
+  const pivot = engine.addEntity()
+  Transform.create(pivot, { position: Vector3.create(x, y, -0.06), parent: root })
+  into.push(pivot)
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2
+    const d = engine.addEntity()
+    Transform.create(d, { position: Vector3.create(Math.cos(a) * size / 2, Math.sin(a) * size / 2, 0), scale: Vector3.create(size * 0.16, size * 0.16, 0.005), rotation: Quaternion.fromEulerDegrees(0, 0, 45), parent: pivot })
+    MeshRenderer.setBox(d)
+    const k = 0.25 + 0.75 * (i / 7)
+    Material.setPbrMaterial(d, { albedoColor: Color4.create(CYAN3.r * k, CYAN3.g * k, CYAN3.b * k, 1), emissiveColor: Color3.create(CYAN3.r * k, CYAN3.g * k, CYAN3.b * k), emissiveIntensity: 3 })
+    into.push(d)
+  }
+  spinners.push(pivot)
+  ensureSpinSystem()
+  return pivot
 }
 export function hologram(into: Bag, root: Entity, x: number, y: number, src: string, scale: number, opts: { z?: number; spin?: boolean } = {}): Entity {
   const e = engine.addEntity()
   Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.15), scale: Vector3.create(scale, scale, scale), parent: root })
   GltfContainer.create(e, { src })
   into.push(e)
-  if (opts.spin !== false) { spinning.push(e); if (!spinSystemAdded) { engine.addSystem(spinSystem); spinSystemAdded = true } }
+  if (opts.spin !== false) { spinning.push(e); ensureSpinSystem() }
   return e
 }

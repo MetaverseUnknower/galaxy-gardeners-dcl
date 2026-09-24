@@ -100,7 +100,7 @@ function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon
     drawList()
     announce(entry, details[entry.id], details[entry.id] === undefined)
     if (details[entry.id] === undefined) {
-      try { details[entry.id] = await api.getCatalogDetail(entry.id) } catch { details[entry.id] = null }
+      try { details[entry.id] = await (ctxRef ? ctxRef.busy(api.getCatalogDetail(entry.id)) : api.getCatalogDetail(entry.id)) } catch { details[entry.id] = null }
       if (selectedId === entry.id) { drawList(); announce(entry, details[entry.id], false) }
     }
   }

@@ -131,12 +131,12 @@ async function collect(expeditionId: string): Promise<void> {
   drawMissions()
   try {
     let result: any = null
-    try { result = await api.completeExpedition(expeditionId) } catch {}
+    try { result = await ctx.busy(api.completeExpedition(expeditionId)) } catch {}
     if (result?.pod_lost) {
       ctx.notify('Expedition failed — pod destroyed!', Color4.create(1, 0.3, 0.3, 1))
     } else {
       try {
-        await api.collectExpedition(expeditionId)
+        await ctx.busy(api.collectExpedition(expeditionId))
         if (result?.type === 'exploration') {
           const parts: string[] = []
           if (result.newSpecies) parts.push('New species!')

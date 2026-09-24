@@ -109,9 +109,7 @@ function Color3ToColor4(c: Color3) { return { r: c.r, g: c.g, b: c.b, a: 1 } }
 async function deploy(body: Body, ctx: StationContext): Promise<void> {
   ctx.notify(`Deploying to ${body.name}…`, CYAN)
   try {
-    if (body.kind === 'belt') await api.deployMiningPod(body.id)
-    else if (body.kind === 'moon') await api.deployExplorationPodToMoon(body.id)
-    else await api.deployExplorationPod(body.id)
+    await ctx.busy(body.kind === 'belt' ? api.deployMiningPod(body.id) : body.kind === 'moon' ? api.deployExplorationPodToMoon(body.id) : api.deployExplorationPod(body.id))
     ctx.notify(body.kind === 'belt' ? 'Mining pod deployed!' : 'Exploration pod deployed!', GREEN)
     await ctx.refresh()
   } catch (err: any) {

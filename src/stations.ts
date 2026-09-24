@@ -5,13 +5,15 @@
 import { engine, Entity, Transform, GltfContainer } from '@dcl/sdk/ecs'
 import { Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
-import { Bag, clearBag, text, RED } from './stations/draw'
+import { Bag, clearBag, text, spinner, RED } from './stations/draw'
 
 export interface StationContext {
   dashboard: any | null
   notify(text: string, color: Color4): void
   refresh(): Promise<void>
   setView(id: string): Promise<void>
+  /** Shows the station's loading indicator while `work` is pending; returns its result. */
+  busy<T>(work: Promise<T>): Promise<T>
 }
 export interface Screens { top: Entity; low: Entity }
 /** A view object holds its own drawing state and may be used by only one station. */
@@ -60,6 +62,14 @@ export function createStation(config: StationConfig): Station {
   const screens: Screens = { top, low }
 
   const fallback: Bag = []
+  const loadingBag: Bag = []
+  let loadingDepth = 0
+  // Spinner in the top screen's corner while anything is in flight. Nested callers share one ring.
+  function setLoading(on: boolean): void {
+    loadingDepth = Math.max(0, loadingDepth + (on ? 1 : -1))
+    if (on && loadingDepth === 1) spinner(loadingBag, top, TOP.halfW - 0.25, TOP.halfH - 0.22, 0.22)
+    if (!on && loadingDepth === 0) clearBag(loadingBag)
+  }
   let active: ViewDefinition = config.views[0]
   let dashboard: any | null = null
 
@@ -68,6 +78,7 @@ export function createStation(config: StationConfig): Station {
     notify: config.notify,
     refresh: () => station.refresh(),
     setView: (id: string) => station.setView(id),
+    busy: async <T>(work: Promise<T>): Promise<T> => { setLoading(true); try { return await work } finally { setLoading(false) } },
   }
 
   function clearAll(): void { clearBag(fallback); active.clear() }
@@ -93,6 +104,7 @@ export function createStation(config: StationConfig): Station {
   async function pump(): Promise<void> {
     if (busy) { queued = true; return }
     busy = true
+    setLoading(true)
     try {
       do {
         queued = false
@@ -101,7 +113,7 @@ export function createStation(config: StationConfig): Station {
         if (needFetch) { needFetch = false; try { dashboard = await api.getShipDashboard() } catch { /* keep last dashboard */ } }
         await draw()
       } while (queued)
-    } finally { busy = false }
+    } finally { busy = false; setLoading(false) }
   }
 
   const station: Station = {
@@ -119,7 +131,7 @@ export function createStation(config: StationConfig): Station {
       await pump()
     },
     destroy() {
-      clearAll()
+      clearAll(); clearBag(loadingBag)
       for (const e of [top, low, tallDesk, lowDesk]) engine.removeEntity(e)
       stations.delete(config.id)
     },

@@ -140,7 +140,7 @@ async function withAction(label: string, run: () => Promise<string>): Promise<vo
   if (!ctx || busyAction) return
   busyAction = true
   drawLow()
-  try { ctx.notify(await run(), GREEN) }
+  try { ctx.notify(await ctx.busy(run()), GREEN) }
   catch (err: any) { ctx.notify(err?.message || `${label} failed`, RED) }
   busyAction = false
   await ctx.refresh()

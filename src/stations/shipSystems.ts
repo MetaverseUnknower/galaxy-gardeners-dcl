@@ -138,7 +138,7 @@ async function install(category: string): Promise<void> {
   installing = true
   drawLow()
   try {
-    await api.applyUpgrade(category)
+    await ctx.busy(api.applyUpgrade(category))
     ctx.notify(`${labelFor(category)} upgraded!`, Color4.create(0, 1, 0.5, 1))
   } catch (err: any) {
     ctx.notify(err.message || 'Upgrade failed', Color4.create(1, 0.3, 0.3, 1))
