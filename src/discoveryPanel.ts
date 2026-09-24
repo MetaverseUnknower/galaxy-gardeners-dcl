@@ -65,24 +65,24 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   displayEntities.push(coordPanel)
 
   const sysLabel = engine.addEntity()
-  Transform.create(sysLabel, { position: Vector3.create(DISPLAY_CENTER.x - 1.2, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(sysLabel, { text: 'CURRENT STAR SYSTEM', fontSize: 0.4 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
+  Transform.create(sysLabel, { position: Vector3.create(DISPLAY_CENTER.x - 1.6, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
+  TextShape.create(sysLabel, { text: 'CURRENT STAR SYSTEM', fontSize: 0.4 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
   displayEntities.push(sysLabel)
 
   const sysName = engine.addEntity()
-  Transform.create(sysName, { position: Vector3.create(DISPLAY_CENTER.x - 1.2, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(sysName, { text: currentSystem?.name || 'Unknown', fontSize: 0.8 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_LEFT })
+  Transform.create(sysName, { position: Vector3.create(DISPLAY_CENTER.x - 1.6, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
+  TextShape.create(sysName, { text: currentSystem?.name || 'Unknown', fontSize: 0.8 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
   displayEntities.push(sysName)
 
   const coordLabel = engine.addEntity()
-  Transform.create(coordLabel, { position: Vector3.create(DISPLAY_CENTER.x + 1.5, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(coordLabel, { text: 'GALACTIC COORDINATES', fontSize: 0.4 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
+  Transform.create(coordLabel, { position: Vector3.create(DISPLAY_CENTER.x + 1.3, coordPanelY + 0.22, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
+  TextShape.create(coordLabel, { text: 'GALACTIC COORDINATES', fontSize: 0.4 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.4, 0.4, 0.4, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
   displayEntities.push(coordLabel)
 
   const coordText = currentSystem ? `R: ${currentSystem.coord_r.toFixed(1)}  Θ: ${(currentSystem.coord_theta * 180 / Math.PI).toFixed(1)}°  Z: ${currentSystem.coord_z.toFixed(1)}` : 'R: ?  Θ: ?  Z: ?'
   const coords = engine.addEntity()
-  Transform.create(coords, { position: Vector3.create(DISPLAY_CENTER.x + 1.5, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
-  TextShape.create(coords, { text: coordText, fontSize: 0.6 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_RIGHT })
+  Transform.create(coords, { position: Vector3.create(DISPLAY_CENTER.x + 1.3, coordPanelY - 0.15, coordPanelZ + 0.03), rotation: Quaternion.fromEulerDegrees(0, 180, 0) })
+  TextShape.create(coords, { text: coordText, fontSize: 0.6 * DISCOVERY_TEXT_SCALE, textColor: Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
   displayEntities.push(coords)
 
   // Mini galaxy map
