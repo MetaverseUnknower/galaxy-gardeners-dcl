@@ -114,6 +114,12 @@
       "name": "Rotate Right",
       "glyph": "A clockwise circular arrow (mirror of the existing rotate-icon.png).",
       "used_for": "Navigation console: ROTATE RIGHT button."
+    },
+    {
+      "file": "assets/icons/build-station-icon.png",
+      "name": "Build Station",
+      "glyph": "The space-station glyph (ringed hub with a central spire, like space-station-icon.png) with a small plus sign at its upper right.",
+      "used_for": "Navigation console: BUILD STATION button when the system has no station."
     }
   ],
   "deliverable": "Return one PNG per entry, named exactly as 'file' (path relative to the project root), overwriting the placeholder.",
@@ -156,6 +162,14 @@
       "format": "PNG with alpha, 1024 x 512 (2:1)",
       "look": "Three thin concentric cyan orbit ellipses around a small warm-white sun, with a cyan dot on one orbit and a magenta dot on another, on a fully transparent background. Matches the thumbnail under DOCK in the same concept.",
       "used_for": "Navigation console: thumbnail under the DOCK card.",
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+    },
+    {
+      "file": "assets/images/station-slot-preview.png",
+      "name": "Station slot preview",
+      "format": "PNG with alpha, 1024 x 512 (2:1)",
+      "look": "Same style as station-orbit.png: thin cyan orbit ellipses around a small warm-white sun with two or three coloured planet dots, plus a small green dashed circle on the outer orbit marking the free station slot, all on a fully transparent background. Matches the SYSTEM PREVIEW thumbnail in docs/superpowers/specs/references/nav-console-no-station-concept.png.",
+      "used_for": "Navigation console: SYSTEM PREVIEW thumbnail under BUILD STATION.",
       "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
     }
   ]

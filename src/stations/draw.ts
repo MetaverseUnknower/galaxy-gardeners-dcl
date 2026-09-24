@@ -101,12 +101,12 @@ export function header(into: Bag, root: Entity, x: number, y: number, opts: { ic
 
 /** Clickable button. 'outline' = dark fill + cyan border + cyan text; 'primary' = bright cyan fill + dark text;
  *  'magenta' = magenta border/text; 'disabled' = muted, not clickable. */
-export function button(into: Bag, root: Entity, x: number, y: number, w: number, h: number, label: string, hover: string, onClick: () => void, opts: { variant?: 'outline' | 'primary' | 'magenta' | 'disabled'; size?: number; icon?: string; z?: number } = {}): Entity {
+export function button(into: Bag, root: Entity, x: number, y: number, w: number, h: number, label: string, hover: string, onClick: () => void, opts: { variant?: 'outline' | 'primary' | 'magenta' | 'green' | 'disabled'; size?: number; icon?: string; z?: number } = {}): Entity {
   const variant = opts.variant ?? 'outline'
   const z = opts.z ?? -0.03
   const size = opts.size ?? 0.42
-  const accent = variant === 'magenta' ? MAGENTA3 : variant === 'disabled' ? Color3.create(0.3, 0.38, 0.45) : CYAN3
-  const fill = variant === 'primary' ? Color4.create(accent.r, accent.g, accent.b, 1) : Color4.create(0.02, 0.06, 0.12, 1)
+  const accent = variant === 'magenta' ? MAGENTA3 : variant === 'green' ? GREEN3 : variant === 'disabled' ? Color3.create(0.3, 0.38, 0.45) : CYAN3
+  const fill = variant === 'primary' ? Color4.create(accent.r, accent.g, accent.b, 1) : variant === 'green' ? Color4.create(0.02, 0.16, 0.08, 1) : Color4.create(0.02, 0.06, 0.12, 1)
   const btn = frame(into, root, x, y, w, h, { border: accent, fill, z })
   const labelColor = variant === 'primary' ? Color4.create(0.02, 0.05, 0.1, 1) : variant === 'disabled' ? MUTED : Color4.create(accent.r, accent.g, accent.b, 1)
   let lx = x

@@ -8,7 +8,7 @@ import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedL
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
 import { showNotification } from './ui'
 import { getCameraMode, setCameraMode } from './consoleCamera'
-import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
+import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
 const CONSOLE_POSITION = Vector3.create(128, DECK_Y, 137.5)   // where the old display screen stood
@@ -22,8 +22,9 @@ const ICONS = {
   pause: 'assets/icons/pause-icon.png', raise: 'assets/icons/height-adjust-icon.png',
   rotateLeft: 'assets/icons/rotate-icon.png', rotateRight: 'assets/icons/rotate-right-icon.png',
   zoomIn: 'assets/icons/zoom-in-icon.png', zoomOut: 'assets/icons/zoom-out-icon.png', recenter: 'assets/icons/recenter-icon.png',
+  buildStation: 'assets/icons/build-station-icon.png',
 }
-const IMAGES = { galaxy: 'assets/images/galaxy-thumb.png', stationOrbit: 'assets/images/station-orbit.png' }
+const IMAGES = { galaxy: 'assets/images/galaxy-thumb.png', stationOrbit: 'assets/images/station-orbit.png', stationSlot: 'assets/images/station-slot-preview.png' }
 
 let screen: Entity | null = null
 const bag: Bag = []
@@ -83,9 +84,16 @@ export function refreshNavConsole(): void {
   text(bag, root, 0.68, 1.08, 'CURRENT SYSTEM', 0.13, DIM, LEFT)
   text(bag, root, 0.68, 0.92, systemName || 'Unknown', 0.22, CYAN, LEFT)
   icon(bag, root, 1.75, 1.0, 0.24, ICONS.station)
-  text(bag, root, 1.93, 1.08, 'STELLAR STATION', 0.13, DIM, LEFT)
-  dot(bag, root, 1.98, 0.92, 0.05, station ? GREEN3 : Color3.create(0.35, 0.45, 0.55))
-  text(bag, root, 2.06, 0.92, station ? 'DOCKING AVAILABLE' : 'NO STATION', 0.13, station ? GREEN : MUTED, LEFT)
+  if (station) {
+    text(bag, root, 1.93, 1.08, 'STELLAR STATION', 0.13, DIM, LEFT)
+    dot(bag, root, 1.98, 0.92, 0.05, GREEN3)
+    text(bag, root, 2.06, 0.92, 'DOCKING AVAILABLE', 0.13, GREEN, LEFT)
+  } else {
+    text(bag, root, 1.93, 1.12, 'STATION STATUS', 0.12, DIM, LEFT)
+    text(bag, root, 1.93, 1.0, 'NO STATION PRESENT', 0.13, MAGENTA, LEFT)
+    dot(bag, root, 1.98, 0.88, 0.04, GREEN3)
+    text(bag, root, 2.06, 0.88, 'STATION SLOT AVAILABLE', 0.1, GREEN, LEFT)
+  }
 
   // View tabs
   const galaxyActive = mode === 'galaxy'
@@ -113,20 +121,32 @@ export function refreshNavConsole(): void {
   iconButton(root, 0.52, -0.7, ICONS.zoomOut, 'ZOOM OUT', 'Zoom Out', () => zoomMap(-1))
   iconButton(root, 0.98, -0.45, ICONS.recenter, 'RECENTER', 'Recenter Map', () => resetMapView())
 
-  // Right: station card + orbit thumbnail
-  dot(bag, root, 1.55, 0.33, 0.05, station ? GREEN3 : Color3.create(0.35, 0.45, 0.55))
-  text(bag, root, 1.63, 0.36, 'STELLAR STATION', 0.14, DIM, LEFT)
-  text(bag, root, 1.63, 0.22, station ? 'DOCKING AVAILABLE' : 'NO STATION IN SYSTEM', 0.12, station ? GREEN : MUTED, LEFT)
-  const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, { fill: Color4.create(0.02, 0.1, 0.16, 1) })
-  icon(bag, root, 2.1, -0.05, 0.3, ICONS.station)
-  text(bag, root, 2.1, -0.32, station ? 'DOCK' : 'BUILD', 0.3, CYAN)
-  text(bag, root, 2.1, -0.5, station ? 'APPROACH & DOCK  »' : 'FOUND A STATION  »', 0.11, DIM)
-  clickable(dockFill, station ? `Dock at ${station.name}` : 'Build Station', () => {
-    console.log(station ? 'Dock' : 'Build')
-    showNotification(station ? `Docking at ${station.name} coming soon` : 'Station construction coming soon', CYAN)
-  })
-  frame(bag, root, 2.1, -0.88, 1.3, 0.42)
-  image(bag, root, 2.1, -0.88, 1.2, 0.36, IMAGES.stationOrbit)
+  // Right: station card + thumbnail (dock when a station exists, build when the slot is free)
+  if (station) {
+    dot(bag, root, 1.55, 0.33, 0.05, GREEN3)
+    text(bag, root, 1.63, 0.36, 'STELLAR STATION', 0.14, DIM, LEFT)
+    text(bag, root, 1.63, 0.22, 'DOCKING AVAILABLE', 0.12, GREEN, LEFT)
+    const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, { fill: Color4.create(0.02, 0.1, 0.16, 1) })
+    icon(bag, root, 2.1, -0.05, 0.3, ICONS.station)
+    text(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
+    text(bag, root, 2.1, -0.5, 'APPROACH & DOCK  »', 0.11, DIM)
+    clickable(dockFill, `Dock at ${station.name}`, () => { console.log('Dock'); showNotification(`Docking at ${station.name} coming soon`, CYAN) })
+    frame(bag, root, 2.1, -0.88, 1.3, 0.42)
+    image(bag, root, 2.1, -0.88, 1.2, 0.36, IMAGES.stationOrbit)
+  } else {
+    dot(bag, root, 1.55, 0.36, 0.05, GREEN3)
+    text(bag, root, 1.63, 0.36, 'STATION SLOT AVAILABLE', 0.11, GREEN, LEFT)
+    text(bag, root, 2.1, 0.2, 'NO STATION PRESENT', 0.16, WHITE)
+    text(bag, root, 2.1, 0.07, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
+    const buildFill = frame(bag, root, 2.1, -0.32, 1.3, 0.62, { border: GREEN3, fill: Color4.create(0.02, 0.16, 0.08, 1) })
+    icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: GREEN3 })
+    text(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
+    clickable(buildFill, 'Build Station', () => { console.log('Build'); showNotification('Station construction coming soon', GREEN) })
+    frame(bag, root, 2.1, -0.88, 1.3, 0.42)
+    text(bag, root, 1.5, -0.72, 'SYSTEM PREVIEW', 0.09, CYAN, LEFT)
+    text(bag, root, 2.7, -0.72, 'STATION LOCATION', 0.09, DIM, RIGHT)
+    image(bag, root, 2.1, -0.92, 1.2, 0.3, IMAGES.stationSlot)
+  }
 
   // Footer, with the console camera toggle in the middle
   const fixedCam = getCameraMode() === 'fixed'
