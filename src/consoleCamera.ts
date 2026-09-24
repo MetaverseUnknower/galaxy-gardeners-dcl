@@ -6,11 +6,11 @@ import { Vector3 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { DECK_Y } from './environment'
 import { getPref, setPref } from './prefs'
-import { getMapView, setMapView, MAP_LOWEST_HEIGHT } from './galaxyMap'
+import { setConsoleLowered } from './navConsole'
 
 export type CameraMode = 'fixed' | 'free'
 const PREF_KEY = 'consoleCamera'
-/** Stepping up to the console always lowers the map into view; 'fixed' additionally lifts the camera over the console. Default is 'free'. */
+/** Stepping up to the console sinks the desk out of the way; 'fixed' additionally lifts the camera over it. Default is 'free'. */
 export function getCameraMode(): CameraMode { return getPref<CameraMode>(PREF_KEY, 'free') }
 export function setCameraMode(mode: CameraMode): void { setPref(PREF_KEY, mode) }
 
@@ -33,9 +33,6 @@ export function setupConsoleCamera(): void {
   engine.addSystem(consoleCameraSystem)
 }
 
-let savedView: { height: number; scale: number } | null = null
-let loweredTo = 0
-
 function consoleCameraSystem(dt: number): void {
   timer += dt
   if (timer < 0.2) return
@@ -44,18 +41,7 @@ function consoleCameraSystem(dt: number): void {
   if (!p || !cameraEntity) return
   const inZone = p.x >= ZONE.minX && p.x <= ZONE.maxX && p.z >= ZONE.minZ && p.z <= ZONE.maxZ
   const wantCamera = inZone && getCameraMode() === 'fixed'
-  if (inZone && !active) {
-    // Bring the map down to the console (it shrinks to fit at the lowest heights) and remember where it was.
-    savedView = getMapView()
-    loweredTo = MAP_LOWEST_HEIGHT
-    setMapView({ height: loweredTo })
-    active = true
-  } else if (!inZone && active) {
-    // Put the map back unless the player moved it themselves while at the console.
-    if (savedView && Math.abs(getMapView().height - loweredTo) < 0.01) setMapView(savedView)
-    savedView = null
-    active = false
-  }
+  if (inZone !== active) { setConsoleLowered(inZone); active = inZone }
   if (wantCamera !== cameraActive) {
     MainCamera.createOrReplace(engine.CameraEntity, { virtualCameraEntity: wantCamera ? cameraEntity : undefined })
     cameraActive = wantCamera

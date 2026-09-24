@@ -18,6 +18,8 @@ const hdr: typeof header = (into, root, x, y, opts) => header(into, root, x, y, 
 const btn: typeof button = (into, root, x, y, w, h, label, hover, onClick, opts = {}) => button(into, root, x, y, w, h, label, hover, onClick, { ...opts, size: (opts.size ?? 0.42) * T })
 const CONSOLE_POSITION = Vector3.create(128, DECK_Y, 137.5)   // where the old display screen stood
 const CONSOLE_SCALE = 0.85
+const CONSOLE_DROP = 0.6      // how far the desk sinks when the player steps up to it
+const CONSOLE_DROP_SPEED = 3  // 1/s
 // Same face geometry as the station low desks (model front is -z; here that faces the projector).
 const SCREEN_OFFSET = Vector3.create(0, 1.35, -0.3)
 const SCREEN_ROT = Quaternion.fromEulerDegrees(50, 0, 0)
@@ -32,6 +34,8 @@ const ICONS = {
 const IMAGES = { galaxy: 'assets/images/galaxy-thumb.png', stationOrbit: 'assets/images/station-orbit.png', stationSlot: 'assets/images/station-slot-preview.png' }
 
 let screen: Entity | null = null
+let desk: Entity | null = null
+let lowered = false
 const bag: Bag = []
 let systemName: string | null = null
 let systemHasStation = false
@@ -43,7 +47,7 @@ let pollTimer = 0
 export function setNavConsoleSystem(system: { name: string; has_station: boolean } | null): void { systemName = system?.name ?? null; systemHasStation = !!system?.has_station; refreshNavConsole() }
 
 export function createNavConsole(): void {
-  const desk = engine.addEntity()
+  desk = engine.addEntity()
   // Half-turn: the desk's front faces north, so the player stands behind it looking south at the projector.
   Transform.create(desk, { position: CONSOLE_POSITION, rotation: Quaternion.fromEulerDegrees(0, 180, 0), scale: Vector3.create(CONSOLE_SCALE, CONSOLE_SCALE, CONSOLE_SCALE) })
   GltfContainer.create(desk, { src: 'assets/models/nav_panel_low_1.glb' })
@@ -52,7 +56,19 @@ export function createNavConsole(): void {
   setViewModeChangedListener(refreshNavConsole)
   setStationChangedListener(refreshNavConsole)
   engine.addSystem(pollSystem)
+  engine.addSystem(deskMotionSystem)
   refreshNavConsole()
+}
+
+/** Sink the console out of the sightline to the map while the player stands at it. */
+export function setConsoleLowered(on: boolean): void { lowered = on }
+
+function deskMotionSystem(dt: number): void {
+  if (!desk) return
+  const t = Transform.getMutable(desk)
+  const targetY = CONSOLE_POSITION.y - (lowered ? CONSOLE_DROP : 0)
+  const k = 1 - Math.exp(-CONSOLE_DROP_SPEED * dt)
+  t.position = Vector3.create(t.position.x, t.position.y + (targetY - t.position.y) * k, t.position.z)
 }
 
 // Re-draw when transit state or the orbit pause flips without a click on this console.
