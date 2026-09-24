@@ -17,6 +17,7 @@ import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
 import { createNavConsole, setNavConsoleSystem } from './navConsole'
 import { setupConsoleCamera } from './consoleCamera'
 import { loadPrefs } from './prefs'
+import { setupSoloShip } from './soloShip'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -36,6 +37,7 @@ export async function main() {
   createProjectorBase()
   createNavConsole()
   setupConsoleCamera()
+  void setupSoloShip()
 
   try {
     setStatusMessage('Authenticating...')
