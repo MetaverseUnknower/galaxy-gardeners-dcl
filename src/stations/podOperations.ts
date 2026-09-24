@@ -161,8 +161,8 @@ export const podOperationsView: ViewDefinition = {
     screens = s; ctxRef = ctx
     const { top } = s
     header(topBag, top, -2.6, 1.1, { title: 'POD OPERATIONS', subtitle: 'deploy // monitor // retrieve // maximize yield' })
-    text(topBag, top, 2.6, 1.15, '"FURTHER REACH.', 0.24, MUTED, RIGHT)
-    text(topBag, top, 2.6, 0.97, 'RICHER WORLDS."', 0.24, MUTED, RIGHT)
+    text(topBag, top, 2.6, 1.15, 'FURTHER REACH.', 0.24, MUTED, RIGHT)
+    text(topBag, top, 2.6, 0.97, 'RICHER WORLDS.', 0.24, MUTED, RIGHT)
     if (!ctx.dashboard) throw new Error('no dashboard')
     drawBayCards()
     bodyNames = await renderSectorMap(mapBag, top, 1.4, -0.3, 2.6, 2.1, ctx, currentSystemId)

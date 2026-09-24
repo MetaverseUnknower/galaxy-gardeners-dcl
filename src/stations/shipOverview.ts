@@ -60,7 +60,6 @@ function drawTop(top: Entity, ctx: StationContext): void {
   }
   button(topBag, top, -2.0, -0.95, 1.15, 0.36, 'REFINE', 'Refine Fuel', () => openRefineryDialog(), { icon: icons('refine'), size: 0.34 })
   button(topBag, top, -0.75, -0.95, 1.15, 0.36, 'BUY FUEL', 'Purchase Fuel Cells', () => openPurchaseDialog(), { icon: icons('buy'), size: 0.34 })
-  text(topBag, top, -2.55, -1.2, '"FURTHER SHORES AWAIT."  — THE UNFOUND', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_LEFT)
 
   // Ship frame, right: hologram + Upgrades entry
   frame(topBag, top, 1.4, -0.35, 2.6, 1.85)

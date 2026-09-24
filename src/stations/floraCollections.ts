@@ -19,8 +19,6 @@ export type CollectionId = 'summary' | 'catalog' | 'vault' | 'inventory'
 
 export function drawCollectionsTop(bag: Bag, top: Entity, ctx: StationContext, current: CollectionId): void {
   header(bag, top, -2.6, 1.05, { icon: ICONS.catalog, title: 'SHIP COLLECTIONS', subtitle: 'explore // study // preserve' })
-  text(bag, top, 2.6, 1.12, '"ALL LIFE EXPANDS THE MAP."', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
-  text(bag, top, 2.6, 0.92, '— THE UNFOUND', 0.22, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
   const tiles: [CollectionId, string, string, string | undefined][] = [
     ['catalog', 'Flora Catalog', 'discovered species', ICONS.catalog],
     ['vault', 'Specimen Vault', 'collected flora samples', ICONS.vault],
