@@ -14,7 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
-import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, BACKDROPS, BACKDROP_SCALE, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
+import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 
 // HUD sizes are authored for a 1080-tall canvas and scaled to the actual canvas height, so every
@@ -430,6 +430,11 @@ const SleepOverlay = () => {
             tiles.push(<UiEntity key={`bd${i}-${r}-${c}`} uiTransform={{ positionType: 'absolute', position: { left: pct(-d + c * wPct), top: pct(r * hPct) }, width: pct(wPct), height: pct(hPct) }} uiBackground={tex(bd.src, undefined, bd.alpha)} />)
           }
           return tiles
+        })}
+        {sleepCelestials().map((cb, i) => {
+          const x = ((cb.x - layerOffset(driftSpeeds.speck * cb.depth, 200) + 200) % 200) - 50
+          return <UiEntity key={`cb${i}`} uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct(cb.y) }, width: pct(cb.size), height: pct(cb.size * view.aspect / ATLAS.cellAspect) }}
+            uiBackground={{ texture: { src: ATLAS.src }, textureMode: 'stretch', uvs: atlasUvs(cb.cell), color: Color4.create(1, 1, 1, cb.alpha) }} />
         })}
         {sleepSpecks().map((sp, i) => {
           const x = ((sp.x - layerOffset(driftSpeeds.speck * sp.depth, 200) + 200) % 200) - 50

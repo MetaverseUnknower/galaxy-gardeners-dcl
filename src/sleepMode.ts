@@ -22,6 +22,18 @@ export const BACKDROPS: { src: string; aspect: number; alpha: number; speed: num
 /** Backdrop tiles are drawn at this fraction of the room height (smaller = finer, more distant-looking stars) and tiled to cover. */
 export const BACKDROP_SCALE = 0.6
 
+/** Celestial atlas: a 4x4 grid of galaxies, clusters and nebulae. Cells are scattered small over the backdrop so they read
+ *  as distant stars with the odd galaxy among them. Cell UVs: bottom-left first, clockwise (protocol order). */
+export const ATLAS = { src: 'assets/images/Celestials_Atlas.png', cols: 4, rows: 4, cellAspect: 384 / 256 }
+export type Celestial = { cell: number; x: number; y: number; size: number; depth: number; alpha: number }
+const CELESTIAL_COUNT = 26
+export function atlasUvs(cell: number): number[] {
+  const c = cell % ATLAS.cols, r = Math.floor(cell / ATLAS.cols)
+  const u0 = c / ATLAS.cols, u1 = (c + 1) / ATLAS.cols
+  const vTop = 1 - r / ATLAS.rows, vBottom = 1 - (r + 1) / ATLAS.rows
+  return [u0, vBottom, u0, vTop, u1, vTop, u1, vBottom]
+}
+
 /** Sparse nebula patches: each is a modest cloud that drifts across once per WRAP percent, so most of the time the window is just stars. */
 export const NEBULAE: { src: string; width: number; height: number; top: number; alpha: number }[] = [
   { src: 'assets/images/Stars_Nebula2.png', width: 70, height: 45, top: 8, alpha: 0.55 },
@@ -54,6 +66,7 @@ let viewIndex = 0
 let time = 0
 let system: StarSystem | null = null
 let specks: Speck[] = []
+let celestials: Celestial[] = []
 
 export function isSleeping(): boolean { return active }
 export function sleepView(): { src: string; aspect: number } { return SLEEP_VIEWS[viewIndex] ?? SLEEP_VIEWS[0] }
@@ -62,6 +75,7 @@ export function panFraction(): number { return 0.5 + 0.5 * Math.sin((time / PAN_
 export function sleepViewIndex(): number { return viewIndex }
 export function sleepTime(): number { return time }
 export function sleepSpecks(): Speck[] { return specks }
+export function sleepCelestials(): Celestial[] { return celestials }
 export function setSleepSystem(s: StarSystem | null): void { system = s }
 
 export function starSprite(): { src: string; size: number; tint: [number, number, number] } {
@@ -73,6 +87,7 @@ export function enterSleepMode(): void {
   viewIndex = Math.min(Math.max(0, getPref<number>(VIEW_PREF, 0)), SLEEP_VIEWS.length - 1)
   time = 0
   specks = makeSpecks(STAR_COUNT)
+  celestials = makeCelestials(CELESTIAL_COUNT)
   active = true
 }
 
@@ -94,6 +109,15 @@ function makeSpecks(n: number): Speck[] {
   for (let i = 0; i < n; i++) {
     const bright = Math.random()
     out.push({ src: SPECK_SPRITES[Math.floor(Math.random() * SPECK_SPRITES.length)], x: Math.random() * 200, y: Math.random() * 100, size: 0.25 + bright * bright * 1.4, depth: 0.4 + Math.random() * 0.8, alpha: 0.45 + bright * 0.55 })
+  }
+  return out
+}
+
+function makeCelestials(n: number): Celestial[] {
+  const out: Celestial[] = []
+  for (let i = 0; i < n; i++) {
+    const far = Math.random()
+    out.push({ cell: Math.floor(Math.random() * ATLAS.cols * ATLAS.rows), x: Math.random() * 200, y: Math.random() * 100, size: 1.2 + (1 - far) * 2.6, depth: 0.3 + far * 0.5, alpha: 0.5 + (1 - far) * 0.4 })
   }
   return out
 }
