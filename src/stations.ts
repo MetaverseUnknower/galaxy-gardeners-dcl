@@ -64,10 +64,10 @@ export function createStation(config: StationConfig): Station {
   const fallback: Bag = []
   const loadingBag: Bag = []
   let loadingDepth = 0
-  // Spinner in the top screen's corner while anything is in flight. Nested callers share one ring.
+  // Spinner centered on both screens while anything is in flight. Nested callers share one pair of rings.
   function setLoading(on: boolean): void {
     loadingDepth = Math.max(0, loadingDepth + (on ? 1 : -1))
-    if (on && loadingDepth === 1) spinner(loadingBag, top, TOP.halfW - 0.25, TOP.halfH - 0.22, 0.22)
+    if (on && loadingDepth === 1) { spinner(loadingBag, top, 0, 0, 0.5); spinner(loadingBag, low, 0, 0, 0.5) }
     if (!on && loadingDepth === 0) clearBag(loadingBag)
   }
   let active: ViewDefinition = config.views[0]
