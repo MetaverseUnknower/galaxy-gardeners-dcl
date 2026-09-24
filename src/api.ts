@@ -213,6 +213,11 @@ export async function emergencyPod(podType: 'mining' | 'exploration'): Promise<a
   return apiPost('/api/ships/emergency-pod', { podType })
 }
 
+/** Streamed soundtrack playlist (public route). */
+export async function getSoundtrack(): Promise<{ tracks: import('./soundtrack').Track[] }> {
+  return apiGet('/api/soundtrack')
+}
+
 export async function getPreferences(): Promise<Record<string, any>> {
   return apiGet('/api/galaxy/player/me/preferences')
 }

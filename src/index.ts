@@ -18,6 +18,7 @@ import { createNavConsole, setNavConsoleSystem } from './navConsole'
 import { setupConsoleCamera } from './consoleCamera'
 import { loadPrefs } from './prefs'
 import { setupSoloShip } from './soloShip'
+import { startSoundtrack } from './soundtrack'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -56,6 +57,7 @@ export async function main() {
     setStatusMessage('Loading player data...')
     playerInfo = await api.getPlayerMe()
     await loadPrefs()
+    void startSoundtrack()
 
     // Apply solar recharge on scene load
     try { await api.solarRecharge() } catch {}

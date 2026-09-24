@@ -12,6 +12,7 @@ export function setCloseDetailCallback(cb: () => void): void { onCloseDetailPane
 import { isCurrentlyTraveling } from './navigation'
 import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
+import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
 import { selectSystem } from './interaction'
 import { requirePayment } from '~system/EthereumController'
 import * as api from './api'
@@ -345,6 +346,29 @@ const CameraSwitch = () => {
   )
 }
 
+const MusicBar = () => {
+  const track = currentTrack()
+  if (!track) return null   // nothing to show until the playlist has loaded
+  const muted = isMuted()
+  const title = track.artist ? `${track.title} — ${track.artist}` : track.title
+  return (
+    <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 20, right: 30 }, flexDirection: 'row', alignItems: 'center', padding: 4 }}
+      uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.85) }}>
+      <Label value={muted ? '♪ MUTED' : `♪ ${title}`} fontSize={12} color={Color4.create(0.45, 0.65, 0.75, 1)} uiTransform={{ margin: { left: 8, right: 8 } }} />
+      <UiEntity uiTransform={{ width: 60, height: 26, margin: { right: 4 }, justifyContent: 'center', alignItems: 'center' }}
+        uiBackground={{ color: Color4.create(0.05, 0.12, 0.2, 1) }}
+        onMouseDown={() => { nextTrack() }}>
+        <Label value="NEXT" fontSize={12} color={Color4.create(0, 0.9, 1, 1)} />
+      </UiEntity>
+      <UiEntity uiTransform={{ width: 76, height: 26, justifyContent: 'center', alignItems: 'center' }}
+        uiBackground={{ color: muted ? Color4.create(0.05, 0.12, 0.2, 1) : Color4.create(0, 0.9, 1, 1) }}
+        onMouseDown={() => { toggleMuted() }}>
+        <Label value={muted ? 'UNMUTE' : 'MUTE'} fontSize={12} color={muted ? Color4.create(0, 0.9, 1, 1) : Color4.create(0.02, 0.05, 0.1, 1)} />
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
 const uiComponent = () => (
   <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
     <SystemInfoPanel />
@@ -356,6 +380,7 @@ const uiComponent = () => (
     <PurchaseDialog />
     <RefineryDialog />
     <CameraSwitch />
+    <MusicBar />
   </UiEntity>
 )
 
