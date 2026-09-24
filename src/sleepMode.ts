@@ -14,14 +14,12 @@ export const SLEEP_VIEWS: { src: string; aspect: number }[] = [
 ]
 const PAN_PERIOD_SECONDS = 300   // one full left-right-left sweep
 /** The galaxy band: faint, huge, behind everything, crossing the window once per cycle like a very slow orbit. */
-// Starts centred in the window, crosses in about ten minutes, is gone for about five, then comes back around.
-export const MILKY_WAY = { src: 'assets/images/MilkyWay_Nebula.png', aspect: 1672 / 941, width: 75, alpha: 0.22, speed: 0.3, wrap: 300, start: 12 }
+// The farthest layer, so it moves the slowest of anything: starts centred and takes the better part of an hour to leave.
+export const MILKY_WAY = { src: 'assets/images/MilkyWay_Nebula.png', aspect: 1672 / 941, width: 75, alpha: 0.22, speed: 0.03, wrap: 300, start: 12 }
 
-/** Star-field backdrops (opaque, native 16:9). Drawn at the room's full height at their own aspect and scrolled
- *  with two copies so they wrap seamlessly; the dense one sits over the sparse one at partial opacity for depth. */
+/** Star-field backdrop (transparent, native 16:9), tiled small over the galaxy band. StarTexture2 is opaque and unused. */
 export const BACKDROPS: { src: string; aspect: number; alpha: number; speed: number }[] = [
   { src: 'assets/images/StarTexture1.png', aspect: 1672 / 941, alpha: 1, speed: 0.05 },
-  { src: 'assets/images/StarTexture2.png', aspect: 1672 / 941, alpha: 0.25, speed: 0.08 },
 ]
 /** Backdrop tiles are drawn at this fraction of the room height (smaller = finer, more distant-looking stars) and tiled to cover. */
 export const BACKDROP_SCALE = 0.28
