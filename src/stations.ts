@@ -6,6 +6,7 @@ import { engine, Entity, Transform, GltfContainer } from '@dcl/sdk/ecs'
 import { Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { Bag, clearBag, text, spinner, RED } from './stations/draw'
+import { hideInTopView } from './topViewHide'
 
 export interface StationContext {
   dashboard: any | null
@@ -55,6 +56,7 @@ export function createStation(config: StationConfig): Station {
   const lowDesk = engine.addEntity()
   Transform.create(lowDesk, { position: config.position, rotation })
   GltfContainer.create(lowDesk, { src: 'assets/models/nav_panel_low_1.glb' })
+  hideInTopView(tallDesk); hideInTopView(lowDesk)
   const top = engine.addEntity()
   Transform.create(top, { position: TOP_ROOT_OFFSET, rotation: TOP_ROOT_ROT, parent: tallDesk })
   const low = engine.addEntity()

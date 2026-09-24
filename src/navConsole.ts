@@ -9,6 +9,7 @@ import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedL
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
 import { showNotification } from './ui'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
+import { hideInTopView } from './topViewHide'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -66,6 +67,7 @@ export function createNavConsole(): void {
   // Half-turn: the desk's front faces north, so the player stands behind it looking south at the projector.
   Transform.create(desk, { position: CONSOLE_POSITION, rotation: Quaternion.fromEulerDegrees(0, 180, 0), scale: Vector3.create(CONSOLE_SCALE, CONSOLE_SCALE, CONSOLE_SCALE) })
   GltfContainer.create(desk, { src: 'assets/models/nav_panel_low_1.glb' })
+  hideInTopView(desk)
   screen = engine.addEntity()
   Transform.create(screen, { position: SCREEN_OFFSET, rotation: SCREEN_ROT, parent: desk })
   setViewModeChangedListener(refreshNavConsole)
@@ -163,8 +165,8 @@ export function refreshNavConsole(): void {
   // Top edge flush with the view tabs (0.4), bottom edge through the camera buttons' centre line (-1.1).
   frame(bag, root, 0.05, -0.35, 2.3, 1.5)   // spans -1.1..1.2; the station column starts at 1.45
   txt(bag, root, -1.0, 0.31, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
-  txt(bag, root, 1.12, 0.33, '1 2 3 4  ROTATE L · RAISE · LOWER · ROTATE R', 0.1, DIM, RIGHT)
-  txt(bag, root, 1.12, 0.22, 'SHIFT + 1 2 3 4  ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.1, DIM, RIGHT)
+  txt(bag, root, 1.12, 0.3, '1 2 3 4  ROTATE L · RAISE · LOWER · ROTATE R', 0.1, DIM, RIGHT)
+  txt(bag, root, 1.12, 0.19, 'SHIFT + 1 2 3 4  ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.1, DIM, RIGHT)
   iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
   iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
   iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
@@ -200,7 +202,7 @@ export function refreshNavConsole(): void {
 
   // Footer, with the console camera toggle in the middle
   const cam = getCameraMode()
-  txt(bag, root, -0.92, -1.1, 'CAMERA', 0.09, DIM, RIGHT)
+  txt(bag, root, -0.92, -1.06, 'CAMERA', 0.09, DIM, RIGHT)
   CAMERA_MODES.forEach((mode, i) => {
     btn(bag, root, -0.57 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })

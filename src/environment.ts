@@ -2,6 +2,7 @@ import { engine, Entity, Transform, MeshRenderer, Material, GltfContainer, Colli
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
+import { hideInTopView } from './topViewHide'
 
 const CENTER = Vector3.create(128, 80, 128)
 const BOX_SIZE = 150
@@ -38,6 +39,7 @@ export function createEnvironment(): void {
     rotation: Quaternion.fromEulerDegrees(180, 0, 180)
   })
   GltfContainer.create(navPanel, { src: 'assets/models/nav_panel_low_1.glb' })
+  hideInTopView(navPanel)
 
   // Galaxy projector base model
   const projectorModel = engine.addEntity()

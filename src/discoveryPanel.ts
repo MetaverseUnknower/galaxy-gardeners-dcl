@@ -8,6 +8,7 @@ import { StarSystem } from './types'
 import { setDiscoveryDescription } from './ui'
 import { DECK_Y } from './environment'
 import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN } from './stations/draw'
+import { hideInTopView } from './topViewHide'
 
 const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -61,13 +62,16 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
     discoveryOptions = options; activeDiscovery = active
   } catch { return }
 
-  deskRoot = engine.addEntity()
-  Transform.create(deskRoot, { position: DISPLAY_CENTER, rotation: DESK_ROT })
-  // Upright panel floating above the desk's top edge
+  // DISPLAY_CENTER is the desk face's lower front edge; the screen root sits mid-face, 1.1m up the slope.
   const cos50 = Math.cos(50 * Math.PI / 180), sin50 = Math.sin(50 * Math.PI / 180)
-  const topEdge = 1.35
+  // Lifted 0.15m off the face along its normal so nothing sits inside the desk's own surface.
+  const upSlope = 1.0, offFace = 0.15
+  deskRoot = engine.addEntity()
+  Transform.create(deskRoot, { position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + upSlope * cos50 + offFace * sin50, DISPLAY_CENTER.z - upSlope * sin50 + offFace * cos50), rotation: DESK_ROT })
+  // Upright panel floating behind and above the desk, high enough that the desk does not hide its bottom.
   topRoot = engine.addEntity()
-  Transform.create(topRoot, { position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + topEdge * cos50 + 0.95, DISPLAY_CENTER.z - topEdge * sin50 - 3.6 + 0.3), rotation: UPRIGHT_ROT })
+  Transform.create(topRoot, { position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 2.6, DISPLAY_CENTER.z - 1.8), rotation: UPRIGHT_ROT })
+  hideInTopView(deskRoot); hideInTopView(topRoot)
 
   drawUpright(topRoot)
   drawDesk(deskRoot)
@@ -86,13 +90,14 @@ function drawUpright(root: Entity): void {
   // Two cells
   frame(bag, root, 0, -0.32, W - 0.3, 0.85, { border: Color3.create(0.1, 0.5, 0.65) })
   line(bag, root, 0, 0.05, 0, -0.7, CYAN3, { thickness: 0.01, alpha: 0.6 })
-  icon(bag, root, -2.35, -0.12, 0.3, ICONS.coordinates)
-  text(bag, root, -2.05, -0.12, 'GALACTIC COORDINATES', 0.24, DIM, LEFT)
+  // Flush left in the cell: icon against the border, label and value sharing one left edge.
+  icon(bag, root, -2.45, -0.12, 0.3, ICONS.coordinates)
+  text(bag, root, -2.22, -0.12, 'GALACTIC COORDINATES', 0.24, DIM, LEFT)
   const coordText = currentSystem ? `R: ${currentSystem.coord_r.toFixed(1)}   Θ: ${(currentSystem.coord_theta * 180 / Math.PI).toFixed(1)}°   Z: ${currentSystem.coord_z.toFixed(1)}` : 'R: ?   Θ: ?   Z: ?'
-  text(bag, root, -2.05, -0.48, coordText, 0.34, WHITE, LEFT)
-  icon(bag, root, 0.4, -0.12, 0.3, ICONS.system)
-  text(bag, root, 0.7, -0.12, 'CURRENT STAR SYSTEM', 0.24, DIM, LEFT)
-  text(bag, root, 0.7, -0.48, currentSystem?.name || 'Unknown', 0.5, CYAN, LEFT)
+  text(bag, root, -2.22, -0.48, coordText, 0.34, WHITE, LEFT)
+  icon(bag, root, 0.2, -0.12, 0.3, ICONS.system)
+  text(bag, root, 0.43, -0.12, 'CURRENT STAR SYSTEM', 0.24, DIM, LEFT)
+  text(bag, root, 0.43, -0.48, currentSystem?.name || 'Unknown', 0.5, CYAN, LEFT)
 }
 
 function drawDesk(root: Entity): void {

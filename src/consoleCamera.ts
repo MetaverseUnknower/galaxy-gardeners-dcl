@@ -7,6 +7,7 @@ import { getPlayer } from '@dcl/sdk/players'
 import { DECK_Y, PLATFORM_Y } from './environment'
 import { getPref, setPref } from './prefs'
 import { setConsoleLowered, refreshNavConsole } from './navConsole'
+import { setTopViewHidden } from './topViewHide'
 import { rotateMap, tiltMap, zoomMap, resetMapView, getViewMode, getMapView } from './galaxyMap'
 import { toggleOrbits } from './systemView'
 
@@ -35,6 +36,7 @@ let topCameraEntity: ReturnType<typeof engine.addEntity> | null = null
 let topTargetEntity: ReturnType<typeof engine.addEntity> | null = null
 let backdropEntity: ReturnType<typeof engine.addEntity> | null = null
 let backdropAlpha = 0
+let panelsHidden = false
 let appliedCamera: ReturnType<typeof engine.addEntity> | null = null
 let active = false        // player is at the console
 let timer = 0
@@ -71,6 +73,9 @@ function topViewSystem(dt: number): void {
     // A hair off-axis in z keeps the look-down orientation well defined.
     Transform.getMutable(topCameraEntity).position = Vector3.create(MAP_CENTER_XZ.x, view.height + distance, MAP_CENTER_XZ.z + 0.04 * distance)
   }
+  // Panels vanish once the backdrop is mostly in, and come back the moment the view is left.
+  const wantHidden = top && backdropAlpha > 0.6
+  if (wantHidden !== panelsHidden) { setTopViewHidden(wantHidden); panelsHidden = wantHidden }
   const targetAlpha = top ? 1 : 0
   if (Math.abs(backdropAlpha - targetAlpha) < 0.001 && backdropAlpha === targetAlpha) return
   backdropAlpha += (targetAlpha - backdropAlpha) * (1 - Math.exp(-TOP_FADE_SPEED * dt))
