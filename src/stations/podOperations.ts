@@ -4,7 +4,7 @@
 import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
-import { ViewDefinition, StationContext, Screens, LOW } from '../stations'
+import { ViewDefinition, StationContext, Screens } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN, RED, CYAN, CYAN3 } from './draw'
 import { titleCase } from './data'
 import { renderSectorMap, minutesLeft, formatMinutes } from './sectorMap'
@@ -165,7 +165,6 @@ export const podOperationsView: ViewDefinition = {
     text(topBag, top, 2.6, 0.97, 'RICHER WORLDS."', 0.24, MUTED, RIGHT)
     if (!ctx.dashboard) throw new Error('no dashboard')
     drawBayCards()
-    frame(topBag, s.low, 0, 0, LOW.halfW * 2, LOW.halfH * 2)
     bodyNames = await renderSectorMap(mapBag, top, 1.4, -0.3, 2.6, 2.1, ctx, currentSystemId)
     drawLow()
   },
