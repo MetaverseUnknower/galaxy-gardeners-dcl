@@ -69,9 +69,16 @@ export function setViewModeChangedListener(cb: () => void): void { onViewModeCha
 export function canSwitchToSystemView(): boolean { return canSwitchToSystem ? canSwitchToSystem() : true }
 
 // Map controls (used by the navigation console)
+// At the three lowest heights the map may only use the three smallest zoom levels, so lowering it
+// toward the console shrinks it to fit rather than swallowing the desk.
+const LOW_HEIGHT_MAX = MIN_HEIGHT + 2 * HEIGHT_STEP + 0.001
+const LOW_ZOOM_MAX = MIN_SCALE + 2 * SCALE_STEP
+function maxScaleForHeight(h: number): number { return h <= LOW_HEIGHT_MAX ? LOW_ZOOM_MAX : MAX_SCALE }
+function clampScaleToHeight(): void { targetScale = Math.min(targetScale, maxScaleForHeight(targetHeight)) }
+
 export function rotateMap(dir: 1 | -1): void { targetRotationY += dir * ROTATE_STEP }
-export function tiltMap(dir: 1 | -1): void { targetHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, targetHeight + dir * HEIGHT_STEP)) }
-export function zoomMap(dir: 1 | -1): void { targetScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, targetScale + dir * SCALE_STEP)) }
+export function tiltMap(dir: 1 | -1): void { targetHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, targetHeight + dir * HEIGHT_STEP)); clampScaleToHeight() }
+export function zoomMap(dir: 1 | -1): void { targetScale = Math.max(MIN_SCALE, Math.min(maxScaleForHeight(targetHeight), targetScale + dir * SCALE_STEP)) }
 export function resetMapView(): void { targetRotationY = 0; targetHeight = FLOOR_Y + 1.0; targetScale = 1.0 }
 
 export function switchViewMode(mode: ViewMode): void {
