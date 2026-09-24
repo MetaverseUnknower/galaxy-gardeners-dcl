@@ -1,7 +1,6 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, TextShape, Font, TextAlignMode, ColliderLayer } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
-import { PANEL_Z, PANEL_Y, PANEL_TILT, PANEL_CENTER_X, GLASS_PANEL_Z, GLASS_PANEL_Y } from './galaxyMap'
 
 const SYSTEM_CENTER = Vector3.create(128, 41, 128)
 
@@ -373,7 +372,7 @@ export async function renderSystemView(systemId: string): Promise<void> {
   }
 
   currentStationInfo = detail.station || null
-  try { createStationPanel() } catch (err) { console.error('[systemView] station panel error:', err) }
+  if (onStationChanged) onStationChanged()
 }
 
 export function systemViewAnimationSystem(dt: number): void {
@@ -434,110 +433,14 @@ export function systemViewAnimationSystem(dt: number): void {
     }
   }
 
-  if (stationPanelEntity) {
-    stationPanelScale = Math.min(1, stationPanelScale + dt * 3)
-    const s = stationPanelScale
-    Transform.getMutable(stationPanelEntity).scale = Vector3.create(1.5 * s, 0.6 * s, 0.03)
-  }
-
-  if (pauseTextEntity) {
-    const ts = TextShape.getMutable(pauseTextEntity)
-    ts.text = orbitsPaused ? 'RESUME' : 'PAUSE'
-  }
 }
 
-// Station panel
-let stationPanelEntity: Entity | null = null
-let stationPanelScale = 0
-const stationPanelEntities: Entity[] = []
-let pauseButtonEntity: Entity | null = null
-let pauseTextEntity: Entity | null = null
-
-function createStationPanel(): void {
-  clearStationPanel()
-  stationPanelScale = 0
-
-  const panelX = PANEL_CENTER_X() - 1.8
-  const panelY = PANEL_Y()
-  const btnZ = PANEL_Z()
-  const glassZ = GLASS_PANEL_Z()
-  const glassY = GLASS_PANEL_Y()
-  const panelTilt = PANEL_TILT()
-  const textRotation = Quaternion.fromEulerDegrees(10, 180, 0)
-  // Labels printed on the flat buttons: same tilt as the button, yawed to read from above.
-  const flatLabelRotation = Quaternion.multiply(PANEL_TILT(), Quaternion.fromEulerDegrees(0, 180, 0))
-  const upY = 0.3 * Math.cos(10 * Math.PI / 180)
-  const upZ = -0.3 * Math.sin(10 * Math.PI / 180)
-
-  stationPanelEntity = engine.addEntity()
-  Transform.create(stationPanelEntity, { position: Vector3.create(panelX, glassY, glassZ), scale: Vector3.create(0, 0, 0.03), rotation: panelTilt })
-  MeshRenderer.setBox(stationPanelEntity)
-  Material.setPbrMaterial(stationPanelEntity, {
-    albedoColor: Color4.create(0.05, 0.15, 0.25, 0.3), emissiveColor: Color3.create(0, 0.2, 0.4),
-    emissiveIntensity: 0.5, metallic: 0.9, roughness: 0.1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-  })
-  stationPanelEntities.push(stationPanelEntity)
-
-  if (currentStationInfo) {
-    const nameLabel = engine.addEntity()
-    Transform.create(nameLabel, { position: Vector3.create(panelX, panelY + upY, btnZ + upZ), rotation: textRotation })
-    TextShape.create(nameLabel, { text: currentStationInfo.name, fontSize: 1, textColor: Color4.create(0, 1, 1, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-    stationPanelEntities.push(nameLabel)
-
-    const dockBtn = engine.addEntity()
-    Transform.create(dockBtn, { position: Vector3.create(panelX, panelY, btnZ), scale: Vector3.create(0.6, 0.25, 0.06), rotation: panelTilt })
-    MeshRenderer.setBox(dockBtn); MeshCollider.setBox(dockBtn)
-    Material.setPbrMaterial(dockBtn, { albedoColor: Color4.create(0, 0.3, 0.4, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
-    pointerEventsSystem.onPointerDown({ entity: dockBtn, opts: { button: InputAction.IA_POINTER, hoverText: `Dock at ${currentStationInfo.name}`, maxDistance: 15 } }, () => { console.log('Dock') })
-    stationPanelEntities.push(dockBtn)
-
-    const dockLabel = engine.addEntity()
-    // Sits just above the button's top face (offset along the panel normal), printed flat on it.
-    Transform.create(dockLabel, { position: Vector3.create(panelX, panelY + 0.04, btnZ + 0.006), rotation: flatLabelRotation })
-    TextShape.create(dockLabel, { text: 'DOCK', fontSize: 1, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-    stationPanelEntities.push(dockLabel)
-  } else {
-    const titleLabel = engine.addEntity()
-    Transform.create(titleLabel, { position: Vector3.create(panelX, panelY + upY, btnZ + upZ), rotation: textRotation })
-    TextShape.create(titleLabel, { text: 'SPACE STATION', fontSize: 1, textColor: Color4.create(0.6, 0.6, 0.6, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-    stationPanelEntities.push(titleLabel)
-
-    const buildBtn = engine.addEntity()
-    Transform.create(buildBtn, { position: Vector3.create(panelX, panelY, btnZ), scale: Vector3.create(0.6, 0.25, 0.06), rotation: panelTilt })
-    MeshRenderer.setBox(buildBtn); MeshCollider.setBox(buildBtn)
-    Material.setPbrMaterial(buildBtn, { albedoColor: Color4.create(0, 0.3, 0.4, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
-    pointerEventsSystem.onPointerDown({ entity: buildBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Build Station', maxDistance: 15 } }, () => { console.log('Build') })
-    stationPanelEntities.push(buildBtn)
-
-    const buildLabel = engine.addEntity()
-    Transform.create(buildLabel, { position: Vector3.create(panelX, panelY, btnZ + 0.04), rotation: textRotation })
-    TextShape.create(buildLabel, { text: 'BUILD', fontSize: 1, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-    stationPanelEntities.push(buildLabel)
-  }
-
-  // Pause button
-  const pauseBtnX = PANEL_CENTER_X() + 1.8
-  pauseButtonEntity = engine.addEntity()
-  Transform.create(pauseButtonEntity, { position: Vector3.create(pauseBtnX, PANEL_Y(), PANEL_Z()), scale: Vector3.create(0.6, 0.25, 0.06), rotation: PANEL_TILT() })
-  MeshRenderer.setBox(pauseButtonEntity); MeshCollider.setBox(pauseButtonEntity)
-  Material.setPbrMaterial(pauseButtonEntity, { albedoColor: Color4.create(0, 0.3, 0.4, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5 })
-  pointerEventsSystem.onPointerDown({ entity: pauseButtonEntity, opts: { button: InputAction.IA_POINTER, hoverText: 'Pause/Resume Orbits', maxDistance: 15 } }, () => toggleOrbits())
-  stationPanelEntities.push(pauseButtonEntity)
-
-  pauseTextEntity = engine.addEntity()
-  Transform.create(pauseTextEntity, { position: Vector3.create(pauseBtnX, PANEL_Y() + 0.04, PANEL_Z() + 0.006), rotation: flatLabelRotation })
-  TextShape.create(pauseTextEntity, { text: 'PAUSE', fontSize: 1, textColor: Color4.create(0, 0, 0, 1), textAlign: TextAlignMode.TAM_MIDDLE_CENTER })
-  stationPanelEntities.push(pauseTextEntity)
-}
-
-function clearStationPanel(): void {
-  for (const entity of stationPanelEntities) engine.removeEntity(entity)
-  stationPanelEntities.length = 0
-  stationPanelEntity = null; stationPanelScale = 0; pauseButtonEntity = null; pauseTextEntity = null
-}
+// The navigation console draws the station card; it is told when the station changes.
+let onStationChanged: (() => void) | null = null
+export function setStationChangedListener(cb: () => void): void { onStationChanged = cb }
 
 export function clearSystemView(): void {
-  selectBody(null); clearSelectionRing(); clearStationPanel()
+  selectBody(null); clearSelectionRing()
   orbitsPaused = false; pauseBlend = 0
   for (const entity of staticEntities) engine.removeEntity(entity); staticEntities.length = 0
   for (const body of orbitingPlanets) engine.removeEntity(body.entity); orbitingPlanets.length = 0
@@ -546,6 +449,7 @@ export function clearSystemView(): void {
   if (starEntity) { engine.removeEntity(starEntity); starEntity = null }
   if (starGlowEntity) { engine.removeEntity(starGlowEntity); starGlowEntity = null }
   currentStationInfo = null
+  if (onStationChanged) onStationChanged()
   if (systemRoot) { engine.removeEntity(systemRoot); systemRoot = null }
   systemTime = 0
 }

@@ -39,15 +39,6 @@ export function createEnvironment(): void {
   })
   GltfContainer.create(navPanel, { src: 'assets/models/nav_panel_low_1.glb' })
 
-  // Test model
-  const testModel = engine.addEntity()
-  Transform.create(testModel, {
-    position: Vector3.create(128, DECK_Y, 137.5),
-    scale: Vector3.create(0.5, 0.5, 0.5),
-    rotation: Quaternion.fromEulerDegrees(-90, 180, 0)
-  })
-  GltfContainer.create(testModel, { src: 'assets/models/display_screen_low_poly.glb' })
-
   // Galaxy projector base model
   const projectorModel = engine.addEntity()
   Transform.create(projectorModel, {

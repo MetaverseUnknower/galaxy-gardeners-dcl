@@ -14,6 +14,7 @@ import { createEnvironment, respawnSystem, twinkleSystem, DECK_Y } from './envir
 import { shipOverviewView, setSolarRechargeRate } from './stations/shipOverview'
 import { shipSystemsView } from './stations/shipSystems'
 import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
+import { createNavConsole, setNavConsoleSystem } from './navConsole'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -31,6 +32,7 @@ export async function main() {
   setStatusMessage('Connecting...')
   createEnvironment()
   createProjectorBase()
+  createNavConsole()
 
   try {
     setStatusMessage('Authenticating...')
@@ -165,6 +167,10 @@ export async function main() {
     setCurrentSystemId(playerInfo.current_system_id)
 
     setPodOpsSystemId(playerInfo.current_system_id)
+
+    const consoleSystemId = playerInfo.current_system_id
+
+    setNavConsoleSystem(systems.find(s => s.id === consoleSystemId)?.name ?? null)
     setCurrentSystemForTravel(playerInfo.current_system_id)
     setCanSwitchCheck(() => !isCurrentlyTraveling())
     setViewSystemCallback(() => {
@@ -224,6 +230,8 @@ async function reloadMap(): Promise<void> {
   clearMap()
   playerInfo = await api.getPlayerMe()
   setPodOpsSystemId(playerInfo.current_system_id)
+  const consoleSystemId = playerInfo.current_system_id
+  setNavConsoleSystem(systems.find(s => s.id === consoleSystemId)?.name ?? null)
   systems = await api.getSystems(playerInfo.galaxy_id)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()

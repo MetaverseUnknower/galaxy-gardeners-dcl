@@ -1,4 +1,4 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, TextShape, TextAlignMode } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { StarSystem } from './types'
 import { getSystemRoot, getSystemAutoScale } from './systemView'
@@ -34,21 +34,7 @@ let currentLocationMarker: Entity | null = null
 let markerRotation = 0
 let beamEntity: Entity | null = null
 let beamTime = 0
-let systemViewBtnEntity: Entity | null = null
-let systemViewBtnDisabled = false
 const NEBULA_EXTENT = MAP_RADIUS * 1.5
-
-// Exported for station panel alignment
-export const PANEL_Z = () => MAP_CENTER.z + NEBULA_EXTENT + 0.5
-export const PANEL_Y = () => DECK_Y + 0.625
-export const PANEL_TILT = () => Quaternion.fromEulerDegrees(-82.5, 0, 0)
-export const PANEL_CENTER_X = () => MAP_CENTER.x
-const VIEW_ROW_OFFSET_Z = -0.35 * Math.sin(82.5 * Math.PI / 180)
-const VIEW_ROW_OFFSET_Y = 0.35 * Math.cos(82.5 * Math.PI / 180)
-export const GLASS_PANEL_Z = () => MAP_CENTER.z + NEBULA_EXTENT + 0.5 + VIEW_ROW_OFFSET_Z / 2
-export const GLASS_PANEL_Y = () => DECK_Y + 0.625 + VIEW_ROW_OFFSET_Y / 2
-
-const PANEL_ANGLE = 82.5 // degrees
 
 // View mode
 export type ViewMode = 'galaxy' | 'system'
@@ -75,6 +61,18 @@ let canSwitchToSystem: (() => boolean) | null = null
 export function setCanSwitchCheck(check: () => boolean): void {
   canSwitchToSystem = check
 }
+
+let onViewModeChanged: (() => void) | null = null
+/** Called after a view switch completes (the console redraws its tabs). */
+export function setViewModeChangedListener(cb: () => void): void { onViewModeChanged = cb }
+/** True when the Star System view may be entered right now (false while in transit). */
+export function canSwitchToSystemView(): boolean { return canSwitchToSystem ? canSwitchToSystem() : true }
+
+// Map controls (used by the navigation console)
+export function rotateMap(dir: 1 | -1): void { targetRotationY += dir * ROTATE_STEP }
+export function tiltMap(dir: 1 | -1): void { targetHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, targetHeight + dir * HEIGHT_STEP)) }
+export function zoomMap(dir: 1 | -1): void { targetScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, targetScale + dir * SCALE_STEP)) }
+export function resetMapView(): void { targetRotationY = 0; targetHeight = FLOOR_Y + 1.0; targetScale = 1.0 }
 
 export function switchViewMode(mode: ViewMode): void {
   if (mode === currentViewMode || transitionPhase !== 'idle') return
@@ -159,121 +157,6 @@ export function createProjectorBase(): void {
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
   })
 
-  // Control panel
-  const panelZ = MAP_CENTER.z + NEBULA_EXTENT + 0.71
-  const panelY = DECK_Y + 0.625
-  const panelTilt = Quaternion.fromEulerDegrees(-PANEL_ANGLE, 0, 0)
-  const btnSize = Vector3.create(0.22, 0.22, 0.08)
-  const spacing = 0.3
-  const startX = MAP_CENTER.x - (spacing * 2.5)
-
-  const viewRowOffsetY = 0.35 * Math.cos(PANEL_ANGLE * Math.PI / 180)
-  const viewRowOffsetZ = -0.35 * Math.sin(PANEL_ANGLE * Math.PI / 180)
-  const viewBtnWidth = Vector3.create(0.5, 0.22, 0.08)
-  const viewSpacing = 0.55
-
-  // Galaxy View button
-  const galaxyViewBtn = engine.addEntity()
-  Transform.create(galaxyViewBtn, {
-    position: Vector3.create(MAP_CENTER.x + viewSpacing / 2, panelY + viewRowOffsetY, panelZ + viewRowOffsetZ),
-    scale: viewBtnWidth, rotation: panelTilt
-  })
-  MeshRenderer.setBox(galaxyViewBtn)
-  MeshCollider.setBox(galaxyViewBtn)
-  Material.setPbrMaterial(galaxyViewBtn, {
-    albedoColor: Color4.create(0, 0.2, 0.3, 1), emissiveColor: Color3.create(0, 0.8, 1), emissiveIntensity: 1.5
-  })
-  pointerEventsSystem.onPointerDown(
-    { entity: galaxyViewBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'Galaxy View', maxDistance: 8 } },
-    () => switchViewMode('galaxy')
-  )
-
-  // Galaxy icon
-  const iconRotation = Quaternion.fromEulerDegrees(PANEL_ANGLE, 180, 0)
-  const iconOffY = 0.12 * Math.cos(PANEL_ANGLE * Math.PI / 180)
-  const iconOffZ = -0.12 * Math.sin(PANEL_ANGLE * Math.PI / 180)
-  const iconStyle = {
-    albedoColor: Color4.create(0, 0.08, 0.25, 0.9),
-    emissiveColor: Color3.create(0, 0.08, 0.25),
-    emissiveIntensity: 2,
-    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-  }
-
-  const galaxyIcon = engine.addEntity()
-  Transform.create(galaxyIcon, {
-    position: Vector3.create(MAP_CENTER.x + viewSpacing / 2, panelY + viewRowOffsetY + 0.045, panelZ + viewRowOffsetZ - 0.01),
-    scale: Vector3.create(0.18, 0.18, 1), rotation: iconRotation
-  })
-  MeshRenderer.setPlane(galaxyIcon)
-  Material.setPbrMaterial(galaxyIcon, { ...iconStyle, texture: Material.Texture.Common({ src: 'assets/icons/galaxy-icon.png' }), emissiveTexture: Material.Texture.Common({ src: 'assets/icons/galaxy-icon.png' }) })
-
-  // System View button
-  const systemViewBtn = engine.addEntity()
-  systemViewBtnEntity = systemViewBtn
-  Transform.create(systemViewBtn, {
-    position: Vector3.create(MAP_CENTER.x - viewSpacing / 2, panelY + viewRowOffsetY, panelZ + viewRowOffsetZ),
-    scale: viewBtnWidth, rotation: panelTilt
-  })
-  MeshRenderer.setBox(systemViewBtn)
-  MeshCollider.setBox(systemViewBtn)
-  Material.setPbrMaterial(systemViewBtn, {
-    albedoColor: Color4.create(0, 0.2, 0.3, 1), emissiveColor: Color3.create(0, 0.8, 1), emissiveIntensity: 1.5
-  })
-  pointerEventsSystem.onPointerDown(
-    { entity: systemViewBtn, opts: { button: InputAction.IA_POINTER, hoverText: 'System View', maxDistance: 8 } },
-    () => switchViewMode('system')
-  )
-
-  const systemIcon = engine.addEntity()
-  Transform.create(systemIcon, {
-    position: Vector3.create(MAP_CENTER.x - viewSpacing / 2, panelY + viewRowOffsetY + 0.045, panelZ + viewRowOffsetZ - 0.01),
-    scale: Vector3.create(0.18, 0.18, 1), rotation: iconRotation
-  })
-  MeshRenderer.setPlane(systemIcon)
-  Material.setPbrMaterial(systemIcon, { ...iconStyle, texture: Material.Texture.Common({ src: 'assets/icons/system-icon.png' }), emissiveTexture: Material.Texture.Common({ src: 'assets/icons/system-icon.png' }) })
-
-
-
-  // Control buttons (reversed for player perspective)
-  const buttons: { hoverText: string; icon: string; flipX?: boolean; flipY?: boolean; callback: () => void }[] = [
-    { hoverText: 'Rotate Right', icon: 'assets/icons/rotate-icon.png', flipX: true, callback: () => { targetRotationY -= ROTATE_STEP } },
-    { hoverText: 'Raise', icon: 'assets/icons/height-adjust-icon.png', callback: () => { targetHeight = Math.min(MAX_HEIGHT, targetHeight + HEIGHT_STEP) } },
-    { hoverText: 'Zoom In', icon: 'assets/icons/zoom-in-icon.png', callback: () => { targetScale = Math.min(MAX_SCALE, targetScale + SCALE_STEP) } },
-    { hoverText: 'Zoom Out', icon: 'assets/icons/zoom-out-icon.png', callback: () => { targetScale = Math.max(MIN_SCALE, targetScale - SCALE_STEP) } },
-    { hoverText: 'Lower', icon: 'assets/icons/height-adjust-icon.png', flipY: true, callback: () => { targetHeight = Math.max(MIN_HEIGHT, targetHeight - HEIGHT_STEP) } },
-    { hoverText: 'Rotate Left', icon: 'assets/icons/rotate-icon.png', callback: () => { targetRotationY += ROTATE_STEP } },
-  ]
-
-  for (let i = 0; i < buttons.length; i++) {
-    const btn = engine.addEntity()
-    Transform.create(btn, {
-      position: Vector3.create(startX + i * spacing, panelY + 0.01, panelZ - 0.08),
-      scale: btnSize, rotation: panelTilt
-    })
-    MeshRenderer.setBox(btn)
-    MeshCollider.setBox(btn)
-    Material.setPbrMaterial(btn, {
-      albedoColor: Color4.create(0.05, 0.1, 0.15, 1), emissiveColor: Color3.create(0, 0.6, 0.8), emissiveIntensity: 1.5
-    })
-    pointerEventsSystem.onPointerDown(
-      { entity: btn, opts: { button: InputAction.IA_POINTER, hoverText: buttons[i].hoverText, maxDistance: 8 } },
-      buttons[i].callback
-    )
-
-    const icon = engine.addEntity()
-    const flipScaleX = buttons[i].flipX ? -1 : 1
-    const flipScaleY = buttons[i].flipY ? -1 : 1
-    Transform.create(icon, {
-      position: Vector3.create(startX + i * spacing, panelY + 0.01 + 0.045, panelZ - 0.08 - 0.01),
-      scale: Vector3.create(0.18 * flipScaleX, 0.18 * flipScaleY, 1), rotation: iconRotation
-    })
-    MeshRenderer.setPlane(icon)
-    Material.setPbrMaterial(icon, {
-      ...iconStyle,
-      texture: Material.Texture.Common({ src: buttons[i].icon }),
-      emissiveTexture: Material.Texture.Common({ src: buttons[i].icon })
-    })
-  }
 }
 
 function createNebula(): void {
@@ -465,6 +348,7 @@ export function galaxyAnimationSystem(dt: number): void {
       transitionPhase = 'swapping'
       if (pendingMode && onViewModeChange) {
         currentViewMode = pendingMode
+        if (onViewModeChanged) onViewModeChanged()
         const result = onViewModeChange(pendingMode)
         pendingMode = null
         if (result && typeof (result as any).then === 'function') {
@@ -518,30 +402,6 @@ export function galaxyAnimationSystem(dt: number): void {
     })
   }
 
-  // Update System View button based on travel state
-  if (systemViewBtnEntity) {
-    const disabled = canSwitchToSystem ? !canSwitchToSystem() : false
-    if (disabled !== systemViewBtnDisabled) {
-      systemViewBtnDisabled = disabled
-      if (disabled) {
-        Material.setPbrMaterial(systemViewBtnEntity, {
-          albedoColor: Color4.create(0.1, 0.1, 0.1, 1), emissiveColor: Color3.create(0.2, 0.2, 0.2), emissiveIntensity: 0.3
-        })
-        pointerEventsSystem.onPointerDown(
-          { entity: systemViewBtnEntity, opts: { button: InputAction.IA_POINTER, hoverText: 'System View (Disabled - In Transit)', maxDistance: 8 } },
-          () => {}
-        )
-      } else {
-        Material.setPbrMaterial(systemViewBtnEntity, {
-          albedoColor: Color4.create(0, 0.2, 0.3, 1), emissiveColor: Color3.create(0, 0.8, 1), emissiveIntensity: 1.5
-        })
-        pointerEventsSystem.onPointerDown(
-          { entity: systemViewBtnEntity, opts: { button: InputAction.IA_POINTER, hoverText: 'System View', maxDistance: 8 } },
-          () => switchViewMode('system')
-        )
-      }
-    }
-  }
 }
 
 export function renderStarSystems(systems: StarSystem[], homeSystemId: string | null, currentSystemId: string | null): void {
