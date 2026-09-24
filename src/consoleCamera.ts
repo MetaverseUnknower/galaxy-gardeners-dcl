@@ -49,12 +49,21 @@ export function setupConsoleCamera(): void {
 }
 
 // Keyboard control of the map while standing at the console:
-// 1-4 = rotate left, raise, lower, rotate right; with E (primary) held: zoom in, zoom out, recenter, pause/resume.
-// (Shift is the explorer's walk toggle and is not forwarded together with number keys.)
+// 1-4 = rotate left, raise, lower, rotate right; with Shift held: zoom in, zoom out, recenter, pause/resume.
+// Shift arrives as IA_MODIFIER down/up events (SDK 7.23+), so its held state is tracked from their timestamps.
+let shiftHeld = false
+function trackShift(): void {
+  const down = inputSystem.getInputCommand(InputAction.IA_MODIFIER, PointerEventType.PET_DOWN)
+  const up = inputSystem.getInputCommand(InputAction.IA_MODIFIER, PointerEventType.PET_UP)
+  if (down && up) shiftHeld = down.timestamp > up.timestamp
+  else if (down) shiftHeld = true
+  else if (up) shiftHeld = false
+}
 function consoleKeysSystem(): void {
+  trackShift()
   if (!active) return
   const down = (a: InputAction) => inputSystem.isTriggered(a, PointerEventType.PET_DOWN)
-  const shift = inputSystem.isPressed(InputAction.IA_PRIMARY)
+  const shift = shiftHeld
   if (down(InputAction.IA_ACTION_3)) shift ? zoomMap(1) : rotateMap(1)
   if (down(InputAction.IA_ACTION_4)) shift ? zoomMap(-1) : tiltMap(1)
   if (down(InputAction.IA_ACTION_5)) shift ? resetMapView() : tiltMap(-1)

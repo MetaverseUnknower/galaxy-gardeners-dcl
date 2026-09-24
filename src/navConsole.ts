@@ -163,7 +163,7 @@ export function refreshNavConsole(): void {
   frame(bag, root, 0.05, -0.35, 2.3, 1.6)   // spans -1.1..1.2; the station column starts at 1.45
   txt(bag, root, -1.0, 0.33, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
   txt(bag, root, 1.12, 0.37, '1 2 3 4   ROTATE L · RAISE · LOWER · ROTATE R', 0.07, MUTED, RIGHT)
-  txt(bag, root, 1.12, 0.28, 'HOLD E + 1 2 3 4   ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.07, MUTED, RIGHT)
+  txt(bag, root, 1.12, 0.28, 'SHIFT + 1 2 3 4   ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.07, MUTED, RIGHT)
   iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
   iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
   iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
@@ -174,9 +174,9 @@ export function refreshNavConsole(): void {
 
   // Right: station card + thumbnail (dock when a station exists, build when the slot is free)
   if (station) {
-    txt(bag, root, 1.5, 0.36, station.name, 0.15, WHITE, LEFT)
-    dot(bag, root, 1.55, 0.22, 0.05, GREEN3)
-    txt(bag, root, 1.63, 0.22, 'DOCKING AVAILABLE', 0.12, GREEN, LEFT)
+    txt(bag, root, 1.5, 0.31, station.name, 0.15, WHITE, LEFT)
+    dot(bag, root, 1.55, 0.19, 0.05, GREEN3)
+    txt(bag, root, 1.63, 0.19, 'DOCKING AVAILABLE', 0.12, GREEN, LEFT)
     const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, { fill: Color4.create(0.02, 0.1, 0.16, 1) })
     icon(bag, root, 2.1, -0.05, 0.3, ICONS.station)
     txt(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
