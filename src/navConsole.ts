@@ -145,16 +145,16 @@ export function refreshNavConsole(): void {
   // Left: pause orbits + galaxy thumbnail
   if (inSystemView) {
     const pauseFill = frame(bag, root, -1.95, -0.05, 1.5, 0.9, { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) })
-    icon(bag, root, -1.95, 0.2, 0.34, ICONS.pause, { color: MAGENTA3 })
-    txt(bag, root, -1.95, -0.15, paused ? 'RESUME ORBITS' : 'PAUSE ORBITS', 0.24, MAGENTA)
-    txt(bag, root, -1.95, -0.33, paused ? 'RESUME CELESTIAL MOTION' : 'FREEZE CELESTIAL MOTION', 0.11, DIM)
+    icon(bag, root, -1.95, 0.16, 0.34, ICONS.pause, { color: MAGENTA3 })
+    txt(bag, root, -1.95, -0.19, paused ? 'RESUME ORBITS' : 'PAUSE ORBITS', 0.24, MAGENTA)
+    txt(bag, root, -1.95, -0.37, paused ? 'RESUME CELESTIAL MOTION' : 'FREEZE CELESTIAL MOTION', 0.11, DIM)
     clickable(pauseFill, paused ? 'Resume Orbits' : 'Pause Orbits', () => { toggleOrbits(); refreshNavConsole() })
   } else {
     const dimGrey = Color3.create(0.3, 0.38, 0.45)
     frame(bag, root, -1.95, -0.05, 1.5, 0.9, { border: dimGrey })
-    icon(bag, root, -1.95, 0.2, 0.34, ICONS.pause, { color: dimGrey })
-    txt(bag, root, -1.95, -0.15, 'PAUSE ORBITS', 0.24, MUTED)
-    txt(bag, root, -1.95, -0.33, 'AVAILABLE IN STAR SYSTEM VIEW', 0.11, MUTED)
+    icon(bag, root, -1.95, 0.16, 0.34, ICONS.pause, { color: dimGrey })
+    txt(bag, root, -1.95, -0.19, 'PAUSE ORBITS', 0.24, MUTED)
+    txt(bag, root, -1.95, -0.37, 'AVAILABLE IN STAR SYSTEM VIEW', 0.11, MUTED)
   }
   frame(bag, root, -1.95, -0.8, 1.5, 0.5)
   image(bag, root, -1.95, -0.8, 1.4, 0.42, IMAGES.galaxy)
@@ -163,7 +163,7 @@ export function refreshNavConsole(): void {
   frame(bag, root, 0.05, -0.35, 2.3, 1.6)   // spans -1.1..1.2; the station column starts at 1.45
   txt(bag, root, -1.0, 0.33, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
   txt(bag, root, 1.12, 0.37, '1 2 3 4   ROTATE L · RAISE · LOWER · ROTATE R', 0.07, MUTED, RIGHT)
-  txt(bag, root, 1.12, 0.28, 'SHIFT + 1 2 3 4   ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.07, MUTED, RIGHT)
+  txt(bag, root, 1.12, 0.28, 'HOLD E + 1 2 3 4   ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.07, MUTED, RIGHT)
   iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
   iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
   iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })

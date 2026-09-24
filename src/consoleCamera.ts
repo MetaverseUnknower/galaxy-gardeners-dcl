@@ -49,11 +49,12 @@ export function setupConsoleCamera(): void {
 }
 
 // Keyboard control of the map while standing at the console:
-// 1-4 = rotate left, raise, lower, rotate right; with Shift (walk) held: zoom in, zoom out, recenter, pause/resume.
+// 1-4 = rotate left, raise, lower, rotate right; with E (primary) held: zoom in, zoom out, recenter, pause/resume.
+// (Shift is the explorer's walk toggle and is not forwarded together with number keys.)
 function consoleKeysSystem(): void {
   if (!active) return
   const down = (a: InputAction) => inputSystem.isTriggered(a, PointerEventType.PET_DOWN)
-  const shift = inputSystem.isPressed(InputAction.IA_WALK)
+  const shift = inputSystem.isPressed(InputAction.IA_PRIMARY)
   if (down(InputAction.IA_ACTION_3)) shift ? zoomMap(1) : rotateMap(1)
   if (down(InputAction.IA_ACTION_4)) shift ? zoomMap(-1) : tiltMap(1)
   if (down(InputAction.IA_ACTION_5)) shift ? resetMapView() : tiltMap(-1)
