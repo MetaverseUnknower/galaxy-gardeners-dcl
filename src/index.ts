@@ -15,6 +15,7 @@ import { shipOverviewView, setSolarRechargeRate } from './stations/shipOverview'
 import { shipSystemsView } from './stations/shipSystems'
 import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
 import { createNavConsole, setNavConsoleSystem } from './navConsole'
+import { setupConsoleCamera } from './consoleCamera'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -33,6 +34,7 @@ export async function main() {
   createEnvironment()
   createProjectorBase()
   createNavConsole()
+  setupConsoleCamera()
 
   try {
     setStatusMessage('Authenticating...')
