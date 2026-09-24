@@ -1,5 +1,5 @@
 {
-  "purpose": "Icon glyphs for the Galaxy Gardeners Decentraland scene station screens. The files listed under 'icons' are transparent placeholders to be replaced with real artwork.",
+  "purpose": "Icon glyphs and panel textures for the Galaxy Gardeners game scene (a peaceful space exploration and gardening game). Entries with \"status\": \"needed\" still need artwork; entries marked \"done\" are finished and listed for reference only.",
   "style": {
     "format": "PNG with alpha (RGBA), 512 x 512 pixels",
     "look": "A single flat white (#FFFFFF, fully opaque) glyph on a fully transparent background. No colour, no gradients, no outline, no drop shadow, no background shape. The scene tints the white glyph cyan at runtime, so any colour in the file is wrong.",
@@ -16,123 +16,142 @@
     {
       "file": "assets/icons/fuel-icon.png",
       "name": "Fuel",
-      "glyph": "A single liquid drop / fuel droplet, solid silhouette.",
-      "used_for": "Ship station Overview: FUEL frame header."
+      "glyph": "A single rounded liquid droplet, solid silhouette.",
+      "used_for": "Ship station Overview: FUEL frame header.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/upgrades-icon.png",
       "name": "Upgrades",
-      "glyph": "A wrench, angled about 45 degrees, solid silhouette.",
-      "used_for": "Ship station Overview: UPGRADES button; Systems view header."
+      "glyph": "A hand wrench tilted about 45 degrees, solid silhouette.",
+      "used_for": "Ship station Overview: UPGRADES button; Systems view header.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/systems-icon.png",
       "name": "Ship Systems",
-      "glyph": "A small angular emblem: two or three slanted parallel bars forming a chevron-like mark (like a stylised ship insignia).",
-      "used_for": "Ship station Systems view header (top-left of the screen)."
+      "glyph": "Three slanted parallel bars forming a chevron-shaped emblem, solid silhouette.",
+      "used_for": "Ship station Systems view header.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/stats-icon.png",
       "name": "Ship Stats",
-      "glyph": "A bar chart: three or four vertical bars of different heights on a baseline.",
-      "used_for": "Ship station low screen: SHIP STATS header."
+      "glyph": "A bar chart: four vertical bars of different heights standing on a baseline.",
+      "used_for": "Ship station low screen: SHIP STATS header.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/missions-icon.png",
       "name": "Active Missions",
-      "glyph": "A target / crosshair: a circle with a centre dot and four short tick marks.",
-      "used_for": "Ship station low screen: ACTIVE MISSIONS header."
+      "glyph": "A circle with a small solid dot in the centre and four short tick marks at the top, bottom, left and right of the rim.",
+      "used_for": "Ship station low screen: ACTIVE MISSIONS header.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/resources-icon.png",
       "name": "Resource Inventory",
-      "glyph": "A cluster of three crystal shards / gems, solid silhouette.",
-      "used_for": "Flora station: RESOURCE INVENTORY tile and view header."
+      "glyph": "A cluster of three faceted mineral crystals of different heights, solid silhouette.",
+      "used_for": "Flora station: RESOURCE INVENTORY tile and view header.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/check-icon.png",
       "name": "Check",
       "glyph": "A bold check mark.",
-      "used_for": "Ship Systems view: required resource satisfied."
+      "used_for": "Ship Systems view: required resource satisfied.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/cross-icon.png",
       "name": "Cross",
-      "glyph": "A bold X / cross mark.",
-      "used_for": "Ship Systems view: required resource missing."
+      "glyph": "A bold letter X.",
+      "used_for": "Ship Systems view: required resource missing.",
+      "status": "needed"
     },
     {
       "file": "assets/icons/coordinates-icon.png",
       "name": "Galactic Coordinates",
-      "glyph": "A crosshair / target: a circle with a centre dot and four tick marks through the rim.",
-      "used_for": "Discovery desk: GALACTIC COORDINATES cell and the STELLAR CARTOGRAPHY badge."
+      "glyph": "A circle with a small solid dot in the centre and four short tick marks crossing the rim at the top, bottom, left and right.",
+      "used_for": "Discovery desk: GALACTIC COORDINATES cell and the STELLAR CARTOGRAPHY badge.",
+      "status": "done"
     },
     {
       "file": "assets/icons/travel-icon.png",
       "name": "Travel Vector",
-      "glyph": "A stylised ship / arrowhead pointing up, with two small swept fins (like a paper-plane glyph).",
-      "used_for": "Discovery desk: TRAVEL VECTOR header."
+      "glyph": "A paper-plane style arrowhead pointing up with two small swept fins.",
+      "used_for": "Discovery desk: TRAVEL VECTOR header.",
+      "status": "done"
     },
     {
       "file": "assets/icons/direction-inward-icon.png",
       "name": "Inward",
-      "glyph": "Two concentric rings with a solid centre dot (a target / bullseye).",
-      "used_for": "Discovery desk: INWARD direction button."
+      "glyph": "Two concentric rings with a solid dot in the centre.",
+      "used_for": "Discovery desk: INWARD direction button.",
+      "status": "done"
     },
     {
       "file": "assets/icons/direction-lateral-icon.png",
       "name": "Lateral",
-      "glyph": "A horizontal double-headed arrow.",
-      "used_for": "Discovery desk: LATERAL direction button."
+      "glyph": "A horizontal arrow with a head at both ends.",
+      "used_for": "Discovery desk: LATERAL direction button.",
+      "status": "done"
     },
     {
       "file": "assets/icons/direction-vertical-icon.png",
       "name": "Vertical",
-      "glyph": "A vertical double-headed arrow.",
-      "used_for": "Discovery desk: VERTICAL direction button."
+      "glyph": "A vertical arrow with a head at both ends.",
+      "used_for": "Discovery desk: VERTICAL direction button.",
+      "status": "done"
     },
     {
       "file": "assets/icons/direction-outward-icon.png",
       "name": "Outward",
-      "glyph": "A small centre dot with two concentric rings and four short radiating dashes outside the outer ring.",
-      "used_for": "Discovery desk: OUTWARD direction button."
+      "glyph": "A small centre dot inside two concentric rings, with four short dashes radiating outward beyond the outer ring.",
+      "used_for": "Discovery desk: OUTWARD direction button.",
+      "status": "done"
     },
     {
       "file": "assets/icons/recenter-icon.png",
       "name": "Recenter",
-      "glyph": "A crosshair: circle with a centre dot and four ticks (may match coordinates-icon).",
-      "used_for": "Navigation console: RECENTER button."
+      "glyph": "A circle with a small solid dot in the centre and four short tick marks on the rim (same family as coordinates-icon).",
+      "used_for": "Navigation console: RECENTER button.",
+      "status": "done"
     },
     {
       "file": "assets/icons/pause-icon.png",
       "name": "Pause Orbits",
-      "glyph": "Two vertical bars (pause symbol) inside a circle.",
-      "used_for": "Navigation console: PAUSE ORBITS button."
+      "glyph": "Two vertical bars, the pause symbol, inside a circle.",
+      "used_for": "Navigation console: PAUSE ORBITS button.",
+      "status": "done"
     },
     {
       "file": "assets/icons/build-station-icon.png",
       "name": "Build Station",
-      "glyph": "The space-station glyph (ringed hub with a central spire, like space-station-icon.png) with a small plus sign at its upper right.",
-      "used_for": "Navigation console: BUILD STATION button when the system has no station."
+      "glyph": "A ringed hub with a central spire, like space-station-icon.png, with a small plus sign at its upper right.",
+      "used_for": "Navigation console: BUILD STATION button when the system has no station.",
+      "status": "done"
     }
   ],
-  "deliverable": "Return one PNG per entry, named exactly as 'file' (path relative to the project root), overwriting the placeholder.",
+  "deliverable": "Return one PNG per \"needed\" entry, named exactly as \"file\" (path relative to the project root).",
   "textures": [
     {
       "file": "assets/images/ship-blueprint.png",
       "name": "Ship blueprint",
       "format": "PNG with alpha, 1024 x 1024, square",
-      "look": "Technical blueprint / wireframe line drawing of the DaisyClass ship (the 3D model at assets/models/DaisyClass_Exterior.glb: a flat, roughly circular petal-shaped hull) seen from above or three-quarter view. Thin cyan (#00E5FF) lines with faint dimension marks and a subtle grid, on a FULLY TRANSPARENT background. No fill, no dark backing, no text. Matches the wireframe ship in docs/superpowers/specs/references/ship-overview-concept.png and ship-upgrades-concept.png.",
+      "look": "Technical blueprint line drawing of a flat, roughly circular petal-shaped spaceship hull seen from above or a three-quarter view. Thin cyan (#00E5FF) lines with a faint grid and a few callout lines, on a fully transparent background, no text.",
       "used_for": "Ship station: Overview right frame and Systems view center, drawn flat on the screen glass.",
-      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder.",
+      "status": "done"
     },
     {
       "file": "assets/images/exploration-bay.png",
       "name": "Exploration bay",
       "format": "PNG with alpha, 1024 x 512 (2:1)",
-      "look": "Isometric technical line-art of a pod bay: a row of four open cradles holding sleek survey pods, thin cyan (#00E5FF) lines with a faint grid, fully transparent background, no text. Matches the bay thumbnails in docs/superpowers/specs/references/pod-operations-concept.png.",
+      "look": "Isometric technical line-art of a pod bay: a row of four open cradles holding sleek survey pods, thin cyan (#00E5FF) lines with a faint grid, fully transparent background, no text.",
       "used_for": "Ship station, Pod Operations view: EXPLORATION BAY card thumbnail.",
-      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder.",
+      "status": "done"
     },
     {
       "file": "assets/images/mining-bay.png",
@@ -140,23 +159,26 @@
       "format": "PNG with alpha, 1024 x 512 (2:1)",
       "look": "Same style as exploration-bay.png but the cradles hold stockier drill-nosed mining pods.",
       "used_for": "Ship station, Pod Operations view: MINING BAY card thumbnail.",
-      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder.",
+      "status": "done"
     },
     {
       "file": "assets/images/galaxy-thumb.png",
       "name": "Galaxy thumbnail",
       "format": "PNG with alpha, 1024 x 512 (2:1)",
-      "look": "A small spiral galaxy seen at an angle, soft blue-white core with faint cyan arms and a few star specks, on a fully transparent background; thin cyan grid lines behind it are welcome. Matches the thumbnail under PAUSE ORBITS in docs/superpowers/specs/references/nav-console-concept.png.",
+      "look": "A small spiral galaxy seen at an angle, soft blue-white core with faint cyan arms and a few star specks, on a fully transparent background; thin cyan grid lines behind it are welcome.",
       "used_for": "Navigation console: thumbnail under the PAUSE ORBITS card.",
-      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder.",
+      "status": "done"
     },
     {
       "file": "assets/images/station-orbit.png",
       "name": "Station orbit thumbnail",
       "format": "PNG with alpha, 1024 x 512 (2:1)",
-      "look": "Three thin concentric cyan orbit ellipses around a small warm-white sun, with a cyan dot on one orbit and a magenta dot on another, on a fully transparent background. Matches the thumbnail under DOCK in the same concept.",
+      "look": "Three thin concentric cyan orbit ellipses around a small warm-white sun, with a cyan dot on one orbit and a magenta dot on another, on a fully transparent background.",
       "used_for": "Navigation console: thumbnail under the DOCK card.",
-      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder.",
+      "status": "done"
     },
     {
       "file": "assets/images/station-slot-preview.png",
@@ -164,7 +186,8 @@
       "format": "PNG with alpha, 1024 x 512 (2:1)",
       "look": "Same style as station-orbit.png: thin cyan orbit ellipses around a small warm-white sun with two or three coloured planet dots, plus a small green dashed circle on the outer orbit marking the free station slot, all on a fully transparent background. Matches the SYSTEM PREVIEW thumbnail in docs/superpowers/specs/references/nav-console-no-station-concept.png.",
       "used_for": "Navigation console: SYSTEM PREVIEW thumbnail under BUILD STATION.",
-      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder."
+      "deliverable": "One PNG named exactly as 'file', overwriting the transparent placeholder.",
+      "status": "done"
     }
   ]
 }
