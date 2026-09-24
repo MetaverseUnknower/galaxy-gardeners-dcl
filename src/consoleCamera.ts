@@ -1,12 +1,14 @@
 // Overhead camera for the Stellar Navigation console: when the player steps up to the console,
 // the view lifts above their head and looks down across the panel toward the galaxy map, and
 // hands control back when they walk away.
-import { engine, Transform, VirtualCamera, MainCamera } from '@dcl/sdk/ecs'
+import { engine, Transform, VirtualCamera, MainCamera, inputSystem, InputAction, PointerEventType } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 import { getPlayer } from '@dcl/sdk/players'
 import { DECK_Y } from './environment'
 import { getPref, setPref } from './prefs'
-import { setConsoleLowered } from './navConsole'
+import { setConsoleLowered, refreshNavConsole } from './navConsole'
+import { rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
+import { toggleOrbits } from './systemView'
 
 export type CameraMode = 'fixed' | 'free'
 const PREF_KEY = 'consoleCamera'
@@ -31,6 +33,19 @@ export function setupConsoleCamera(): void {
   Transform.create(cameraEntity, { position: CAMERA_POS })
   VirtualCamera.create(cameraEntity, { defaultTransition: { transitionMode: VirtualCamera.Transition.Time(0.8) }, lookAtEntity: target })
   engine.addSystem(consoleCameraSystem)
+  engine.addSystem(consoleKeysSystem)
+}
+
+// Keyboard control of the map while standing at the console:
+// 1-4 = rotate left, raise, lower, rotate right; with Shift (walk) held: zoom in, zoom out, recenter, pause/resume.
+function consoleKeysSystem(): void {
+  if (!active) return
+  const down = (a: InputAction) => inputSystem.isTriggered(a, PointerEventType.PET_DOWN)
+  const shift = inputSystem.isPressed(InputAction.IA_WALK)
+  if (down(InputAction.IA_ACTION_3)) shift ? zoomMap(1) : rotateMap(1)
+  if (down(InputAction.IA_ACTION_4)) shift ? zoomMap(-1) : tiltMap(1)
+  if (down(InputAction.IA_ACTION_5)) shift ? resetMapView() : tiltMap(-1)
+  if (down(InputAction.IA_ACTION_6)) { if (shift) { toggleOrbits(); refreshNavConsole() } else rotateMap(-1) }
 }
 
 function consoleCameraSystem(dt: number): void {

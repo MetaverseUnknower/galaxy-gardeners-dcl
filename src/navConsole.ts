@@ -18,7 +18,8 @@ const hdr: typeof header = (into, root, x, y, opts) => header(into, root, x, y, 
 const btn: typeof button = (into, root, x, y, w, h, label, hover, onClick, opts = {}) => button(into, root, x, y, w, h, label, hover, onClick, { ...opts, size: (opts.size ?? 0.42) * T })
 const CONSOLE_POSITION = Vector3.create(128, DECK_Y, 137.5)   // where the old display screen stood
 const CONSOLE_SCALE = 0.85
-const CONSOLE_DROP = 0.6      // how far the desk sinks when the player steps up to it
+const CONSOLE_DROP = 0.25     // how far the desk sinks when the player steps up to it
+const CONSOLE_TILT = 8        // degrees the lowered desk tips toward the projector
 const CONSOLE_DROP_SPEED = 3  // 1/s
 // Same face geometry as the station low desks (model front is -z; here that faces the projector).
 const SCREEN_OFFSET = Vector3.create(0, 1.35, -0.3)
@@ -36,6 +37,7 @@ const IMAGES = { galaxy: 'assets/images/galaxy-thumb.png', stationOrbit: 'assets
 let screen: Entity | null = null
 let desk: Entity | null = null
 let lowered = false
+let tiltNow = 0
 const bag: Bag = []
 let systemName: string | null = null
 let systemHasStation = false
@@ -69,6 +71,9 @@ function deskMotionSystem(dt: number): void {
   const targetY = CONSOLE_POSITION.y - (lowered ? CONSOLE_DROP : 0)
   const k = 1 - Math.exp(-CONSOLE_DROP_SPEED * dt)
   t.position = Vector3.create(t.position.x, t.position.y + (targetY - t.position.y) * k, t.position.z)
+  tiltNow += ((lowered ? CONSOLE_TILT : 0) - tiltNow) * k
+  // Tip the far (projector-side) edge down as it sinks. If it tips the wrong way, negate CONSOLE_TILT.
+  t.rotation = Quaternion.multiply(Quaternion.fromEulerDegrees(0, 180, 0), Quaternion.fromEulerDegrees(tiltNow, 0, 0))
 }
 
 // Re-draw when transit state or the orbit pause flips without a click on this console.
@@ -136,7 +141,8 @@ export function refreshNavConsole(): void {
   // Center: map navigation
   frame(bag, root, 0.05, -0.35, 2.3, 1.6)   // spans -1.1..1.2; the station column starts at 1.45
   txt(bag, root, -1.0, 0.33, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
-  txt(bag, root, 1.1, 0.33, 'EXPLORE THE GALAXY', 0.1, MUTED, RIGHT)
+  txt(bag, root, 1.12, 0.37, '1 2 3 4   ROTATE L · RAISE · LOWER · ROTATE R', 0.07, MUTED, RIGHT)
+  txt(bag, root, 1.12, 0.28, 'SHIFT + 1 2 3 4   ZOOM IN · ZOOM OUT · RECENTER · PAUSE', 0.07, MUTED, RIGHT)
   iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
   iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
   iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
