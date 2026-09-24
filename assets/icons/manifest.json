@@ -114,12 +114,6 @@
       "name": "Rotate Right",
       "glyph": "A clockwise circular arrow (mirror of the existing rotate-icon.png).",
       "used_for": "Navigation console: ROTATE RIGHT button."
-    },
-    {
-      "file": "assets/icons/tilt-down-icon.png",
-      "name": "Tilt Down",
-      "glyph": "A bold downward arrow (mirror of height-adjust-icon.png).",
-      "used_for": "Navigation console: TILT DOWN button."
     }
   ],
   "deliverable": "Return one PNG per entry, named exactly as 'file' (path relative to the project root), overwriting the placeholder.",
