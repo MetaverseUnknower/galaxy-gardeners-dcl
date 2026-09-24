@@ -158,7 +158,7 @@ export function refreshNavConsole(): void {
     txt(bag, root, -1.95, -0.19, 'PAUSE ORBITS', 0.24, MUTED)
     txt(bag, root, -1.95, -0.37, 'AVAILABLE IN STAR SYSTEM VIEW', 0.11, MUTED)
   }
-  frame(bag, root, -1.95, -0.85, 1.5, 0.6)
+  frame(bag, root, -1.95, -0.85, 1.2, 0.6)
   image(bag, root, -1.95, -0.85, 1.16, 0.58, IMAGES.galaxy)   // 2:1, matching the texture
 
   // Center: map navigation
@@ -185,7 +185,7 @@ export function refreshNavConsole(): void {
     txt(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
     txt(bag, root, 2.1, -0.5, 'APPROACH & DOCK  »', 0.11, DIM)
     clickable(dockFill, `Dock at ${station.name}`, () => { showNotification(`Captain, docking clamps are offline. The airlock seal failed its last integrity check and engineering has it on the bench. Holding position off ${station.name} until they clear us to dock.`, CYAN, 9) })
-    frame(bag, root, 2.1, -0.87, 1.3, 0.5)
+    frame(bag, root, 2.1, -0.87, 1.0, 0.5)
     image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationOrbit)   // 2:1
   } else {
     txt(bag, root, 2.1, 0.3, 'NO STATION PRESENT', 0.16, WHITE)
@@ -194,10 +194,8 @@ export function refreshNavConsole(): void {
     icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: GREEN3 })
     txt(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
     clickable(buildFill, 'Build Station', () => { console.log('Build'); showNotification('Station construction coming soon', GREEN) })
-    frame(bag, root, 2.1, -0.87, 1.3, 0.5)
-    txt(bag, root, 1.5, -0.68, 'SYSTEM PREVIEW', 0.08, CYAN, LEFT)
-    txt(bag, root, 2.7, -0.68, 'STATION LOCATION', 0.08, DIM, RIGHT)
-    image(bag, root, 2.1, -0.93, 0.72, 0.36, IMAGES.stationSlot)   // 2:1
+    frame(bag, root, 2.1, -0.87, 1.0, 0.5)
+    image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationSlot)   // 2:1
   }
 
   // Footer, with the console camera toggle in the middle
@@ -206,7 +204,7 @@ export function refreshNavConsole(): void {
   CAMERA_MODES.forEach((mode, i) => {
     btn(bag, root, -0.57 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })
-  txt(bag, root, -2.65, -1.12, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
-  txt(bag, root, 2.65, -1.17, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
+  txt(bag, root, -2.65, -1.19, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
+  txt(bag, root, 2.65, -1.19, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 
 }
