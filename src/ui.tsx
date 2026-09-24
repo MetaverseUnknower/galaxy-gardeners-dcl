@@ -352,7 +352,7 @@ const TERMINAL_POSITION = { x: 128, y: 40.1, z: 139.5 }
 const TERMINAL_LOOK_AT = { x: 128, y: 41, z: 128 }
 
 const ReturnToTerminal = () => (
-  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 14, left: '50%' }, margin: { left: -95 }, width: 190, height: 30, justifyContent: 'center', alignItems: 'center' }}
+  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 250, left: 24 }, width: 190, height: 30, justifyContent: 'center', alignItems: 'center' }}
     uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.85) }}
     onMouseDown={() => {
       setCameraMode('free')

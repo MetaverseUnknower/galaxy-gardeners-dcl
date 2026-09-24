@@ -142,20 +142,7 @@ function updateBeamShape(): void {
 }
 
 export function createProjectorBase(): void {
-  // Translucent cyan top
-  const top = engine.addEntity()
-  Transform.create(top, {
-    position: Vector3.create(MAP_CENTER.x, FLOOR_Y + PROJECTOR_HEIGHT * 0.85, MAP_CENTER.z),
-    scale: Vector3.create(PROJECTOR_RADIUS * 1.85, PROJECTOR_HEIGHT * 0.3, PROJECTOR_RADIUS * 1.85)
-  })
-  MeshRenderer.setCylinder(top)
-  Material.setPbrMaterial(top, {
-    albedoColor: Color4.create(0, 0.8, 1, 0.3),
-    emissiveColor: Color3.create(0, 0.6, 0.8),
-    emissiveIntensity: 4,
-    transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-  })
-
+  // The projector itself is the interior model's dais plus galaxy_projector_base.glb; only the beam is drawn here.
   // Cone beam
   beamEntity = engine.addEntity()
   const beamHeight = MAP_CENTER.y - FLOOR_Y - PROJECTOR_HEIGHT
