@@ -29,7 +29,7 @@ let actionStatus: Record<string, string> = {}
 let page = 0
 let screens: Screens | null = null
 // Both low-screen sections sit a little further down the face than the root's centre.
-const LOW_SHIFT_Y = -0.06
+const LOW_SHIFT_Y = -0.16
 let lowShifted: Entity | null = null
 let ctxRef: StationContext | null = null
 
