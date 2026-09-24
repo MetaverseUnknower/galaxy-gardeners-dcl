@@ -51,7 +51,7 @@ export function createEnvironment(): void {
     scale: Vector3.create(1, 1, 0.7),
     rotation: Quaternion.fromEulerDegrees(-90, 0, 0)
   })
-  GltfContainer.create(projectorModel, { src: 'assets/models/galaxy_projector_base.glb' })
+  GltfContainer.create(projectorModel, { src: 'assets/models/galaxy_projector_base.glb', visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS })
 
   // Ship interior. DaisyClass_Interior.glb is a Y-up export (no axis-fix rotation needed). Its central
   // dais tops out at model y 1.33 and the main deck at 0.24, so it is lowered by 1.33 to put the dais

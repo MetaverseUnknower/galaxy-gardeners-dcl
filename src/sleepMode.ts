@@ -17,10 +17,10 @@ const PAN_PERIOD_SECONDS = 300   // one full left-right-left sweep
  *  with two copies so they wrap seamlessly; the dense one sits over the sparse one at partial opacity for depth. */
 export const BACKDROPS: { src: string; aspect: number; alpha: number; speed: number }[] = [
   { src: 'assets/images/StarTexture1.png', aspect: 1672 / 941, alpha: 1, speed: 0.05 },
-  { src: 'assets/images/StarTexture2.png', aspect: 1672 / 941, alpha: 0.55, speed: 0.08 },
+  { src: 'assets/images/StarTexture2.png', aspect: 1672 / 941, alpha: 0.35, speed: 0.08 },
 ]
 /** Backdrop tiles are drawn at this fraction of the room height (smaller = finer, more distant-looking stars) and tiled to cover. */
-export const BACKDROP_SCALE = 0.6
+export const BACKDROP_SCALE = 0.4
 
 /** Celestial atlas: a 4x4 grid of galaxies, clusters and nebulae. Cells are scattered small over the backdrop so they read
  *  as distant stars with the odd galaxy among them. Cell UVs: bottom-left first, clockwise (protocol order). */
@@ -55,7 +55,7 @@ const DEFAULT_STAR = STAR_SPRITES.yellow_star
 /** A dense field of distant stars behind everything. Positions are fixed per sleep session; the field drifts slowly. */
 export type Speck = { src: string; x: number; y: number; size: number; depth: number; alpha: number }
 const SPECK_SPRITES = ['assets/images/Stars_WhiteStar.png', 'assets/images/Stars_BlueGiant.png', 'assets/images/Stars_YellowStar.png', 'assets/images/Stars_RedDwarf.png', 'assets/images/Stars_WhiteStar.png', 'assets/images/Stars_YellowStar.png']
-const STAR_COUNT = 48   // bright near-field stars over the textured backdrops
+const STAR_COUNT = 30   // bright near-field stars over the textured backdrops
 
 const VIEW_PREF = 'sleepView'
 const DRIFT = [0.18, 0.25]           // % of width per second per nebula patch
