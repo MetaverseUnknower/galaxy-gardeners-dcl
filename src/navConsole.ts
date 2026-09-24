@@ -20,7 +20,7 @@ const SCREEN_ROT = Quaternion.fromEulerDegrees(50, 0, 0)
 const ICONS = {
   galaxy: 'assets/icons/galaxy-icon.png', system: 'assets/icons/system-icon.png', station: 'assets/icons/space-station-icon.png',
   pause: 'assets/icons/pause-icon.png', raise: 'assets/icons/height-adjust-icon.png',
-  rotateLeft: 'assets/icons/rotate-icon.png', rotateRight: 'assets/icons/rotate-right-icon.png',
+  rotate: 'assets/icons/rotate-icon.png',
   zoomIn: 'assets/icons/zoom-in-icon.png', zoomOut: 'assets/icons/zoom-out-icon.png', recenter: 'assets/icons/recenter-icon.png',
   buildStation: 'assets/icons/build-station-icon.png',
 }
@@ -58,10 +58,10 @@ function pollSystem(dt: number): void {
 }
 
 /** Square icon button with a caption underneath (the MAP NAVIGATION grid). */
-function iconButton(root: Entity, x: number, y: number, iconSrc: string, label: string, hover: string, onClick: () => void, flipY = false): void {
+function iconButton(root: Entity, x: number, y: number, iconSrc: string, label: string, hover: string, onClick: () => void, flip: { x?: boolean; y?: boolean } = {}): void {
   const w = 0.42, h = 0.42
   const f = frame(bag, root, x, y, w, h, { fill: Color4.create(0.02, 0.06, 0.12, 1), z: -0.02 })
-  icon(bag, root, x, y + 0.08, 0.2, iconSrc, { z: -0.04, flipY })
+  icon(bag, root, x, y + 0.08, 0.2, iconSrc, { z: -0.04, flipX: flip.x, flipY: flip.y })
   text(bag, root, x, y - 0.13, label, 0.11, CYAN, TextAlignMode.TAM_MIDDLE_CENTER, -0.04)
   clickable(f, hover, onClick)
 }
@@ -113,10 +113,10 @@ export function refreshNavConsole(): void {
   frame(bag, root, 0.05, -0.35, 2.3, 1.6)   // spans -1.1..1.2; the station column starts at 1.45
   text(bag, root, -1.0, 0.33, 'MAP NAVIGATION', 0.16, CYAN, LEFT)
   text(bag, root, 1.1, 0.33, 'EXPLORE THE GALAXY', 0.1, MUTED, RIGHT)
-  iconButton(root, -0.86, -0.45, ICONS.rotateLeft, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
+  iconButton(root, -0.86, -0.45, ICONS.rotate, 'ROTATE LEFT', 'Rotate Left', () => rotateMap(1))
   iconButton(root, -0.4, -0.2, ICONS.raise, 'RAISE', 'Raise Map', () => tiltMap(1))
-  iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), true)
-  iconButton(root, 0.06, -0.45, ICONS.rotateRight, 'ROTATE RIGHT', 'Rotate Right', () => rotateMap(-1))
+  iconButton(root, -0.4, -0.7, ICONS.raise, 'LOWER', 'Lower Map', () => tiltMap(-1), { y: true })
+  iconButton(root, 0.06, -0.45, ICONS.rotate, 'ROTATE RIGHT', 'Rotate Right', () => rotateMap(-1), { x: true })
   iconButton(root, 0.52, -0.2, ICONS.zoomIn, 'ZOOM IN', 'Zoom In', () => zoomMap(1))
   iconButton(root, 0.52, -0.7, ICONS.zoomOut, 'ZOOM OUT', 'Zoom Out', () => zoomMap(-1))
   iconButton(root, 0.98, -0.45, ICONS.recenter, 'RECENTER', 'Recenter Map', () => resetMapView())

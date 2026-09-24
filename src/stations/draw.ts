@@ -80,10 +80,10 @@ export function bar(into: Bag, root: Entity, x: number, y: number, w: number, pc
 }
 
 /** Tinted glyph from a white-on-transparent PNG. */
-export function icon(into: Bag, root: Entity, x: number, y: number, size: number, src: string, opts: { color?: Color3; z?: number; flipY?: boolean } = {}): Entity {
+export function icon(into: Bag, root: Entity, x: number, y: number, size: number, src: string, opts: { color?: Color3; z?: number; flipX?: boolean; flipY?: boolean } = {}): Entity {
   const c = opts.color ?? CYAN3
   const e = engine.addEntity()
-  Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.04), scale: Vector3.create(size, opts.flipY ? -size : size, 1), rotation: IMAGE_ROT, parent: root })
+  Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.04), scale: Vector3.create(opts.flipX ? -size : size, opts.flipY ? -size : size, 1), rotation: IMAGE_ROT, parent: root })
   MeshRenderer.setPlane(e)
   Material.setPbrMaterial(e, { texture: Material.Texture.Common({ src }), emissiveTexture: Material.Texture.Common({ src }), albedoColor: Color4.create(c.r, c.g, c.b, 1), emissiveColor: c, emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND })
   into.push(e)

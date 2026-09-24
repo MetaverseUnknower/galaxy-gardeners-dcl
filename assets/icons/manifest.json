@@ -110,12 +110,6 @@
       "used_for": "Navigation console: PAUSE ORBITS button."
     },
     {
-      "file": "assets/icons/rotate-right-icon.png",
-      "name": "Rotate Right",
-      "glyph": "A clockwise circular arrow (mirror of the existing rotate-icon.png).",
-      "used_for": "Navigation console: ROTATE RIGHT button."
-    },
-    {
       "file": "assets/icons/build-station-icon.png",
       "name": "Build Station",
       "glyph": "The space-station glyph (ringed hub with a central spire, like space-station-icon.png) with a small plus sign at its upper right.",
