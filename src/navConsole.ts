@@ -4,6 +4,7 @@
 import { engine, Entity, Transform, GltfContainer, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { DECK_Y } from './environment'
+import * as api from './api'
 import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
 import { showNotification } from './ui'
@@ -41,12 +42,24 @@ let tiltNow = 0
 const bag: Bag = []
 let systemName: string | null = null
 let systemHasStation = false
+// Station details for the current system, fetched when the galaxy list says one exists but the system view hasn't loaded.
+let fetchedStation: { systemId: string; info: { name: string; origin: string; founded_by: string | null } | null } | null = null
 let lastCanSwitch = true
 let lastPaused = false
 let pollTimer = 0
 
 /** The player's current system, from the galaxy list (has_station is known before the system view loads). */
-export function setNavConsoleSystem(system: { name: string; has_station: boolean } | null): void { systemName = system?.name ?? null; systemHasStation = !!system?.has_station; refreshNavConsole() }
+export function setNavConsoleSystem(system: { id: string; name: string; has_station: boolean } | null): void {
+  systemName = system?.name ?? null
+  systemHasStation = !!system?.has_station
+  refreshNavConsole()
+  if (system?.has_station && fetchedStation?.systemId !== system.id) {
+    api.getSystemDetail(system.id).then(detail => {
+      fetchedStation = { systemId: system.id, info: detail?.station || null }
+      refreshNavConsole()
+    }).catch(() => {})
+  }
+}
 
 export function createNavConsole(): void {
   desk = engine.addEntity()
@@ -102,7 +115,8 @@ export function refreshNavConsole(): void {
   const canSwitch = canSwitchToSystemView()
   const paused = areOrbitsPaused()
   // Detail (with the station's name) exists once the system view has loaded; otherwise fall back to the list's flag.
-  const station = getStationInfo() ?? (systemHasStation ? { name: 'Space Station', origin: '', founded_by: null } : null)
+  const station = getStationInfo() ?? fetchedStation?.info ?? (systemHasStation ? { name: 'Space Station', origin: '', founded_by: null } : null)
+  const inSystemView = mode === 'system'
   lastCanSwitch = canSwitch; lastPaused = paused
 
   // Header + top-right cells
@@ -115,8 +129,7 @@ export function refreshNavConsole(): void {
   icon(bag, root, 1.75, 1.0, 0.24, ICONS.station)
   if (station) {
     txt(bag, root, 1.93, 1.08, 'STELLAR STATION', 0.13, DIM, LEFT)
-    dot(bag, root, 1.98, 0.92, 0.05, GREEN3)
-    txt(bag, root, 2.06, 0.92, 'DOCKING AVAILABLE', 0.13, GREEN, LEFT)
+    txt(bag, root, 1.93, 0.92, station.name, 0.2, CYAN, LEFT)
   } else {
     txt(bag, root, 1.93, 1.12, 'STATION STATUS', 0.12, DIM, LEFT)
     txt(bag, root, 1.93, 1.0, 'NO STATION PRESENT', 0.13, MAGENTA, LEFT)
@@ -130,11 +143,19 @@ export function refreshNavConsole(): void {
   btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })
 
   // Left: pause orbits + galaxy thumbnail
-  const pauseFill = frame(bag, root, -1.95, -0.05, 1.5, 0.9, { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) })
-  icon(bag, root, -1.95, 0.2, 0.34, ICONS.pause, { color: MAGENTA3 })
-  txt(bag, root, -1.95, -0.15, paused ? 'RESUME ORBITS' : 'PAUSE ORBITS', 0.24, MAGENTA)
-  txt(bag, root, -1.95, -0.33, paused ? 'RESUME CELESTIAL MOTION' : 'FREEZE CELESTIAL MOTION', 0.11, DIM)
-  clickable(pauseFill, paused ? 'Resume Orbits' : 'Pause Orbits', () => { toggleOrbits(); refreshNavConsole() })
+  if (inSystemView) {
+    const pauseFill = frame(bag, root, -1.95, -0.05, 1.5, 0.9, { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) })
+    icon(bag, root, -1.95, 0.2, 0.34, ICONS.pause, { color: MAGENTA3 })
+    txt(bag, root, -1.95, -0.15, paused ? 'RESUME ORBITS' : 'PAUSE ORBITS', 0.24, MAGENTA)
+    txt(bag, root, -1.95, -0.33, paused ? 'RESUME CELESTIAL MOTION' : 'FREEZE CELESTIAL MOTION', 0.11, DIM)
+    clickable(pauseFill, paused ? 'Resume Orbits' : 'Pause Orbits', () => { toggleOrbits(); refreshNavConsole() })
+  } else {
+    const dimGrey = Color3.create(0.3, 0.38, 0.45)
+    frame(bag, root, -1.95, -0.05, 1.5, 0.9, { border: dimGrey })
+    icon(bag, root, -1.95, 0.2, 0.34, ICONS.pause, { color: dimGrey })
+    txt(bag, root, -1.95, -0.15, 'PAUSE ORBITS', 0.24, MUTED)
+    txt(bag, root, -1.95, -0.33, 'AVAILABLE IN STAR SYSTEM VIEW', 0.11, MUTED)
+  }
   frame(bag, root, -1.95, -0.8, 1.5, 0.5)
   image(bag, root, -1.95, -0.8, 1.4, 0.42, IMAGES.galaxy)
 
@@ -153,8 +174,8 @@ export function refreshNavConsole(): void {
 
   // Right: station card + thumbnail (dock when a station exists, build when the slot is free)
   if (station) {
-    dot(bag, root, 1.55, 0.33, 0.05, GREEN3)
-    txt(bag, root, 1.63, 0.36, 'STELLAR STATION', 0.14, DIM, LEFT)
+    txt(bag, root, 1.5, 0.36, station.name, 0.15, WHITE, LEFT)
+    dot(bag, root, 1.55, 0.22, 0.05, GREEN3)
     txt(bag, root, 1.63, 0.22, 'DOCKING AVAILABLE', 0.12, GREEN, LEFT)
     const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, { fill: Color4.create(0.02, 0.1, 0.16, 1) })
     icon(bag, root, 2.1, -0.05, 0.3, ICONS.station)
@@ -164,10 +185,8 @@ export function refreshNavConsole(): void {
     frame(bag, root, 2.1, -0.88, 1.3, 0.42)
     image(bag, root, 2.1, -0.88, 1.2, 0.36, IMAGES.stationOrbit)
   } else {
-    dot(bag, root, 1.55, 0.36, 0.05, GREEN3)
-    txt(bag, root, 1.63, 0.36, 'STATION SLOT AVAILABLE', 0.11, GREEN, LEFT)
-    txt(bag, root, 2.1, 0.2, 'NO STATION PRESENT', 0.16, WHITE)
-    txt(bag, root, 2.1, 0.07, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
+    txt(bag, root, 2.1, 0.3, 'NO STATION PRESENT', 0.16, WHITE)
+    txt(bag, root, 2.1, 0.14, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
     const buildFill = frame(bag, root, 2.1, -0.32, 1.3, 0.62, { border: GREEN3, fill: Color4.create(0.02, 0.16, 0.08, 1) })
     icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: GREEN3 })
     txt(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
@@ -180,7 +199,7 @@ export function refreshNavConsole(): void {
 
   // Footer, with the console camera toggle in the middle
   const cam = getCameraMode()
-  txt(bag, root, -0.95, -1.1, 'CAMERA', 0.09, DIM, RIGHT)
+  txt(bag, root, -0.8, -1.1, 'CAMERA', 0.09, DIM, RIGHT)
   CAMERA_MODES.forEach((mode, i) => {
     btn(bag, root, -0.45 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })

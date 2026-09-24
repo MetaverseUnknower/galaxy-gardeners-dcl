@@ -7,7 +7,7 @@ import { getPlayer } from '@dcl/sdk/players'
 import { DECK_Y } from './environment'
 import { getPref, setPref } from './prefs'
 import { setConsoleLowered, refreshNavConsole } from './navConsole'
-import { rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
+import { rotateMap, tiltMap, zoomMap, resetMapView, getViewMode } from './galaxyMap'
 import { toggleOrbits } from './systemView'
 
 export type CameraMode = 'free' | 'fixed' | 'top'
@@ -57,7 +57,7 @@ function consoleKeysSystem(): void {
   if (down(InputAction.IA_ACTION_3)) shift ? zoomMap(1) : rotateMap(1)
   if (down(InputAction.IA_ACTION_4)) shift ? zoomMap(-1) : tiltMap(1)
   if (down(InputAction.IA_ACTION_5)) shift ? resetMapView() : tiltMap(-1)
-  if (down(InputAction.IA_ACTION_6)) { if (shift) { toggleOrbits(); refreshNavConsole() } else rotateMap(-1) }
+  if (down(InputAction.IA_ACTION_6)) { if (shift) { if (getViewMode() === 'system') { toggleOrbits(); refreshNavConsole() } } else rotateMap(-1) }
 }
 
 function consoleCameraSystem(dt: number): void {
