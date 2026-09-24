@@ -13,7 +13,12 @@ export const SLEEP_VIEWS: { src: string; aspect: number }[] = [
   { src: 'assets/images/DaisyClass-SleepView4.png', aspect: 1672 / 940 },
 ]
 const PAN_PERIOD_SECONDS = 120   // one full left-right-left sweep
-export const NEBULAE = ['assets/images/Stars_Nebula.png', 'assets/images/Stars_Nebula2.png', 'assets/images/Stars_Nebula3.png']
+/** Sparse nebula patches: each is a modest cloud that drifts across once per WRAP percent, so most of the time the window is just stars. */
+export const NEBULAE: { src: string; width: number; height: number; top: number; alpha: number }[] = [
+  { src: 'assets/images/Stars_Nebula2.png', width: 70, height: 45, top: 8, alpha: 0.55 },
+  { src: 'assets/images/Stars_Nebula3.png', width: 60, height: 40, top: 30, alpha: 0.45 },
+]
+export const NEBULA_WRAP = 320   // % of width a patch travels before coming back around
 
 /** Star sprite per star type, with a size (fraction of screen width) and tint. Red giants reuse the dwarf, larger and warmer. */
 export const STAR_SPRITES: Record<string, { src: string; size: number; tint: [number, number, number] }> = {
@@ -26,14 +31,14 @@ export const STAR_SPRITES: Record<string, { src: string; size: number; tint: [nu
 }
 const DEFAULT_STAR = STAR_SPRITES.yellow_star
 
-/** Distant specks sprinkled behind the nebulae until a celestial atlas lands. Positions are fixed per session. */
-export type Speck = { src: string; x: number; y: number; size: number; depth: number }
-const SPECK_SPRITES = ['assets/images/Stars_WhiteStar.png', 'assets/images/Stars_BlueGiant.png', 'assets/images/Stars_YellowStar.png', 'assets/images/Stars_RedDwarf.png']
+/** A dense field of distant stars behind everything. Positions are fixed per sleep session; the field drifts slowly. */
+export type Speck = { src: string; x: number; y: number; size: number; depth: number; alpha: number }
+const SPECK_SPRITES = ['assets/images/Stars_WhiteStar.png', 'assets/images/Stars_BlueGiant.png', 'assets/images/Stars_YellowStar.png', 'assets/images/Stars_RedDwarf.png', 'assets/images/Stars_WhiteStar.png', 'assets/images/Stars_YellowStar.png']
+const STAR_COUNT = 160
 
 const VIEW_PREF = 'sleepView'
-const DRIFT = [0.55, 0.9, 1.35]      // % of screen width per second per nebula layer, back to front
-const STAR_DRIFT = 0.25              // the star is farthest away: barely moves
-const SPECK_DRIFT = 0.4
+const DRIFT = [0.35, 0.5]            // % of width per second per nebula patch
+const SPECK_DRIFT = 0.3              // the star field creeps
 
 let active = false
 let viewIndex = 0
@@ -58,7 +63,7 @@ export function enterSleepMode(): void {
   if (active) return
   viewIndex = Math.min(Math.max(0, getPref<number>(VIEW_PREF, 0)), SLEEP_VIEWS.length - 1)
   time = 0
-  specks = makeSpecks(28)
+  specks = makeSpecks(STAR_COUNT)
   active = true
 }
 
@@ -69,17 +74,17 @@ export function setSleepView(i: number): void {
   setPref(VIEW_PREF, viewIndex)
 }
 
-/** Horizontal offset in % for a layer that is 200% wide, wrapping so two copies always cover the screen. */
-export function layerOffset(speed: number): number { return (time * speed) % 200 }
-export function starOffset(): { x: number; y: number; scale: number } {
-  return { x: Math.sin(time * 0.05) * 4 + Math.sin(time * 0.013) * 3, y: Math.cos(time * 0.037) * 2, scale: 1 + Math.sin(time * 0.2) * 0.015 }
-}
-export const driftSpeeds = { nebula: DRIFT, star: STAR_DRIFT, speck: SPECK_DRIFT }
+/** Horizontal travel in % for a drifting layer, wrapping every `wrap` percent. */
+export function layerOffset(speed: number, wrap: number): number { return (time * speed) % wrap }
+/** The local star holds its place in the window; only a faint breathing in scale. */
+export function starOffset(): { scale: number } { return { scale: 1 + Math.sin(time * 0.2) * 0.012 } }
+export const driftSpeeds = { nebula: DRIFT, speck: SPECK_DRIFT }
 
 function makeSpecks(n: number): Speck[] {
   const out: Speck[] = []
   for (let i = 0; i < n; i++) {
-    out.push({ src: SPECK_SPRITES[Math.floor(Math.random() * SPECK_SPRITES.length)], x: Math.random() * 200, y: Math.random() * 100, size: 0.6 + Math.random() * 1.6, depth: 0.5 + Math.random() })
+    const bright = Math.random()
+    out.push({ src: SPECK_SPRITES[Math.floor(Math.random() * SPECK_SPRITES.length)], x: Math.random() * 200, y: Math.random() * 100, size: 0.25 + bright * bright * 1.4, depth: 0.4 + Math.random() * 0.8, alpha: 0.45 + bright * 0.55 })
   }
   return out
 }

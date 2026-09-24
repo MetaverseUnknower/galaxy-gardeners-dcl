@@ -14,7 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
-import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, NEBULAE, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
+import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
@@ -388,7 +388,7 @@ const MusicBar = () => {
 }
 
 const WHITE = Color4.White()
-const tex = (src: string, tint?: [number, number, number]) => ({ texture: { src }, textureMode: 'stretch' as const, color: tint ? Color4.create(tint[0], tint[1], tint[2], 1) : WHITE })
+const tex = (src: string, tint?: [number, number, number], alpha: number = 1) => ({ texture: { src }, textureMode: 'stretch' as const, color: tint || alpha < 1 ? Color4.create(tint?.[0] ?? 1, tint?.[1] ?? 1, tint?.[2] ?? 1, alpha) : WHITE })
 
 /** Bedroom fitted to the screen height at its native aspect, panning slowly if wider than the screen. The space
  *  layers live inside the same clipped box so the window always looks out on them. */
@@ -410,17 +410,17 @@ const SleepOverlay = () => {
     <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0.005, 0.005, 0.02, 1) }}>
       <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left }, width: w, height: h, overflow: 'hidden' }}>
         {sleepSpecks().map((sp, i) => {
-          const x = ((sp.x - layerOffset(driftSpeeds.speck * sp.depth) + 200) % 200) - 50
-          return <UiEntity key={`sp${i}`} uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct(sp.y) }, width: pct(sp.size), height: pct(sp.size * view.aspect) }} uiBackground={tex(sp.src)} />
+          const x = ((sp.x - layerOffset(driftSpeeds.speck * sp.depth, 200) + 200) % 200) - 50
+          return <UiEntity key={`sp${i}`} uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct(sp.y) }, width: pct(sp.size), height: pct(sp.size * view.aspect) }} uiBackground={tex(sp.src, undefined, sp.alpha)} />
         })}
-        {NEBULAE.map((src, i) => {
-          const d = layerOffset(driftSpeeds.nebula[i])
-          const bob = Math.sin((i + 1) * 0.7 + d * 0.02) * 3
-          return [0, 1].map(copy => (
-            <UiEntity key={`neb${i}-${copy}`} uiTransform={{ positionType: 'absolute', position: { left: pct(-100 + d - copy * 200), top: pct(-25 + bob + i * 6) }, width: '200%', height: '150%' }} uiBackground={tex(src)} />
-          ))
+        {NEBULAE.map((neb, i) => {
+          // Enters from the right, crosses, and is gone for most of its cycle.
+          const d = layerOffset(driftSpeeds.nebula[i], NEBULA_WRAP)
+          const x = 100 + i * 140 - d
+          const bob = Math.sin((i + 1) * 0.7 + d * 0.02) * 2
+          return <UiEntity key={`neb${i}`} uiTransform={{ positionType: 'absolute', position: { left: pct(((x + neb.width + NEBULA_WRAP) % NEBULA_WRAP) - neb.width), top: pct(neb.top + bob) }, width: pct(neb.width), height: pct(neb.height) }} uiBackground={tex(neb.src, undefined, neb.alpha)} />
         })}
-        <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(50 - starW / 2 + so.x - layerOffset(driftSpeeds.star) * 0.1), top: pct(26 + so.y - starW * view.aspect / 2) }, width: pct(starW), height: pct(starW * view.aspect) }} uiBackground={tex(star.src, star.tint)} />
+        <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(50 - starW / 2), top: pct(26 - starW * view.aspect / 2) }, width: pct(starW), height: pct(starW * view.aspect) }} uiBackground={tex(star.src, star.tint)} />
         <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%' }} uiBackground={tex(view.src)} />
       </UiEntity>
       <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 24, left: 30 }, flexDirection: 'row', alignItems: 'center', padding: 4 }} uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.7) }}>
