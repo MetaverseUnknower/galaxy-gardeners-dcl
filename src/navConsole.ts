@@ -7,7 +7,7 @@ import { DECK_Y } from './environment'
 import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
 import { showNotification } from './ui'
-import { getCameraMode, cycleCameraMode, CAMERA_MODE_LABELS } from './consoleCamera'
+import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -180,7 +180,10 @@ export function refreshNavConsole(): void {
 
   // Footer, with the console camera toggle in the middle
   const cam = getCameraMode()
-  btn(bag, root, 0.05, -1.1, 1.5, 0.2, `CAMERA: ${CAMERA_MODE_LABELS[cam]}`, 'Cycle camera view', () => { cycleCameraMode(); refreshNavConsole() }, { size: 0.12, variant: cam === 'free' ? 'outline' : 'magenta' })
+  txt(bag, root, -0.95, -1.1, 'CAMERA', 0.09, DIM, RIGHT)
+  CAMERA_MODES.forEach((mode, i) => {
+    btn(bag, root, -0.45 + i * 0.62, -1.1, 0.58, 0.2, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
+  })
   txt(bag, root, -2.65, -1.12, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
   txt(bag, root, 2.65, -1.12, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 

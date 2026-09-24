@@ -329,6 +329,7 @@ const RefineryDialog = () => {
 
 const CameraSwitch = () => {
   const current = getCameraMode()
+  if (current === 'free') return null   // only shown while a fixed view is active, as the way back
   return (
     <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 20, right: 30 }, flexDirection: 'row', alignItems: 'center', padding: 4 }}
       uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.85) }}>
