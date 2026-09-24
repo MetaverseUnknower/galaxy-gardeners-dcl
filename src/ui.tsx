@@ -14,7 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
-import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
+import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 
 // HUD sizes are authored for a 1080-tall canvas and scaled to the actual canvas height, so every
@@ -424,7 +424,8 @@ const SleepOverlay = () => {
           const hPct = mw.width * view.aspect / mw.aspect
           const d = layerOffset(mw.speed, mw.wrap)
           const x = ((mw.start - d + mw.width + mw.wrap) % mw.wrap) - mw.width
-          return <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct((100 - hPct) / 2 - 8) }, width: pct(mw.width), height: pct(hPct) }} uiBackground={tex(mw.src, undefined, mw.alpha)} />
+          // Centred on the star's height, shifted by how far this system sits above or below the galactic plane.
+          return <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(x), top: pct(STAR_Y + galacticPlaneOffset() - hPct / 2) }, width: pct(mw.width), height: pct(hPct) }} uiBackground={tex(mw.src, undefined, mw.alpha)} />
         })()}
         {BACKDROPS.map((bd, i) => {
           // Tiles at native aspect, BACKDROP_SCALE of the room height, in a grid wide and tall enough to cover while scrolling.
@@ -455,7 +456,7 @@ const SleepOverlay = () => {
           const bob = Math.sin((i + 1) * 0.7 + d * 0.02) * 2
           return <UiEntity key={`neb${i}`} uiTransform={{ positionType: 'absolute', position: { left: pct(((x + neb.width + NEBULA_WRAP) % NEBULA_WRAP) - neb.width), top: pct(neb.top + bob) }, width: pct(neb.width), height: pct(neb.height) }} uiBackground={tex(neb.src, undefined, neb.alpha)} />
         })}
-        <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(50 - starW / 2), top: pct(26 - starW * view.aspect / 2) }, width: pct(starW), height: pct(starW * view.aspect) }} uiBackground={tex(star.src, star.tint)} />
+        <UiEntity uiTransform={{ positionType: 'absolute', position: { left: pct(50 - starW / 2), top: pct(STAR_Y - starW * view.aspect / 2) }, width: pct(starW), height: pct(starW * view.aspect) }} uiBackground={tex(star.src, star.tint)} />
         <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(0), left: px(0) }, width: '100%', height: '100%' }} uiBackground={tex(view.src)} />
       </UiEntity>
       {/* Controls sit at the bottom right, above the music bar, clear of the chat window on the left. */}

@@ -80,6 +80,16 @@ export function sleepSpecks(): Speck[] { return specks }
 export function sleepCelestials(): Celestial[] { return celestials }
 export function setSleepSystem(s: StarSystem | null): void { system = s }
 
+/** Where the local star sits in the window, as % of room height. */
+export const STAR_Y = 26
+/** Vertical offset of the galactic plane from the local star, in % of room height: above the plane (positive
+ *  coord_z) you look down on the band, so it sits below the star; below the plane it rises above. Systems are
+ *  mostly within ±20 of the plane (never past ±50), so ±25 maps to the full ±28% swing. */
+export function galacticPlaneOffset(): number {
+  const z = system?.coord_z ?? 0
+  return Math.max(-1, Math.min(1, z / 25)) * 28
+}
+
 export function starSprite(): { src: string; size: number; tint: [number, number, number] } {
   return STAR_SPRITES[system?.star_type ?? ''] ?? DEFAULT_STAR
 }
