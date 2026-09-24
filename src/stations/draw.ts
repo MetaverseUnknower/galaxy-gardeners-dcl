@@ -101,7 +101,7 @@ export function header(into: Bag, root: Entity, x: number, y: number, opts: { ic
 
 /** Clickable button. 'outline' = dark fill + cyan border + cyan text; 'primary' = bright cyan fill + dark text;
  *  'magenta' = magenta border/text; 'disabled' = muted, not clickable. */
-export function button(into: Bag, root: Entity, x: number, y: number, w: number, h: number, label: string, hover: string, onClick: () => void, opts: { variant?: 'outline' | 'primary' | 'magenta' | 'green' | 'disabled'; size?: number; icon?: string; z?: number } = {}): Entity {
+export function button(into: Bag, root: Entity, x: number, y: number, w: number, h: number, label: string, hover: string, onClick: () => void, opts: { variant?: 'outline' | 'primary' | 'magenta' | 'green' | 'disabled'; size?: number; icon?: string; iconSize?: number; iconInset?: number; z?: number } = {}): Entity {
   const variant = opts.variant ?? 'outline'
   const z = opts.z ?? -0.03
   const size = opts.size ?? 0.42
@@ -110,7 +110,7 @@ export function button(into: Bag, root: Entity, x: number, y: number, w: number,
   const btn = frame(into, root, x, y, w, h, { border: accent, fill, z })
   const labelColor = variant === 'primary' ? Color4.create(0.02, 0.05, 0.1, 1) : variant === 'disabled' ? MUTED : Color4.create(accent.r, accent.g, accent.b, 1)
   let lx = x
-  if (opts.icon) { icon(into, root, x - w / 2 + h * 0.6, y, h * 0.6, opts.icon, { color: variant === 'primary' ? Color3.create(0.02, 0.05, 0.1) : accent, z: z - 0.02 }); lx = x + h * 0.3 }
+  if (opts.icon) { icon(into, root, x - w / 2 + (opts.iconInset ?? h * 0.6), y, opts.iconSize ?? h * 0.6, opts.icon, { color: variant === 'primary' ? Color3.create(0.02, 0.05, 0.1) : accent, z: z - 0.02 }); lx = x + h * 0.3 }
   text(into, root, lx, y, label, size, labelColor, TextAlignMode.TAM_MIDDLE_CENTER, z - 0.02)
   if (variant !== 'disabled') clickable(btn, hover, onClick)
   return btn

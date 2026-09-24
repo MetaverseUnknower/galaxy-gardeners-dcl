@@ -70,7 +70,7 @@ function drawTop(top: Entity, ctx: StationContext): void {
   // Ship frame, right: hologram + Upgrades entry
   frame(topBag, top, 1.4, -0.35, 2.6, 1.85)
   image(topBag, top, 1.4, -0.35, 2.4, 1.35, SHIP_BLUEPRINT_WIDE, { z: -0.02 })   // 16:9, behind the button
-  button(topBag, top, 2.05, -0.35, 1.1, 0.42, 'UPGRADES »', 'Ship Systems', () => ctx.setView('systems'), { icon: icons('upgrades'), size: 0.34 })
+  button(topBag, top, 2.05, -0.35, 1.1, 0.42, 'UPGRADES »', 'Ship Systems', () => ctx.setView('systems'), { icon: icons('upgrades'), size: 0.34, iconSize: 0.2, iconInset: 0.21 })
   text(topBag, top, 2.6, -1.15, 'EXPLORE  //  UPGRADE  //  GO FURTHER', 0.24, MUTED, TextAlignMode.TAM_MIDDLE_RIGHT)
 }
 
