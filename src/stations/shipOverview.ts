@@ -4,6 +4,7 @@
 import { engine, Entity, Transform, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import * as api from '../api'
+import { playSfx, playMiningFanfare } from '../sfx'
 import { openRefineryDialog, openPurchaseDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN } from './draw'
@@ -137,16 +138,19 @@ async function collect(expeditionId: string): Promise<void> {
     let result: any = null
     try { result = await ctx.busy(api.completeExpedition(expeditionId)) } catch {}
     if (result?.pod_lost) {
+      playSfx('pod_destroyed')
       ctx.notify('Expedition failed — pod destroyed!', Color4.create(1, 0.3, 0.3, 1))
     } else {
       try {
         await ctx.busy(api.collectExpedition(expeditionId))
         if (result?.type === 'exploration') {
+          playSfx('specimen')
           const parts: string[] = []
           if (result.newSpecies) parts.push('New species!')
           if (result.sampleCollected) parts.push('Sample collected')
           ctx.notify(parts.length > 0 ? `Exploration success! ${parts.join(' — ')}` : 'Exploration complete!', Color4.create(0.2, 0.8, 0.4, 1))
         } else if (result?.rewards) {
+          void playMiningFanfare(expeditions.find((e: any) => e.id === expeditionId)?.belt_id)
           const rt = Object.entries(result.rewards).filter(([k]) => k !== 'species_id').map(([k, v]) => `${v} ${k.replace(/_/g, ' ')}`).join(', ')
           ctx.notify(rt ? `Mining successful! ${rt}` : 'Mining complete!', Color4.create(0.9, 0.7, 0.3, 1))
         } else { ctx.notify('Collected!', Color4.create(0, 1, 0.5, 1)) }

@@ -25,6 +25,7 @@ let elapsed = 0
 let muted = false
 let started = false
 let listener: (() => void) | null = null
+let holdSeconds = 0             // soundtrack paused while a fanfare plays
 
 export function isMuted(): boolean { return muted }
 export function currentTrack(): Track | null { return started && queue.length ? queue[position] : null }
@@ -91,14 +92,25 @@ export function nextTrack(): void {
 export function setMuted(on: boolean): void {
   muted = on
   setPref(MUTED_PREF, on)
-  if (player && AudioStream.has(player)) AudioStream.getMutable(player).playing = !on
+  if (player && AudioStream.has(player)) AudioStream.getMutable(player).playing = !on && holdSeconds <= 0
   listener?.()
 }
 
 export function toggleMuted(): void { setMuted(!muted) }
 
+/** Pause the music for a fanfare and resume afterwards (the track picks up where it stopped). */
+export function holdSoundtrack(seconds: number): void {
+  holdSeconds = Math.max(holdSeconds, seconds)
+  if (player && AudioStream.has(player)) AudioStream.getMutable(player).playing = false
+}
+
 function soundtrackSystem(dt: number): void {
   if (!started || muted || queue.length === 0) return
+  if (holdSeconds > 0) {
+    holdSeconds -= dt
+    if (holdSeconds <= 0 && player && AudioStream.has(player)) AudioStream.getMutable(player).playing = true
+    return
+  }
   elapsed += dt
   if (elapsed >= queue[position].durationSeconds + TRACK_GAP_SECONDS) nextTrack()
 }

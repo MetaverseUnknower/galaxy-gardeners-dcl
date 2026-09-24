@@ -19,6 +19,7 @@ import { setupConsoleCamera } from './consoleCamera'
 import { loadPrefs } from './prefs'
 import { setupSoloShip } from './soloShip'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
+import { playSfx, setSfxSystemId } from './sfx'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -121,6 +122,7 @@ export async function main() {
     if (currentSys) setSolarRechargeRate(currentSys.solar_recharge_rate)
     // No docking in the scene yet, so the station theme waits for that feature.
     setSoundtrackContext({ docked: false, system: currentSys ?? null })
+    setSfxSystemId(playerInfo.current_system_id)
 
     const floraStation = createStation({
       id: 'flora',
@@ -210,6 +212,7 @@ export async function main() {
     }
 
     setStatusMessage(null)
+    playSfx('game_start')
   } catch (err: any) {
     setStatusMessage(`Error: ${err.message}`)
     console.error('Galaxy Gardeners init error:', err)
@@ -244,6 +247,7 @@ async function reloadMap(): Promise<void> {
   setNavConsoleSystem(systems.find(s => s.id === consoleSystemId) ?? null)
   systems = await api.getSystems(playerInfo.galaxy_id)
   setSoundtrackContext({ docked: false, system: systems.find(s => s.id === playerInfo!.current_system_id) ?? null })
+  setSfxSystemId(playerInfo.current_system_id)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
 }
