@@ -11,6 +11,9 @@ const BOX_SIZE = 150
 export const PLATFORM_Y = 40
 // The main deck around the dais is 1.09m lower; the station panels stand on it.
 export const DECK_Y = PLATFORM_Y - 1.09
+// Top of the interior model's central dais: the projector base sits on it. (Dais top is 0.657 in
+// model units, and the interior is placed at PLATFORM_Y - 1.33, so 0.657 - 1.33.)
+export const DAIS_Y = PLATFORM_Y - 0.673
 // Hull walls start ~14.5m from center, so the panels sit at ~12.5m.
 
 let seed = 777
@@ -44,7 +47,7 @@ export function createEnvironment(): void {
   // Galaxy projector base model
   const projectorModel = engine.addEntity()
   Transform.create(projectorModel, {
-    position: Vector3.create(128, PLATFORM_Y, 128),
+    position: Vector3.create(128, DAIS_Y, 128),
     scale: Vector3.create(1, 1, 0.7),
     rotation: Quaternion.fromEulerDegrees(-90, 0, 0)
   })
