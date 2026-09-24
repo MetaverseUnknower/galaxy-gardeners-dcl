@@ -1,7 +1,7 @@
 // Stellar Navigation console (see docs/superpowers/specs/references/nav-console-concept.png).
 // A low desk north of the galaxy projector, facing it, carrying the map controls: view tabs,
 // pause orbits, map navigation (tilt / rotate / zoom / recenter) and the station card.
-import { engine, Entity, Transform, GltfContainer, TextAlignMode } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, GltfContainer, TextAlignMode, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { DECK_Y } from './environment'
 import * as api from './api'
@@ -66,7 +66,7 @@ export function createNavConsole(): void {
   desk = engine.addEntity()
   // Half-turn: the desk's front faces north, so the player stands behind it looking south at the projector.
   Transform.create(desk, { position: CONSOLE_POSITION, rotation: Quaternion.fromEulerDegrees(0, 180, 0), scale: Vector3.create(CONSOLE_SCALE, CONSOLE_SCALE, CONSOLE_SCALE) })
-  GltfContainer.create(desk, { src: 'assets/models/nav_panel_low_1.glb' })
+  GltfContainer.create(desk, { src: 'assets/models/nav_panel_low_1.glb', visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS })
   hideInTopView(desk)
   screen = engine.addEntity()
   Transform.create(screen, { position: SCREEN_OFFSET, rotation: SCREEN_ROT, parent: desk })

@@ -38,7 +38,7 @@ export function createEnvironment(): void {
     scale: Vector3.create(1, 1, 1),
     rotation: Quaternion.fromEulerDegrees(180, 0, 180)
   })
-  GltfContainer.create(navPanel, { src: 'assets/models/nav_panel_low_1.glb' })
+  GltfContainer.create(navPanel, { src: 'assets/models/nav_panel_low_1.glb', visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS })
   hideInTopView(navPanel)
 
   // Galaxy projector base model

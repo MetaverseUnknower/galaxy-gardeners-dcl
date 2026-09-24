@@ -2,7 +2,7 @@
 // A station is a tall desk (top screen) plus a low desk (low screen). Screen roots are children of
 // the desk entities, so views draw in screen coordinates and move with the desks. A view renders
 // both screens; the station owns view switching and the shared dashboard fetch.
-import { engine, Entity, Transform, GltfContainer } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, GltfContainer, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { Bag, clearBag, text, spinner, RED } from './stations/draw'
@@ -52,10 +52,10 @@ export function createStation(config: StationConfig): Station {
   const rotation = Quaternion.fromEulerDegrees(180, config.yaw, 180)
   const tallDesk = engine.addEntity()
   Transform.create(tallDesk, { position: config.position, rotation })
-  GltfContainer.create(tallDesk, { src: 'assets/models/nav_panel_high_1.glb' })
+  GltfContainer.create(tallDesk, { src: 'assets/models/nav_panel_high_1.glb', visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS })
   const lowDesk = engine.addEntity()
   Transform.create(lowDesk, { position: config.position, rotation })
-  GltfContainer.create(lowDesk, { src: 'assets/models/nav_panel_low_1.glb' })
+  GltfContainer.create(lowDesk, { src: 'assets/models/nav_panel_low_1.glb', visibleMeshesCollisionMask: ColliderLayer.CL_PHYSICS })
   hideInTopView(tallDesk); hideInTopView(lowDesk)
   const top = engine.addEntity()
   Transform.create(top, { position: TOP_ROOT_OFFSET, rotation: TOP_ROOT_ROT, parent: tallDesk })
