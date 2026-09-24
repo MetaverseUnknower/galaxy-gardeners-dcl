@@ -12,7 +12,7 @@ export function setCloseDetailCallback(cb: () => void): void { onCloseDetailPane
 import { isCurrentlyTraveling } from './navigation'
 import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
-import { movePlayerTo } from '~system/RestrictedActions'
+import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
 import { selectSystem } from './interaction'
 import { requirePayment } from '~system/EthereumController'
@@ -347,17 +347,13 @@ const CameraSwitch = () => {
   )
 }
 
-// Bridge spawn (matches scene.json): the nav console faces the map from here.
-const TERMINAL_POSITION = { x: 128, y: 40.1, z: 139.5 }
-const TERMINAL_LOOK_AT = { x: 128, y: 41, z: 128 }
+// The Terminal is the Galaxy Gardeners build in Genesis City; the explorer confirms the jump with the player.
+const TERMINAL_PARCEL = { x: 35, y: -121 }
 
 const ReturnToTerminal = () => (
   <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 250, left: 24 }, width: 190, height: 30, justifyContent: 'center', alignItems: 'center' }}
     uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.85) }}
-    onMouseDown={() => {
-      setCameraMode('free')
-      void movePlayerTo({ newRelativePosition: TERMINAL_POSITION, cameraTarget: TERMINAL_LOOK_AT })
-    }}>
+    onMouseDown={() => { void teleportTo({ worldCoordinates: TERMINAL_PARCEL }) }}>
     <Label value="RETURN TO TERMINAL" fontSize={12} color={Color4.create(0, 0.9, 1, 1)} />
   </UiEntity>
 )
