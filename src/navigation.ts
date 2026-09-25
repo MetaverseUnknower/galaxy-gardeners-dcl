@@ -1,3 +1,4 @@
+import { StarSystem } from './types'
 import { engine, Entity, Transform, MeshRenderer, Material, MaterialTransparencyMode } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
@@ -14,6 +15,15 @@ let destinationPosition: Vector3 | null = null
 let travelMarkerRotation = 0
 let currentProgress = 0
 let totalTravelDistance = 0
+let destinationSystem: StarSystem | null = null
+
+/** The system being travelled to (null when not travelling or not yet known). */
+export function getTravelDestination(): StarSystem | null { return isTraveling ? destinationSystem : null }
+/** 0 at departure → 1 at arrival, from the server's start and end times (independent of the map marker). */
+export function getTravelFraction(): number {
+  if (!isTraveling || travelEndTime <= travelStartTime) return 0
+  return Math.max(0, Math.min(1, (Date.now() - travelStartTime) / (travelEndTime - travelStartTime)))
+}
 
 export function isCurrentlyTraveling(): boolean {
   return isTraveling
@@ -150,6 +160,7 @@ export async function updateTravelState(): Promise<void> {
   for (const [entity, system] of starEntities) {
     if (system.id === destId) {
       destinationPosition = Transform.get(entity).position
+      destinationSystem = system
     }
     if (currentSystemId && system.id === currentSystemId) {
       originPosition = Transform.get(entity).position
