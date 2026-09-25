@@ -11,6 +11,7 @@ import { showNotification } from './ui'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, setCameraModeChangedListener } from './consoleCamera'
 import { enterSleepMode } from './sleepMode'
 import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } from './heatMap'
+import { isDocked, dockAt, undock, onDockingChanged } from './docking'
 import { hideInTopView } from './topViewHide'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
@@ -47,7 +48,7 @@ const bag: Bag = []
 let systemName: string | null = null
 let systemHasStation = false
 // Station details for the current system, fetched when the galaxy list says one exists but the system view hasn't loaded.
-let fetchedStation: { systemId: string; info: { name: string; origin: string; founded_by: string | null } | null } | null = null
+let fetchedStation: { systemId: string; info: { id?: string; name: string; origin: string; founded_by: string | null } | null } | null = null
 let lastCanSwitch = true
 let lastPaused = false
 let pollTimer = 0
@@ -75,6 +76,7 @@ export function createNavConsole(): void {
   Transform.create(screen, { position: SCREEN_OFFSET, rotation: SCREEN_ROT, parent: desk })
   setViewModeChangedListener(refreshNavConsole)
   setHeatMapChangedListener(refreshNavConsole)
+  onDockingChanged(refreshNavConsole)
   setCameraModeChangedListener(refreshNavConsole)   // keeps the camera buttons in step with the HUD switcher and keys
   setStationChangedListener(refreshNavConsole)
   engine.addSystem(pollSystem)
@@ -185,14 +187,20 @@ export function refreshNavConsole(): void {
 
   // Right: station card + thumbnail (dock when a station exists, build when the slot is free)
   if (station) {
+    const stationId: string | undefined = (station as any).id ?? fetchedStation?.info?.id
+    const docked = isDocked()
     txt(bag, root, 1.5, 0.31, station.name, 0.15, WHITE, LEFT)
-    dot(bag, root, 1.55, 0.19, 0.05, GREEN3)
-    txt(bag, root, 1.63, 0.19, 'DOCKING AVAILABLE', 0.12, GREEN, LEFT)
-    const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, { fill: Color4.create(0.02, 0.1, 0.16, 1) })
-    icon(bag, root, 2.1, -0.05, 0.3, ICONS.station)
-    txt(bag, root, 2.1, -0.32, 'DOCK', 0.3, CYAN)
-    txt(bag, root, 2.1, -0.5, 'APPROACH & DOCK  »', 0.11, DIM)
-    clickable(dockFill, `Dock at ${station.name}`, () => { showNotification(`Captain, docking clamps are offline. The airlock seal failed its last integrity check and engineering has it on the bench. Holding position off ${station.name} until they clear us to dock.`, CYAN, 9) })
+    dot(bag, root, 1.55, 0.19, 0.05, docked ? MAGENTA3 : GREEN3)
+    txt(bag, root, 1.63, 0.19, docked ? 'DOCKED  //  EXTERNAL SERVICE' : 'DOCKING AVAILABLE', 0.12, docked ? MAGENTA : GREEN, LEFT)
+    const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, docked ? { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) } : { fill: Color4.create(0.02, 0.1, 0.16, 1) })
+    icon(bag, root, 2.1, -0.05, 0.3, ICONS.station, docked ? { color: MAGENTA3 } : {})
+    txt(bag, root, 2.1, -0.32, docked ? 'UNDOCK' : 'DOCK', 0.3, docked ? MAGENTA : CYAN)
+    txt(bag, root, 2.1, -0.5, docked ? 'RELEASE CLAMPS  »' : 'APPROACH & DOCK  »', 0.11, DIM)
+    clickable(dockFill, docked ? `Undock from ${station.name}` : `Dock at ${station.name}`, () => {
+      if (docked) { void undock(); return }
+      if (!stationId) { showNotification('Station registry unavailable. Try again in a moment, Captain.', Color4.create(1, 0.4, 0.4, 1)); return }
+      void dockAt(stationId, station.name)
+    })
     frame(bag, root, 2.1, -0.87, 1.0, 0.5)
     image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationOrbit)   // 2:1
   } else {

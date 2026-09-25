@@ -4,6 +4,7 @@
 import { TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
+import { isDocked, dockedStationName } from '../docking'
 import { ViewDefinition, StationContext, Screens, TOP } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, clickable, icon, CYAN, MAGENTA3, MAGENTA, WHITE, DIM, MUTED, GREEN, RED, GREEN3, RED3 } from './draw'
 // 4:3 blueprint whose connector lines run to the image edges, meeting the upgrade cards' inner edges.
@@ -106,9 +107,13 @@ function drawLow(): void {
       text(lowBag, low, 0.5, y, `${have(r)} / ${need}`, 0.28, ok ? GREEN : RED, TextAlignMode.TAM_MIDDLE_RIGHT)
       icon(lowBag, low, 0.62, y, 0.2, ok ? 'assets/icons/check-icon.png' : 'assets/icons/cross-icon.png', { color: ok ? GREEN3 : RED3 })
     })
+    const docked = isDocked()
     if (installing) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'UPGRADING…', 'Upgrading', () => {}, { variant: 'disabled', size: 0.4 })
+    else if (!docked) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'DOCK TO UPGRADE', 'Dock at a station from the Stellar Navigation console', () => {}, { variant: 'disabled', size: 0.3 })
     else if (u.canAfford) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'UPGRADE', `Upgrade ${labelFor(u.category)}`, () => install(u.category), { variant: 'primary', size: 0.44 })
     else button(lowBag, low, 0, -0.6, 1.55, 0.42, 'NEED RESOURCES', 'Insufficient resources', () => {}, { variant: 'disabled', size: 0.34 })
+    const crew = dockedStationName()
+    text(lowBag, low, 0, -0.88, docked ? `${crew ? crew.toUpperCase() + ' ' : ''}SERVICE CREW STANDING BY` : 'INSTALLED BY STATION EVA CREWS', 0.15, docked ? MAGENTA : MUTED)
   }
 
   // System status, right

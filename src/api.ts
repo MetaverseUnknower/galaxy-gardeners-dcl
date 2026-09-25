@@ -243,6 +243,14 @@ export async function getOperationsPricing(): Promise<any> {
   return apiGet('/api/ship/operations-pricing')
 }
 
+export async function dockAtStation(stationId: string): Promise<{ docked: boolean }> {
+  return apiPost('/api/stations/dock', { stationId })
+}
+
+export async function undockFromStation(): Promise<{ undocked: boolean }> {
+  return apiPost('/api/stations/undock')
+}
+
 export async function getFabricationStatus(): Promise<any> {
   return apiGet('/api/ship/fabrication-status')
 }

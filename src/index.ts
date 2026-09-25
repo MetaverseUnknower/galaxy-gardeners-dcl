@@ -22,6 +22,8 @@ import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
 import { setupHeatMap } from './heatMap'
+import { isDocked, loadDockedStatus, onDockingChanged, undock } from './docking'
+import { refreshStation } from './stations'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -124,9 +126,14 @@ export async function main() {
     const currentSys = systems.find(s => s.id === playerInfo!.current_system_id)
     if (currentSys) setSolarRechargeRate(currentSys.solar_recharge_rate)
     // No docking in the scene yet, so the station theme waits for that feature.
-    setSoundtrackContext({ docked: false, system: currentSys ?? null })
+    setSoundtrackContext({ docked: isDocked(), system: currentSys ?? null })
     setSfxSystemId(playerInfo.current_system_id)
     setSleepSystem(currentSys ?? null)
+    onDockingChanged(() => {
+      setSoundtrackContext({ docked: isDocked(), system: systems.find(x => x.id === playerInfo?.current_system_id) ?? null })
+      refreshStation('ship')   // docked pricing, and the UPGRADE button
+    })
+    void loadDockedStatus()
 
     const floraStation = createStation({
       id: 'flora',
@@ -175,6 +182,7 @@ export async function main() {
       const selected = getSelectedSystem()
       if (!selected) return
       try {
+        if (isDocked()) { setStatusMessage('Releasing docking clamps...'); await undock(true) }
         setStatusMessage('Initiating travel...')
         hideCurrentLocationMarker()
         await startTravel(selected.id)
@@ -256,7 +264,7 @@ async function reloadMap(): Promise<void> {
   const consoleSystemId = playerInfo.current_system_id
   setNavConsoleSystem(systems.find(s => s.id === consoleSystemId) ?? null)
   systems = await api.getSystems(playerInfo.galaxy_id)
-  setSoundtrackContext({ docked: false, system: systems.find(s => s.id === playerInfo!.current_system_id) ?? null })
+  setSoundtrackContext({ docked: isDocked(), system: systems.find(s => s.id === playerInfo!.current_system_id) ?? null })
   setSfxSystemId(playerInfo.current_system_id)
   setSleepSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
