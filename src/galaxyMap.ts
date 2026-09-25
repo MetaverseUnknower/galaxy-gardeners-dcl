@@ -42,12 +42,17 @@ const nebulaEntities: Entity[] = []
 let currentLocationMarker: Entity | null = null
 let markerRotation = 0
 let beamEntity: Entity | null = null
+let beamOuterEntity: Entity | null = null   // second, slightly wider hologram layer
 let beamTime = 0
 const NEBULA_EXTENT = MAP_RADIUS * 1.5
 // Hologram beam texture (a 1024 copy of assets/images/hologram.png; the original is kept as supplied).
 const HOLO_TEXTURE = 'assets/images/hologram-1024.png'
-const HOLO_TILING = Vector2.create(2, 1)
-const HOLO_SCROLL_SPEED = 0.06   // texture heights per second, upward
+// Two faint layers turning in opposite directions and rising at different speeds, so the streaks drift past each other.
+const HOLO_OUTER_SCALE = 1.06
+const HOLO_LAYERS = [
+  { tiling: Vector2.create(2, 1), spin: 0.018, rise: 0.05, alpha: 0.16, glow: 0.7 },    // inner
+  { tiling: Vector2.create(3, 1.4), spin: -0.026, rise: 0.08, alpha: 0.11, glow: 0.55 }, // outer
+]
 
 // View mode
 export type ViewMode = 'galaxy' | 'system'
@@ -155,6 +160,12 @@ function updateBeamShape(): void {
   transform.position = Vector3.create(MAP_CENTER.x, PROJECTOR_TOP_Y + beamHeight / 2, MAP_CENTER.z)
   transform.scale = Vector3.create(transitionScale, beamHeight, transitionScale)
   MeshRenderer.setCylinder(beamEntity, PROJECTOR_RADIUS * transitionScale, topRadius)
+  if (beamOuterEntity) {
+    const outer = Transform.getMutable(beamOuterEntity)
+    outer.position = transform.position
+    outer.scale = transform.scale
+    MeshRenderer.setCylinder(beamOuterEntity, PROJECTOR_RADIUS * transitionScale * HOLO_OUTER_SCALE, topRadius * HOLO_OUTER_SCALE)
+  }
 }
 
 export function createProjectorBase(): void {
@@ -173,7 +184,12 @@ export function createProjectorBase(): void {
     emissiveIntensity: 1,
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
   })
-
+  beamOuterEntity = engine.addEntity()
+  Transform.create(beamOuterEntity, {
+    position: Vector3.create(MAP_CENTER.x, PROJECTOR_TOP_Y + beamHeight / 2, MAP_CENTER.z),
+    scale: Vector3.create(1, beamHeight, 1)
+  })
+  MeshRenderer.setCylinder(beamOuterEntity, PROJECTOR_RADIUS * HOLO_OUTER_SCALE, NEBULA_EXTENT * currentScale * HOLO_OUTER_SCALE)
 }
 
 function createNebula(): void {
@@ -408,22 +424,25 @@ export function galaxyAnimationSystem(dt: number): void {
     transform.rotation = Quaternion.fromEulerDegrees(45, markerRotation, 45)
   }
 
-  // Pulse beam: the hologram texture drives both colour and glow, so only its streaks light up (transparent
-  // parts stay transparent). The texture scrolls slowly upward, wrapped twice around the cone.
-  if (beamEntity) {
+  // Hologram beam: each layer's texture drives both colour and glow, so only its streaks light up. The layers
+  // spin in opposite directions (horizontal UV scroll) and rise at different speeds; a gentle shared pulse on top.
+  if (beamEntity && beamOuterEntity) {
     beamTime += dt
     const pulse = 0.5 + 0.5 * Math.sin(beamTime * 1.5)
-    const scroll = Vector2.create(0, -(beamTime * HOLO_SCROLL_SPEED) % 1)
-    const tex = { src: HOLO_TEXTURE, wrapMode: TextureWrapMode.TWM_REPEAT, tiling: HOLO_TILING, offset: scroll }
-    Material.setPbrMaterial(beamEntity, {
-      texture: Material.Texture.Common(tex),
-      emissiveTexture: Material.Texture.Common(tex),
-      albedoColor: Color4.create(0.6, 0.85, 1, 0.55 + pulse * 0.3),
-      emissiveColor: Color3.create(0.35, 0.75, 1),
-      emissiveIntensity: 1.6 + pulse * 1.6,
-      transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
-      castShadows: false,
-    })
+    const layers: [Entity, typeof HOLO_LAYERS[number]][] = [[beamEntity, HOLO_LAYERS[0]], [beamOuterEntity, HOLO_LAYERS[1]]]
+    for (const [entity, L] of layers) {
+      const offset = Vector2.create((beamTime * L.spin) % 1, -(beamTime * L.rise) % 1)
+      const tex = { src: HOLO_TEXTURE, wrapMode: TextureWrapMode.TWM_REPEAT, tiling: L.tiling, offset }
+      Material.setPbrMaterial(entity, {
+        texture: Material.Texture.Common(tex),
+        emissiveTexture: Material.Texture.Common(tex),
+        albedoColor: Color4.create(0.6, 0.85, 1, L.alpha * (0.8 + pulse * 0.4)),
+        emissiveColor: Color3.create(0.35, 0.75, 1),
+        emissiveIntensity: L.glow * (0.8 + pulse * 0.5),
+        transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
+        castShadows: false,
+      })
+    }
   }
 
 }
