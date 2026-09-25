@@ -13,7 +13,7 @@ import { enterSleepMode } from './sleepMode'
 import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } from './heatMap'
 import { isDocked, dockAt, undock, onDockingChanged } from './docking'
 import { hideInTopView } from './topViewHide'
-import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, ring, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
+import { Bag, clearBag, text, frame, header, button, icon, image, dot, disc, pin, line, ring, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
 // This desk is scaled down (0.85), so its text gets a local boost on top of the global scale.
@@ -154,14 +154,13 @@ export function refreshNavConsole(): void {
   const L1 = 0.66, L2 = 0.5, C1 = -2.62, C2 = -1.98
   frame(bag, root, C1, L1, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
   txt(bag, root, C1 + 0.08, L1, 'YOU ARE HERE', 0.08, DIM, LEFT)
-  dot(bag, root, C2, L1 - 0.02, 0.035, Color3.create(1, 0.3, 1))
-  line(bag, root, C2 - 0.03, L1 + 0.05, C2, L1 + 0.01, Color3.create(1, 0.3, 1), { thickness: 0.012 })   // pin: a V over the star
-  line(bag, root, C2 + 0.03, L1 + 0.05, C2, L1 + 0.01, Color3.create(1, 0.3, 1), { thickness: 0.012 })
+  disc(bag, root, C2, L1 - 0.02, 0.045, Color3.create(1, 0.3, 1))
+  pin(bag, root, C2, L1 + 0.045, 0.045, 0.05, Color3.create(1, 0.3, 1))   // the map's home pin, hovering over the star
   txt(bag, root, C2 + 0.08, L1, 'HOME SYSTEM', 0.08, DIM, LEFT)
-  dot(bag, root, C1, L2, 0.03, Color3.create(1, 1, 1))
+  disc(bag, root, C1, L2, 0.035, Color3.create(1, 1, 1))
   txt(bag, root, C1 + 0.08, L2, 'STAR SYSTEM', 0.08, DIM, LEFT)
-  dot(bag, root, C2, L2, 0.03, Color3.create(0, 0.8, 0.8))
-  ring(bag, root, C2, L2, 0.045, Color3.create(0, 0.8, 0.8), { segments: 20, thickness: 0.006, alpha: 0.5 })   // the halo disc
+  disc(bag, root, C2, L2, 0.08, Color3.create(0, 0.8, 0.8), { alpha: 0.28, z: -0.03 })   // the halo disc
+  disc(bag, root, C2, L2, 0.035, Color3.create(0, 0.8, 0.8))
   txt(bag, root, C2 + 0.08, L2, 'WITH STATION', 0.08, DIM, LEFT)
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
   btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })

@@ -190,6 +190,26 @@ export function ring(into: Bag, root: Entity, cx: number, cy: number, r: number,
 }
 
 /** Small glowing square marker; clickable when `hover`/`onClick` are given. */
+/** Filled circle on a screen (a flat disc facing the viewer). `size` is the diameter. */
+export function disc(into: Bag, root: Entity, x: number, y: number, size: number, color: Color3, opts: { z?: number; alpha?: number } = {}): Entity {
+  const e = engine.addEntity()
+  Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.035), scale: Vector3.create(size, 0.01, size), rotation: Quaternion.fromEulerDegrees(90, 0, 0), parent: root })
+  MeshRenderer.setCylinder(e)
+  Material.setPbrMaterial(e, { albedoColor: Color4.create(color.r, color.g, color.b, opts.alpha ?? 1), emissiveColor: color, emissiveIntensity: 2, transparencyMode: (opts.alpha ?? 1) < 0.99 ? MaterialTransparencyMode.MTM_ALPHA_BLEND : MaterialTransparencyMode.MTM_OPAQUE })
+  into.push(e)
+  return e
+}
+
+/** Small downward-pointing cone seen side-on (reads as ▼), matching the map's home pin. */
+export function pin(into: Bag, root: Entity, x: number, y: number, w: number, h: number, color: Color3, opts: { z?: number } = {}): Entity {
+  const e = engine.addEntity()
+  Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.035), scale: Vector3.create(w, h, 0.01), parent: root })
+  MeshRenderer.setCylinder(e, 0, 1)   // point at the bottom
+  Material.setPbrMaterial(e, { albedoColor: Color4.create(color.r, color.g, color.b, 1), emissiveColor: color, emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_OPAQUE })
+  into.push(e)
+  return e
+}
+
 export function dot(into: Bag, root: Entity, x: number, y: number, size: number, color: Color3, opts: { z?: number; hover?: string; onClick?: () => void } = {}): Entity {
   const e = engine.addEntity()
   Transform.create(e, { position: Vector3.create(x, y, opts.z ?? -0.035), scale: Vector3.create(size, size, 0.01), rotation: Quaternion.fromEulerDegrees(0, 0, 45), parent: root })
