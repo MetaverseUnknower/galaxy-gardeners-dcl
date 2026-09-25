@@ -70,7 +70,28 @@ let system: StarSystem | null = null
 let specks: Speck[] = []
 let celestials: Celestial[] = []
 
-export function isSleeping(): boolean { return active }
+// Fade: world → black → room on the way in; room → black → world on the way out.
+type Phase = 'off' | 'dimming' | 'revealing' | 'asleep' | 'closing' | 'waking'
+const FADE_SECONDS: Record<Phase, number> = { off: 0, dimming: 1.2, revealing: 2.2, asleep: 0, closing: 1.5, waking: 1.2 }
+let phase: Phase = 'off'
+let phaseT = 0
+
+/** True from the first frame of the fade-in until the fade-out has finished (the HUD stays hidden throughout). */
+export function isSleeping(): boolean { return phase !== 'off' }
+/** Whether the bedroom composite is drawn (false while the world is fading to or from black). */
+export function sleepSceneVisible(): boolean { return phase === 'revealing' || phase === 'asleep' || phase === 'closing' }
+/** Opacity of the black curtain over everything, 0..1. */
+export function sleepCurtain(): number {
+  const k = FADE_SECONDS[phase] > 0 ? Math.min(1, phaseT / FADE_SECONDS[phase]) : 1
+  const ease = k * k * (3 - 2 * k)
+  switch (phase) {
+    case 'dimming': return ease
+    case 'revealing': return 1 - ease
+    case 'closing': return ease
+    case 'waking': return 1 - ease
+    default: return 0
+  }
+}
 export function sleepView(): { src: string; aspect: number } { return SLEEP_VIEWS[viewIndex] ?? SLEEP_VIEWS[0] }
 /** 0..1 position along the pan, starting centred and easing back and forth. */
 export function panFraction(): number { return 0.5 + 0.5 * Math.sin((time / PAN_PERIOD_SECONDS) * Math.PI * 2) }
@@ -95,15 +116,22 @@ export function starSprite(): { src: string; size: number; tint: [number, number
 }
 
 export function enterSleepMode(): void {
-  if (active) return
+  if (phase !== 'off') return
   viewIndex = Math.min(Math.max(0, getPref<number>(VIEW_PREF, 0)), SLEEP_VIEWS.length - 1)
   time = 0
   specks = makeSpecks(STAR_COUNT)
   celestials = makeCelestials(CELESTIAL_COUNT)
   active = true
+  phase = 'dimming'; phaseT = 0
 }
 
-export function wake(): void { active = false }
+export function wake(): void {
+  if (phase === 'off' || phase === 'closing' || phase === 'waking') return
+  // Waking mid fade-in starts the close from the current darkness so there's no jump.
+  if (phase === 'dimming') { phase = 'waking'; phaseT = FADE_SECONDS.waking * (1 - sleepCurtain()); return }
+  const c = sleepCurtain()
+  phase = 'closing'; phaseT = FADE_SECONDS.closing * c
+}
 
 export function setSleepView(i: number): void {
   viewIndex = ((i % SLEEP_VIEWS.length) + SLEEP_VIEWS.length) % SLEEP_VIEWS.length
@@ -134,4 +162,15 @@ function makeCelestials(n: number): Celestial[] {
   return out
 }
 
-engine.addSystem((dt: number) => { if (active) time += dt })
+engine.addSystem((dt: number) => {
+  if (phase === 'off') return
+  if (sleepSceneVisible()) time += dt
+  phaseT += dt
+  if (FADE_SECONDS[phase] > 0 && phaseT >= FADE_SECONDS[phase]) {
+    phaseT = 0
+    if (phase === 'dimming') phase = 'revealing'
+    else if (phase === 'revealing') phase = 'asleep'
+    else if (phase === 'closing') phase = 'waking'
+    else if (phase === 'waking') { phase = 'off'; active = false }
+  }
+})

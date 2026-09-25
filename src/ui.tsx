@@ -14,7 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
-import { isSleeping, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
+import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 
 // HUD sizes are authored for a 1080-tall canvas and scaled to the actual canvas height, so every
@@ -417,7 +417,7 @@ const tex = (src: string, tint?: [number, number, number], alpha: number = 1) =>
 /** Bedroom fitted to the screen height at its native aspect, panning slowly if wider than the screen. The space
  *  layers live inside the same clipped box so the window always looks out on them. */
 const SleepOverlay = () => {
-  if (!isSleeping()) return null
+  if (!sleepSceneVisible()) return null
   const canvas = UiCanvasInformation.getOrNull(engine.RootEntity)
   const cw = canvas?.width ?? 1920
   const ch = canvas?.height ?? 1080
@@ -490,11 +490,20 @@ const SleepOverlay = () => {
         </UiEntity>
       </UiEntity>
       <MusicBar />
+      <SleepCurtain />
     </UiEntity>
   )
 }
 
-const uiComponent = () => isSleeping() ? <SleepOverlay /> : (
+/** Black fade over whatever is showing; drawn last so it covers everything. */
+const SleepCurtain = () => {
+  const a = sleepCurtain()
+  if (!isSleeping() || a <= 0.001) return null
+  return <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%' }} uiBackground={{ color: Color4.create(0, 0, 0, a) }} />
+}
+
+// While the world fades to or from black, the normal HUD stays up under the curtain; once dark, the room takes over.
+const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
   <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
     <SystemInfoPanel />
     <BodyDetailPanel />
@@ -507,6 +516,7 @@ const uiComponent = () => isSleeping() ? <SleepOverlay /> : (
     <CameraSwitch />
     <MusicBar />
     <ReturnToTerminal />
+    <SleepCurtain />
   </UiEntity>
 )
 
