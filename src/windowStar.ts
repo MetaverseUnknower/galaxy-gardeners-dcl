@@ -84,15 +84,15 @@ function travelPlacement(dest: StarSystem, frac: number): BandPlacement | null {
   }
 }
 
-/** Searching for a new star: the sky the probe is sweeping. Inward faces the core, lateral looks along the disc
- *  to one side, vertical climbs out of the plane (the band drops away below), outward sees the faint far side. */
-function scanPlacement(direction: string): BandPlacement {
+/** Searching for a new star: inward faces the core (band centred), lateral looks along the disc (band off to one
+ *  side), vertical climbs out of the plane (band drops away below), outward faces away from the core (no band). */
+function scanPlacement(direction: string): BandPlacement | null {
   const planeY = STAR_POSITION.y - Math.max(-1, Math.min(1, (current?.coord_z ?? 0) / 25)) * 10
   switch (direction) {
     case 'inward': return { x: STAR_POSITION.x, y: planeY, width: BAND_WIDTH, alpha: BAND_ALPHA }
     case 'lateral': return { x: STAR_POSITION.x + BAND_SIDE_OFFSET * 0.8, y: planeY, width: BAND_WIDTH, alpha: BAND_ALPHA }
     case 'vertical': return { x: STAR_POSITION.x, y: planeY - 14, width: BAND_WIDTH * 1.2, alpha: BAND_ALPHA * 0.8 }
-    default: return { x: STAR_POSITION.x, y: planeY + 4, width: BAND_WIDTH * 0.65, alpha: BAND_ALPHA * 0.45 }
+    default: return null   // outward: the core is behind us
   }
 }
 
