@@ -7,7 +7,7 @@ import * as api from './api'
 import { StarSystem } from './types'
 import { setDiscoveryDescription } from './ui'
 import { DECK_Y } from './environment'
-import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN } from './stations/draw'
+import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, spinner, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN } from './stations/draw'
 import { hideInTopView } from './topViewHide'
 
 const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
@@ -33,6 +33,8 @@ let miniMapEntities: Entity[] = []
 let arrowEntities: Entity[] = []
 let discoveryOptions: any[] = []
 let activeDiscovery: any = null
+// Set the instant a direction (or COMPLETE) is clicked, so the desk reacts before the server answers.
+let pending: { kind: 'launch' | 'complete'; direction: string } | null = null
 let currentSystem: StarSystem | null = null
 let allSystems: StarSystem[] = []
 let deskRoot: Entity | null = null
@@ -103,7 +105,8 @@ function drawUpright(root: Entity): void {
 function drawDesk(root: Entity): void {
   // Left: travel vector
   header(bag, root, -2.65, 1.0, { icon: ICONS.travel, title: 'TRAVEL VECTOR', subtitle: 'select direction', size: 0.55 })
-  if (activeDiscovery) drawActiveDiscovery(root)
+  if (pending) drawPending(root)
+  else if (activeDiscovery) drawActiveDiscovery(root)
   else drawDirectionButtons(root)
 
   // Right: galactic map
@@ -140,6 +143,27 @@ function drawDirectionButtons(root: Entity): void {
     pointerEventsSystem.onPointerHoverEnter({ entity: btn }, () => { showDirectionArrows(d.dir, d.color); setDiscoveryDescription(`${description}  —  Est. ${timeStr}`) })
     pointerEventsSystem.onPointerHoverLeave({ entity: btn }, () => { hideArrows(); setDiscoveryDescription(null) })
   }
+}
+
+/** Launch / completion in flight: the direction buttons are gone (nothing to double-click) and a spinner shows. */
+function drawPending(root: Entity): void {
+  const p = pending!
+  frame(bag, root, -1.4, -0.15, 2.5, 1.7, { border: MAGENTA3 })
+  spinner(bag, root, -1.4, 0.3, 0.42)
+  text(bag, root, -1.4, -0.1, p.kind === 'launch' ? 'LAUNCHING PROBE' : 'LOCKING SIGNAL', 0.34, MAGENTA)
+  text(bag, root, -1.4, -0.38, `${p.direction.toUpperCase()} VECTOR`, 0.24, WHITE)
+  text(bag, root, -1.4, -0.62, p.kind === 'launch' ? 'CALCULATING TRAJECTORY…' : 'RESOLVING NEW STAR SYSTEM…', 0.18, DIM)
+}
+
+/** Redraw both screens from the state already in hand (no server round trip). */
+function redraw(): void {
+  if (!deskRoot || !topRoot) return
+  hideArrows()
+  clearBag(bag)
+  for (const e of miniMapEntities) engine.removeEntity(e); miniMapEntities.length = 0
+  if (panelRoot) { engine.removeEntity(panelRoot); panelRoot = null }
+  drawUpright(topRoot)
+  drawDesk(deskRoot)
 }
 
 function drawActiveDiscovery(root: Entity): void {
@@ -280,22 +304,35 @@ function showDirectionArrows(direction: string, color: Color3): void {
 function hideArrows(): void { for (const e of arrowEntities) engine.removeEntity(e); arrowEntities = [] }
 
 async function handleStartDiscovery(direction: string): Promise<void> {
+  if (pending) return
+  pending = { kind: 'launch', direction }
+  setDiscoveryDescription(null)
+  redraw()
   try {
     const result = await api.startDiscovery(direction)
     if (onDiscoveryNotify) { const mins = result.durationMinutes; const hrs = Math.floor(mins / 60); const m = mins % 60; onDiscoveryNotify(`Discovery started: ${direction} — ETA ${hrs > 0 ? `${hrs}h ${m}m` : `${m}m`}`, Color4.create(0, 1, 1, 1)) }
     activeDiscovery = await api.getActiveDiscovery()
-    await createDiscoveryPanel(allSystems, currentSystem?.id || null)
   } catch (err: any) { if (onDiscoveryNotify) onDiscoveryNotify(err.message || 'Discovery failed', Color4.create(1, 0.3, 0.3, 1)) }
+  pending = null
+  redraw()
 }
 
 async function handleCompleteDiscovery(discoveryId: string): Promise<void> {
+  if (pending) return
+  pending = { kind: 'complete', direction: String(activeDiscovery?.direction ?? '') }
+  redraw()
   try {
     const result = await api.completeDiscovery(discoveryId)
     if (onDiscoveryNotify) onDiscoveryNotify(`New system discovered: ${result.systemName || 'Unknown'}!`, Color4.create(0, 1, 0.5, 1))
     activeDiscovery = null
     if (onDiscoveryComplete && result.systemId) onDiscoveryComplete(result.systemId, result.systemName || 'Unknown')
+    pending = null
     await createDiscoveryPanel(allSystems, currentSystem?.id || null)
-  } catch (err: any) { if (onDiscoveryNotify) onDiscoveryNotify(err.message || 'Complete failed', Color4.create(1, 0.3, 0.3, 1)) }
+  } catch (err: any) {
+    if (onDiscoveryNotify) onDiscoveryNotify(err.message || 'Complete failed', Color4.create(1, 0.3, 0.3, 1))
+    pending = null
+    redraw()
+  }
 }
 
 export function clearDiscoveryPanel(): void {
@@ -305,5 +342,5 @@ export function clearDiscoveryPanel(): void {
   if (panelRoot) { engine.removeEntity(panelRoot); panelRoot = null }
   if (deskRoot) { engine.removeEntity(deskRoot); deskRoot = null }
   if (topRoot) { engine.removeEntity(topRoot); topRoot = null }
-  discoveryOptions = []; activeDiscovery = null
+  discoveryOptions = []; activeDiscovery = null; pending = null
 }
