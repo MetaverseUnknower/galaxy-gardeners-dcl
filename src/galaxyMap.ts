@@ -13,19 +13,28 @@ const PROJECTOR_RADIUS = 1.5
 // Control state
 let galaxyRoot: Entity | null = null
 let currentScale = 1.0
-let currentHeight = FLOOR_Y + 1.0
+let currentHeight = FLOOR_Y + 1.2
 let currentRotationY = 0
-let targetScale = 1.0
-let targetHeight = FLOOR_Y + 1.0
 let targetRotationY = 0
 const ANIM_SPEED = 4.0
-const MIN_SCALE = 0.4
-const MAX_SCALE = 2.0
-const SCALE_STEP = 0.2
-const HEIGHT_STEP = 0.3
-const MIN_HEIGHT = FLOOR_Y + 0.3
-const MAX_HEIGHT = FLOOR_Y + 4.0
 const ROTATE_STEP = 15
+// Height and zoom are whole-number levels so every step is exact (no drift, no uneven end steps).
+const MIN_HEIGHT = FLOOR_Y + 0.3
+const HEIGHT_STEP = 0.3
+const HEIGHT_LEVELS = 13            // levels 0..12 → 0.3m .. 3.9m above the floor
+const MIN_SCALE = 0.4
+const SCALE_STEP = 0.2
+const SCALE_LEVELS = 9              // levels 0..8 → zoom 0.4 .. 2.0
+const LOW_HEIGHT_LEVELS = 3         // the three lowest heights…
+const LOW_SCALE_LEVELS = 3          // …may only use the three smallest zooms; above them, zoom freely
+const DEFAULT_HEIGHT_LEVEL = LOW_HEIGHT_LEVELS   // the first unrestricted height (1.2m)
+const DEFAULT_SCALE_LEVEL = 3                    // zoom 1.0
+let heightLevel = DEFAULT_HEIGHT_LEVEL
+let scaleLevel = DEFAULT_SCALE_LEVEL
+const heightFor = (l: number) => MIN_HEIGHT + l * HEIGHT_STEP
+const scaleFor = (l: number) => MIN_SCALE + l * SCALE_STEP
+let targetScale = scaleFor(DEFAULT_SCALE_LEVEL)
+let targetHeight = heightFor(DEFAULT_HEIGHT_LEVEL)
 
 export const starEntities: Map<Entity, StarSystem> = new Map()
 const zoneRingEntities: Entity[] = []
@@ -69,22 +78,25 @@ export function setViewModeChangedListener(cb: () => void): void { onViewModeCha
 export function canSwitchToSystemView(): boolean { return canSwitchToSystem ? canSwitchToSystem() : true }
 
 // Map controls (used by the navigation console)
-// At the three lowest heights the map may only use the three smallest zoom levels, so lowering it
-// toward the console shrinks it to fit rather than swallowing the desk.
-const LOW_HEIGHT_MAX = MIN_HEIGHT + 2 * HEIGHT_STEP + 0.001
-const LOW_ZOOM_MAX = MIN_SCALE + 2 * SCALE_STEP
-function maxScaleForHeight(h: number): number { return h <= LOW_HEIGHT_MAX ? LOW_ZOOM_MAX : MAX_SCALE }
-function clampScaleToHeight(): void { targetScale = Math.min(targetScale, maxScaleForHeight(targetHeight)) }
+// At the three lowest heights the map may only use the three smallest zoom levels, so lowering it toward the
+// console shrinks it to fit rather than swallowing the desk. Above that, height and zoom are independent.
+function maxScaleLevelFor(h: number): number { return h < LOW_HEIGHT_LEVELS ? LOW_SCALE_LEVELS - 1 : SCALE_LEVELS - 1 }
+function applyLevels(): void {
+  heightLevel = Math.max(0, Math.min(HEIGHT_LEVELS - 1, heightLevel))
+  scaleLevel = Math.max(0, Math.min(maxScaleLevelFor(heightLevel), scaleLevel))
+  targetHeight = heightFor(heightLevel)
+  targetScale = scaleFor(scaleLevel)
+}
 
 export function rotateMap(dir: 1 | -1): void { targetRotationY += dir * ROTATE_STEP }
-export function tiltMap(dir: 1 | -1): void { targetHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, targetHeight + dir * HEIGHT_STEP)); clampScaleToHeight() }
-export function zoomMap(dir: 1 | -1): void { targetScale = Math.max(MIN_SCALE, Math.min(maxScaleForHeight(targetHeight), targetScale + dir * SCALE_STEP)) }
-export function resetMapView(): void { targetRotationY = 0; targetHeight = FLOOR_Y + 1.0; targetScale = 1.0 }
+export function tiltMap(dir: 1 | -1): void { heightLevel += dir; applyLevels() }
+export function zoomMap(dir: 1 | -1): void { scaleLevel += dir; applyLevels() }
+export function resetMapView(): void { targetRotationY = 0; heightLevel = DEFAULT_HEIGHT_LEVEL; scaleLevel = DEFAULT_SCALE_LEVEL; applyLevels() }
 export function getMapView(): { height: number; scale: number } { return { height: targetHeight, scale: targetScale } }
 export function setMapView(view: { height?: number; scale?: number }): void {
-  if (view.height !== undefined) targetHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, view.height))
-  if (view.scale !== undefined) targetScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, view.scale))
-  clampScaleToHeight()
+  if (view.height !== undefined) heightLevel = Math.round((view.height - MIN_HEIGHT) / HEIGHT_STEP)
+  if (view.scale !== undefined) scaleLevel = Math.round((view.scale - MIN_SCALE) / SCALE_STEP)
+  applyLevels()
 }
 export const MAP_LOWEST_HEIGHT = MIN_HEIGHT
 
@@ -448,8 +460,5 @@ export function clearMap(): void {
   if (galaxyRoot) {
     engine.removeEntity(galaxyRoot)
     galaxyRoot = null
-    currentScale = targetScale = 1.0
-    currentHeight = targetHeight = FLOOR_Y + 1.0
-    currentRotationY = targetRotationY = 0
   }
 }
