@@ -49,6 +49,11 @@ const NEBULA_EXTENT = MAP_RADIUS * 1.5
 const HOLO_TEXTURE = 'assets/images/hologram-1024.png'
 // Two faint layers turning in opposite directions and rising at different speeds, so the streaks drift past each other.
 const HOLO_OUTER_SCALE = 1.06
+// The texture masks the glow down to its streaks; until it has loaded the whole cone would glow white. The
+// explorer gives no texture-loaded signal, so the beam stays fully transparent (texture already requested, so it
+// loads meanwhile) for a warm-up period, then fades in.
+const HOLO_WARMUP_SECONDS = 8
+const HOLO_FADE_IN_SECONDS = 3
 // Spin is a real rotation of each cone (degrees per second): the explorer does not animate texture offsets.
 const HOLO_LAYERS = [
   { tiling: Vector2.create(2, 1), spin: 1.5, alpha: 0.16, glow: 0.7 },     // inner: one turn every 4 minutes
@@ -180,9 +185,8 @@ export function createProjectorBase(): void {
   })
   MeshRenderer.setCylinder(beamEntity, PROJECTOR_RADIUS, NEBULA_EXTENT * currentScale)
   Material.setPbrMaterial(beamEntity, {
-    albedoColor: Color4.create(0, 0.5, 1, 0.06),
-    emissiveColor: Color3.create(0, 0.3, 0.8),
-    emissiveIntensity: 1,
+    albedoColor: Color4.create(0, 0, 0, 0),
+    emissiveColor: Color3.Black(),
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
   })
   beamOuterEntity = engine.addEntity()
@@ -430,6 +434,8 @@ export function galaxyAnimationSystem(dt: number): void {
   if (beamEntity && beamOuterEntity) {
     beamTime += dt
     const pulse = 0.5 + 0.5 * Math.sin(beamTime * 1.5)
+    const k = Math.max(0, Math.min(1, (beamTime - HOLO_WARMUP_SECONDS) / HOLO_FADE_IN_SECONDS))
+    const fadeIn = k * k * (3 - 2 * k)
     const layers: [Entity, typeof HOLO_LAYERS[number]][] = [[beamEntity, HOLO_LAYERS[0]], [beamOuterEntity, HOLO_LAYERS[1]]]
     for (const [entity, L] of layers) {
       Transform.getMutable(entity).rotation = Quaternion.fromEulerDegrees(0, (beamTime * L.spin) % 360, 0)
@@ -437,8 +443,8 @@ export function galaxyAnimationSystem(dt: number): void {
       Material.setPbrMaterial(entity, {
         texture: Material.Texture.Common(tex),
         emissiveTexture: Material.Texture.Common(tex),
-        albedoColor: Color4.create(0.6, 0.85, 1, L.alpha * (0.8 + pulse * 0.4)),
-        emissiveColor: Color3.create(0.35, 0.75, 1),
+        albedoColor: Color4.create(0.6, 0.85, 1, L.alpha * (0.8 + pulse * 0.4) * fadeIn),
+        emissiveColor: Color3.create(0.35 * fadeIn, 0.75 * fadeIn, fadeIn),
         emissiveIntensity: L.glow * (0.8 + pulse * 0.5),
         transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
         castShadows: false,
