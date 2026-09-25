@@ -9,6 +9,7 @@ import { setDiscoveryDescription } from './ui'
 import { DECK_Y } from './environment'
 import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, spinner, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN } from './stations/draw'
 import { hideInTopView } from './topViewHide'
+import { registerDimmableScreen } from './cabinDim'
 
 const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -82,6 +83,8 @@ export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentS
   topRoot = engine.addEntity()
   Transform.create(topRoot, { position: Vector3.create(DISPLAY_CENTER.x, DISPLAY_CENTER.y + 2.6, DISPLAY_CENTER.z - 1.8), rotation: UPRIGHT_ROT })
   hideInTopView(deskRoot); hideInTopView(topRoot)
+  registerDimmableScreen(topRoot, 2.8, 0.85)          // upright panel: 5.6 × 1.7 frame
+  registerDimmableScreen(deskRoot, 2.75, 1.15, -0.05)  // desk face: content from y -1.12 to 1.0
 
   drawUpright(topRoot)
   drawDesk(deskRoot)

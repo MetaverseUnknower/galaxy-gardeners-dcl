@@ -7,6 +7,7 @@ import { Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { Bag, clearBag, text, spinner, RED } from './stations/draw'
 import { hideInTopView } from './topViewHide'
+import { registerDimmableScreen } from './cabinDim'
 
 export interface StationContext {
   dashboard: any | null
@@ -61,6 +62,8 @@ export function createStation(config: StationConfig): Station {
   Transform.create(top, { position: TOP_ROOT_OFFSET, rotation: TOP_ROOT_ROT, parent: tallDesk })
   const low = engine.addEntity()
   Transform.create(low, { position: LOW_ROOT_OFFSET, rotation: LOW_ROOT_ROT, parent: lowDesk })
+  registerDimmableScreen(top, TOP.halfW, TOP.halfH)
+  registerDimmableScreen(low, LOW.halfW, LOW.halfH)
   const screens: Screens = { top, low }
 
   const fallback: Bag = []
