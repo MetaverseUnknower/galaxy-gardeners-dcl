@@ -3,6 +3,7 @@
 import { engine } from '@dcl/sdk/ecs'
 import { getPref, setPref } from './prefs'
 import { StarSystem } from './types'
+import { getTravelDestination, getTravelFraction } from './navigation'
 
 // Bedrooms are used at their native size and aspect: the overlay fits them to the screen height ("contain")
 // and pans slowly when the fitted image is wider than the screen.
@@ -111,8 +112,14 @@ export function galacticPlaneOffset(): number {
   return Math.max(-1, Math.min(1, z / 25)) * 28
 }
 
+const MIN_TRAVEL_FRACTION = 0.06   // same as the bridge window: a findable speck at departure
+
+/** The local star; in transit, the destination star grown in proportion to the distance covered (as the window does). */
 export function starSprite(): { src: string; size: number; tint: [number, number, number] } {
-  return STAR_SPRITES[system?.star_type ?? ''] ?? DEFAULT_STAR
+  const dest = getTravelDestination()
+  const sprite = STAR_SPRITES[(dest ?? system)?.star_type ?? ''] ?? DEFAULT_STAR
+  if (!dest) return sprite
+  return { ...sprite, size: sprite.size * Math.max(MIN_TRAVEL_FRACTION, getTravelFraction()) }
 }
 
 export function enterSleepMode(): void {
