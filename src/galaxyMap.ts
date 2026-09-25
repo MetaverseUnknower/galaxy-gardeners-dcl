@@ -1,5 +1,5 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, ColliderLayer } from '@dcl/sdk/ecs'
-import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, ColliderLayer, TextureWrapMode } from '@dcl/sdk/ecs'
+import { Color3, Color4, Vector3, Quaternion, Vector2 } from '@dcl/sdk/math'
 import { StarSystem } from './types'
 import { getSystemRoot, getSystemAutoScale } from './systemView'
 import { DECK_Y } from './environment'
@@ -44,6 +44,10 @@ let markerRotation = 0
 let beamEntity: Entity | null = null
 let beamTime = 0
 const NEBULA_EXTENT = MAP_RADIUS * 1.5
+// Hologram beam texture (a 1024 copy of assets/images/hologram.png; the original is kept as supplied).
+const HOLO_TEXTURE = 'assets/images/hologram-1024.png'
+const HOLO_TILING = Vector2.create(2, 1)
+const HOLO_SCROLL_SPEED = 0.06   // texture heights per second, upward
 
 // View mode
 export type ViewMode = 'galaxy' | 'system'
@@ -404,15 +408,21 @@ export function galaxyAnimationSystem(dt: number): void {
     transform.rotation = Quaternion.fromEulerDegrees(45, markerRotation, 45)
   }
 
-  // Pulse beam
+  // Pulse beam: the hologram texture drives both colour and glow, so only its streaks light up (transparent
+  // parts stay transparent). The texture scrolls slowly upward, wrapped twice around the cone.
   if (beamEntity) {
     beamTime += dt
     const pulse = 0.5 + 0.5 * Math.sin(beamTime * 1.5)
-    const intensity = 1.2 + pulse * 2.3
+    const scroll = Vector2.create(0, -(beamTime * HOLO_SCROLL_SPEED) % 1)
+    const tex = { src: HOLO_TEXTURE, wrapMode: TextureWrapMode.TWM_REPEAT, tiling: HOLO_TILING, offset: scroll }
     Material.setPbrMaterial(beamEntity, {
-      albedoColor: Color4.create(0, 0.3 + pulse * 0.2, 1, 0.045 + pulse * 0.035),
-      emissiveColor: Color3.create(0, 0.2 + pulse * 0.3, 0.6 + pulse * 0.4),
-      emissiveIntensity: intensity, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+      texture: Material.Texture.Common(tex),
+      emissiveTexture: Material.Texture.Common(tex),
+      albedoColor: Color4.create(0.6, 0.85, 1, 0.55 + pulse * 0.3),
+      emissiveColor: Color3.create(0.35, 0.75, 1),
+      emissiveIntensity: 1.6 + pulse * 1.6,
+      transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
+      castShadows: false,
     })
   }
 
