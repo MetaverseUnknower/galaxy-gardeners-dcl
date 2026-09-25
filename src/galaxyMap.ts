@@ -49,9 +49,10 @@ const NEBULA_EXTENT = MAP_RADIUS * 1.5
 const HOLO_TEXTURE = 'assets/images/hologram-1024.png'
 // Two faint layers turning in opposite directions and rising at different speeds, so the streaks drift past each other.
 const HOLO_OUTER_SCALE = 1.06
+// Spin is a real rotation of each cone (degrees per second): the explorer does not animate texture offsets.
 const HOLO_LAYERS = [
-  { tiling: Vector2.create(2, 1), spin: 0.018, rise: 0.05, alpha: 0.16, glow: 0.7 },    // inner
-  { tiling: Vector2.create(3, 1.4), spin: -0.026, rise: 0.08, alpha: 0.11, glow: 0.55 }, // outer
+  { tiling: Vector2.create(2, 1), spin: 7, alpha: 0.16, glow: 0.7 },       // inner
+  { tiling: Vector2.create(3, 1.4), spin: -10, alpha: 0.11, glow: 0.55 },  // outer
 ]
 
 // View mode
@@ -424,15 +425,15 @@ export function galaxyAnimationSystem(dt: number): void {
     transform.rotation = Quaternion.fromEulerDegrees(45, markerRotation, 45)
   }
 
-  // Hologram beam: each layer's texture drives both colour and glow, so only its streaks light up. The layers
-  // spin in opposite directions (horizontal UV scroll) and rise at different speeds; a gentle shared pulse on top.
+  // Hologram beam: each layer's texture drives both colour and glow, so only its streaks light up. The two cones
+  // turn in opposite directions at different speeds; a gentle shared pulse on top.
   if (beamEntity && beamOuterEntity) {
     beamTime += dt
     const pulse = 0.5 + 0.5 * Math.sin(beamTime * 1.5)
     const layers: [Entity, typeof HOLO_LAYERS[number]][] = [[beamEntity, HOLO_LAYERS[0]], [beamOuterEntity, HOLO_LAYERS[1]]]
     for (const [entity, L] of layers) {
-      const offset = Vector2.create((beamTime * L.spin) % 1, -(beamTime * L.rise) % 1)
-      const tex = { src: HOLO_TEXTURE, wrapMode: TextureWrapMode.TWM_REPEAT, tiling: L.tiling, offset }
+      Transform.getMutable(entity).rotation = Quaternion.fromEulerDegrees(0, (beamTime * L.spin) % 360, 0)
+      const tex = { src: HOLO_TEXTURE, wrapMode: TextureWrapMode.TWM_REPEAT, tiling: L.tiling }
       Material.setPbrMaterial(entity, {
         texture: Material.Texture.Common(tex),
         emissiveTexture: Material.Texture.Common(tex),
