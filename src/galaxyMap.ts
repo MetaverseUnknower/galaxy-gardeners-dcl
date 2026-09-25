@@ -353,6 +353,32 @@ function getStarColor(system: StarSystem, homeSystemId: string | null, currentSy
   return { color: Color4.create(1, 1, 1, 1), emissive: Color3.create(1, 1, 1), size: 0.05, intensity: 3 }
 }
 
+const HOME_COLOR = Color3.create(1, 0.3, 1)
+const STATION_COLOR = Color3.create(0, 0.8, 0.8)
+const STATION_RING_DOTS = 8
+
+/** Downward-pointing cone hovering over the home system, like a map pin. */
+function addHomePin(root: Entity, pos: Vector3, starSize: number): void {
+  const pin = engine.addEntity()
+  Transform.create(pin, { position: Vector3.create(pos.x, pos.y + starSize / 2 + 0.1, pos.z), scale: Vector3.create(0.07, 0.11, 0.07), parent: root })
+  MeshRenderer.setCylinder(pin, 0, 1)   // point at the bottom, toward the star
+  Material.setPbrMaterial(pin, { albedoColor: Color4.create(HOME_COLOR.r, HOME_COLOR.g, HOME_COLOR.b, 1), emissiveColor: HOME_COLOR, emissiveIntensity: 4 })
+  nebulaEntities.push(pin)   // cleared with the map
+}
+
+/** A flat ring of small beads around a station system, like an orbit. */
+function addStationRing(root: Entity, pos: Vector3, starSize: number): void {
+  const r = starSize / 2 + 0.07
+  for (let i = 0; i < STATION_RING_DOTS; i++) {
+    const a = (i / STATION_RING_DOTS) * Math.PI * 2
+    const bead = engine.addEntity()
+    Transform.create(bead, { position: Vector3.create(pos.x + Math.cos(a) * r, pos.y, pos.z + Math.sin(a) * r), scale: Vector3.create(0.022, 0.022, 0.022), parent: root })
+    MeshRenderer.setSphere(bead)
+    Material.setPbrMaterial(bead, { albedoColor: Color4.create(STATION_COLOR.r, STATION_COLOR.g, STATION_COLOR.b, 1), emissiveColor: STATION_COLOR, emissiveIntensity: 3 })
+    nebulaEntities.push(bead)
+  }
+}
+
 export function hideCurrentLocationMarker(): void {
   if (currentLocationMarker) { engine.removeEntity(currentLocationMarker); currentLocationMarker = null }
 }
@@ -482,6 +508,9 @@ export function renderStarSystems(systems: StarSystem[], homeSystemId: string | 
     Material.setPbrMaterial(entity, { albedoColor: color, emissiveColor: emissive, emissiveIntensity: intensity })
     starEntities.set(entity, system)
     if (system.id === currentSystemId) createCurrentLocationMarker(position)
+    // Shape cues so no marker relies on colour alone: a pin over home, a dotted orbit ring around stations.
+    if (system.id === homeSystemId) addHomePin(root, position, size)
+    if (system.has_station) addStationRing(root, position, size)
   }
   for (const h of mapHooks) h.rendered?.()
 }

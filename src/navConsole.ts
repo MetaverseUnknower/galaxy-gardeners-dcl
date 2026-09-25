@@ -13,7 +13,7 @@ import { enterSleepMode } from './sleepMode'
 import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } from './heatMap'
 import { isDocked, dockAt, undock, onDockingChanged } from './docking'
 import { hideInTopView } from './topViewHide'
-import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
+import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, ring, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
 // This desk is scaled down (0.85), so its text gets a local boost on top of the global scale.
@@ -149,18 +149,20 @@ export function refreshNavConsole(): void {
 
   // View tabs
   const galaxyActive = mode === 'galaxy'
-  // Map legend: the free strip left of the view tabs, between the header and the heat map card.
-  const legend: [number, number, string, 'box' | Color3][] = [
-    [-2.62, 0.66, 'YOU ARE HERE', 'box'],
-    [-1.98, 0.66, 'HOME SYSTEM', Color3.create(1, 0.3, 1)],
-    [-2.62, 0.5, 'STAR SYSTEM', Color3.create(1, 1, 1)],
-    [-1.98, 0.5, 'WITH STATION', Color3.create(0, 0.8, 0.8)],
-  ]
-  for (const [x, y, label, mark] of legend) {
-    if (mark === 'box') frame(bag, root, x, y, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
-    else dot(bag, root, x, y, 0.04, mark)
-    txt(bag, root, x + 0.08, y, label, 0.08, DIM, LEFT)
-  }
+  // Map legend: the free strip left of the view tabs. Each mark has the same shape as on the map, so none of
+  // them depends on colour: cube, pinned star, plain star, ringed star.
+  const L1 = 0.66, L2 = 0.5, C1 = -2.62, C2 = -1.98
+  frame(bag, root, C1, L1, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
+  txt(bag, root, C1 + 0.08, L1, 'YOU ARE HERE', 0.08, DIM, LEFT)
+  dot(bag, root, C2, L1 - 0.02, 0.035, Color3.create(1, 0.3, 1))
+  line(bag, root, C2 - 0.03, L1 + 0.05, C2, L1 + 0.01, Color3.create(1, 0.3, 1), { thickness: 0.012 })   // pin: a V over the star
+  line(bag, root, C2 + 0.03, L1 + 0.05, C2, L1 + 0.01, Color3.create(1, 0.3, 1), { thickness: 0.012 })
+  txt(bag, root, C2 + 0.08, L1, 'HOME SYSTEM', 0.08, DIM, LEFT)
+  dot(bag, root, C1, L2, 0.03, Color3.create(1, 1, 1))
+  txt(bag, root, C1 + 0.08, L2, 'STAR SYSTEM', 0.08, DIM, LEFT)
+  dot(bag, root, C2, L2, 0.03, Color3.create(0, 0.8, 0.8))
+  ring(bag, root, C2, L2, 0.045, Color3.create(0, 0.8, 0.8), { segments: 8, dashed: true, thickness: 0.008 })
+  txt(bag, root, C2 + 0.08, L2, 'WITH STATION', 0.08, DIM, LEFT)
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
   btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })
 
