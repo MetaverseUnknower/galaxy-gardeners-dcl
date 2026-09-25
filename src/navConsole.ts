@@ -149,6 +149,18 @@ export function refreshNavConsole(): void {
 
   // View tabs
   const galaxyActive = mode === 'galaxy'
+  // Map legend: the free strip left of the view tabs, between the header and the heat map card.
+  const legend: [number, number, string, 'box' | Color3][] = [
+    [-2.62, 0.66, 'YOU ARE HERE', 'box'],
+    [-1.98, 0.66, 'HOME SYSTEM', Color3.create(1, 0.3, 1)],
+    [-2.62, 0.5, 'STAR SYSTEM', Color3.create(1, 1, 1)],
+    [-1.98, 0.5, 'WITH STATION', Color3.create(0, 0.8, 0.8)],
+  ]
+  for (const [x, y, label, mark] of legend) {
+    if (mark === 'box') frame(bag, root, x, y, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
+    else dot(bag, root, x, y, 0.04, mark)
+    txt(bag, root, x + 0.08, y, label, 0.08, DIM, LEFT)
+  }
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
   btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })
 
