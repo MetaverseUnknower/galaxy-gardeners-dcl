@@ -223,7 +223,7 @@ export function refreshNavConsole(): void {
   })
   // Sleep mode lives under the camera row, on the footer line.
   btn(bag, root, 0.05, -1.19, 1.2, 0.14, 'SLEEP MODE', 'Sleep Mode', () => enterSleepMode(), { size: 0.09, variant: 'magenta', icon: ICONS.sleep, iconSize: 0.11, iconInset: 0.26 })
-  txt(bag, root, -2.65, -1.19, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
+  txt(bag, root, -2.65, -1.26, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
   txt(bag, root, 2.65, -1.19, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 
 }
