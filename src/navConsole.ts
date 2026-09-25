@@ -37,6 +37,7 @@ const ICONS = {
   zoomIn: 'assets/icons/zoom-in-icon.png', zoomOut: 'assets/icons/zoom-out-icon.png', recenter: 'assets/icons/recenter-icon.png',
   buildStation: 'assets/icons/build-station-icon.png',
   social: 'assets/icons/social-galaxy-icon.png',
+  sleep: 'assets/icons/sleep-mode-icon.png',
 }
 const IMAGES = { galaxy: 'assets/images/galaxy-thumb.png', stationOrbit: 'assets/images/station-orbit.png', stationSlot: 'assets/images/station-slot-preview.png' }
 
@@ -221,7 +222,7 @@ export function refreshNavConsole(): void {
     btn(bag, root, -0.57 + i * 0.62, -0.99, 0.58, 0.18, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })
   // Sleep mode lives under the camera row, on the footer line.
-  btn(bag, root, 0.05, -1.19, 1.2, 0.14, 'SLEEP MODE', 'Sleep Mode', () => enterSleepMode(), { size: 0.09, variant: 'magenta' })
+  btn(bag, root, 0.05, -1.19, 1.2, 0.14, 'SLEEP MODE', 'Sleep Mode', () => enterSleepMode(), { size: 0.09, variant: 'magenta', icon: ICONS.sleep, iconSize: 0.11, iconInset: 0.26 })
   txt(bag, root, -2.65, -1.19, 'CHART  //  NAVIGATE  //  EXPLORE', 0.11, MUTED, LEFT)
   txt(bag, root, 2.65, -1.19, 'STELLAR CARTOGRAPHY   v2.4.1', 0.11, MUTED, RIGHT)
 
