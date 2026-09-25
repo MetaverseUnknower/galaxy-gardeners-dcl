@@ -44,6 +44,9 @@ let appliedCamera: ReturnType<typeof engine.addEntity> | null = null
 let active = false        // player is at the console
 let timer = 0
 
+/** True while the player stands at the Stellar Navigation console (drives the cabin dimming). */
+export function isAtConsole(): boolean { return active }
+
 export function setupConsoleCamera(): void {
   const target = engine.addEntity()
   Transform.create(target, { position: LOOK_AT })

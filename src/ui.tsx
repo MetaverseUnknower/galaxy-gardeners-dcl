@@ -11,7 +11,7 @@ export function clearSelectedFlora(): void { selectedFlora = null }
 export function setCloseDetailCallback(cb: () => void): void { onCloseDetailPanel = cb }
 import { isCurrentlyTraveling } from './navigation'
 import { refreshStation } from './stations'
-import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
+import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, isAtConsole } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
 import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
@@ -495,6 +495,21 @@ const SleepOverlay = () => {
   )
 }
 
+// Cabin lights dim at the Stellar Navigation console: a vignette darkens the edges of the view (the cabin) and
+// leaves the centre (the hologram) clear. Fades over about a second each way.
+const DIM_FADE_PER_SECOND = 1.2
+let cabinDim = 0
+engine.addSystem((dt: number) => {
+  const want = isAtConsole() && getCameraMode() !== 'top' ? 1 : 0   // the top view already has its own black backdrop
+  cabinDim = want > cabinDim ? Math.min(want, cabinDim + dt * DIM_FADE_PER_SECOND) : Math.max(want, cabinDim - dt * DIM_FADE_PER_SECOND)
+})
+const CabinDim = () => {
+  if (cabinDim <= 0.001) return null
+  const a = cabinDim * cabinDim * (3 - 2 * cabinDim)
+  return <UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, left: 0 }, width: '100%', height: '100%', pointerFilter: 'none' }}
+    uiBackground={{ texture: { src: 'assets/images/cabin-dim-vignette.png' }, textureMode: 'stretch', color: Color4.create(1, 1, 1, a) }} />
+}
+
 /** Black fade over whatever is showing; drawn last so it covers everything. */
 const SleepCurtain = () => {
   const a = sleepCurtain()
@@ -505,6 +520,7 @@ const SleepCurtain = () => {
 // While the world fades to or from black, the normal HUD stays up under the curtain; once dark, the room takes over.
 const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
   <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
+    <CabinDim />
     <SystemInfoPanel />
     <BodyDetailPanel />
     <TravelStatusPanel />
