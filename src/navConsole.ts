@@ -231,7 +231,7 @@ export function refreshNavConsole(): void {
 
   // Footer, with the console camera toggle in the middle
   const cam = getCameraMode()
-  txt(bag, root, -0.92, -0.95, 'CAMERA', 0.09, DIM, RIGHT, -0.02)
+  txt(bag, root, -0.92, -0.99, 'CAMERA', 0.09, DIM, RIGHT, -0.02)
   CAMERA_MODES.forEach((mode, i) => {
     btn(bag, root, -0.57 + i * 0.62, -0.99, 0.58, 0.18, CAMERA_MODE_LABELS[mode], `${CAMERA_MODE_LABELS[mode]} camera`, () => { setCameraMode(mode); refreshNavConsole() }, { size: 0.1, variant: mode === cam ? 'primary' : 'outline' })
   })
