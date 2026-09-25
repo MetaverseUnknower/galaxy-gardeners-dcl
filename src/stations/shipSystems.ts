@@ -108,12 +108,21 @@ function drawLow(): void {
       icon(lowBag, low, 0.62, y, 0.2, ok ? 'assets/icons/check-icon.png' : 'assets/icons/cross-icon.png', { color: ok ? GREEN3 : RED3 })
     })
     const docked = isDocked()
-    if (installing) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'UPGRADING…', 'Upgrading', () => {}, { variant: 'disabled', size: 0.4 })
-    else if (!docked) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'DOCK TO UPGRADE', 'Dock at a station from the Stellar Navigation console', () => {}, { variant: 'disabled', size: 0.3 })
-    else if (u.canAfford) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'UPGRADE', `Upgrade ${labelFor(u.category)}`, () => install(u.category), { variant: 'primary', size: 0.44 })
+    const active = ctx.dashboard?.activeInstallation
+    const running = active && active.status === 'in_progress'
+    if (installing) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'WORKING…', 'Working', () => {}, { variant: 'disabled', size: 0.4 })
+    else if (running) {
+      const left = Math.max(0, Math.ceil((new Date(active.completes_at).getTime() - Date.now()) / 60000))
+      if (left > 0) button(lowBag, low, 0, -0.6, 1.55, 0.42, `INSTALLING · ${left}m`, `${labelFor(active.category)} installing`, () => {}, { variant: 'disabled', size: 0.3 })
+      else button(lowBag, low, 0, -0.6, 1.55, 0.42, 'FINISH INSTALL', `Finish ${labelFor(active.category)} installation`, () => finishInstall(), { variant: 'primary', size: 0.34 })
+    }
+    else if (u.canAfford) button(lowBag, low, 0, -0.6, 1.55, 0.42, 'UPGRADE', `Upgrade ${labelFor(u.category)}`, () => install(u.category, u.tier), { variant: 'primary', size: 0.44 })
     else button(lowBag, low, 0, -0.6, 1.55, 0.42, 'NEED RESOURCES', 'Insufficient resources', () => {}, { variant: 'disabled', size: 0.34 })
     const crew = dockedStationName()
-    text(lowBag, low, 0, -0.88, docked ? `${crew ? crew.toUpperCase() + ' ' : ''}SERVICE CREW STANDING BY` : 'INSTALLED BY STATION EVA CREWS', 0.15, docked ? MAGENTA : MUTED)
+    const note = running
+      ? `INSTALLING ${labelFor(active.category).toUpperCase()} T${active.tier}`
+      : docked ? `INSTANT: ${crew ? crew.toUpperCase() + ' ' : ''}SERVICE CREW` : `FIELD INSTALL: ${u.buildMinutes ?? 15} MIN  //  INSTANT WHEN DOCKED`
+    text(lowBag, low, 0, -0.88, note, 0.15, running || docked ? MAGENTA : MUTED)
   }
 
   // System status, right
@@ -142,19 +151,42 @@ function drawLow(): void {
   button(lowBag, low, -2.05, -1.05, 1.4, 0.24, '‹ BACK TO OVERVIEW', 'Back to Overview', () => ctx.setView('overview'), { size: 0.24 })
 }
 
-async function install(category: string): Promise<void> {
+async function install(category: string, tier: number): Promise<void> {
   const ctx = ctxRef
   if (!ctx || installing) return
   installing = true
   drawLow()
   try {
-    await ctx.busy(api.applyUpgrade(category))
-    ctx.notify(`${labelFor(category)} upgraded!`, Color4.create(0, 1, 0.5, 1))
+    const result = await ctx.busy(api.applyUpgrade(category, tier))
+    if (result?.installation) ctx.notify(`${labelFor(category)} installation started: ${result.installation.durationMinutes} min`, Color4.create(0, 0.9, 1, 1))
+    else ctx.notify(`${labelFor(category)} upgraded!`, Color4.create(0, 1, 0.5, 1))
   } catch (err: any) {
-    ctx.notify(err.message || 'Upgrade failed', Color4.create(1, 0.3, 0.3, 1))
+    ctx.notify(cleanError(err?.message) || 'Upgrade failed', Color4.create(1, 0.3, 0.3, 1))
   }
   installing = false
   await ctx.refresh()   // re-fetches dashboard and re-runs render(), which reloads upgrades
+}
+
+async function finishInstall(): Promise<void> {
+  const ctx = ctxRef
+  if (!ctx || installing) return
+  installing = true
+  drawLow()
+  try {
+    const r = await ctx.busy(api.getInstallationStatus())
+    ctx.notify(r?.completed ? 'Upgrade installed!' : 'Installation still in progress', r?.completed ? Color4.create(0, 1, 0.5, 1) : Color4.create(0.9, 0.8, 0.3, 1))
+  } catch (err: any) {
+    ctx.notify(cleanError(err?.message) || 'Could not finish the installation', Color4.create(1, 0.3, 0.3, 1))
+  }
+  installing = false
+  await ctx.refresh()
+}
+
+/** "API error 400: {"error":"..."}" → the server's message. */
+function cleanError(msg?: string): string | undefined {
+  const m = /^API error \d+: (.*)$/s.exec(msg ?? '')
+  if (m) { try { return JSON.parse(m[1]).error } catch { return msg } }
+  return msg
 }
 
 export const shipSystemsView: ViewDefinition = {

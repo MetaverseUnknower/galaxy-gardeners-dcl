@@ -205,12 +205,20 @@ export async function getCatalogDetail(speciesId: string): Promise<any> {
   return apiGet<any>(`/api/catalog/detail/${speciesId}`)
 }
 
+/** Next tier per category with docked-aware pricing: instant when docked, a timed field install otherwise. */
 export async function getAvailableUpgrades(): Promise<any[]> {
-  return apiGet<any[]>('/api/ships/upgrades')
+  const pricing = await getOperationsPricing()
+  return pricing?.upgrades ?? []
 }
 
-export async function applyUpgrade(category: string): Promise<any> {
-  return apiPost<any>('/api/ships/upgrade', { category })
+/** Docked: installs at once. In the field: starts a timed installation (returned as `installation`). */
+export async function applyUpgrade(category: string, tier: number): Promise<any> {
+  return apiPost<any>('/api/ship/upgrade', { category, tier })
+}
+
+/** Finishes a field installation whose timer has run out ({ completed: true }), or reports it still running. */
+export async function getInstallationStatus(): Promise<any> {
+  return apiGet<any>('/api/ship/installation-status')
 }
 
 export async function deployMiningPod(beltId: string): Promise<any> {
