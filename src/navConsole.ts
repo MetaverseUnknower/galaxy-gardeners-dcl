@@ -35,6 +35,7 @@ const ICONS = {
   rotate: 'assets/icons/rotate-icon.png',
   zoomIn: 'assets/icons/zoom-in-icon.png', zoomOut: 'assets/icons/zoom-out-icon.png', recenter: 'assets/icons/recenter-icon.png',
   buildStation: 'assets/icons/build-station-icon.png',
+  social: 'assets/icons/social-galaxy-icon.png',
 }
 const IMAGES = { galaxy: 'assets/images/galaxy-thumb.png', stationOrbit: 'assets/images/station-orbit.png', stationSlot: 'assets/images/station-slot-preview.png' }
 
@@ -159,7 +160,7 @@ export function refreshNavConsole(): void {
     // Galaxy view: the same slot toggles the social heat map (orbits only pause in star system view).
     const on = isHeatMapOn()
     const heatFill = frame(bag, root, -1.95, -0.05, 1.5, 0.9, on ? { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) } : {})
-    icon(bag, root, -1.95, 0.16, 0.34, ICONS.galaxy, { color: on ? MAGENTA3 : CYAN3 })
+    icon(bag, root, -1.95, 0.16, 0.34, ICONS.social, { color: on ? MAGENTA3 : CYAN3 })
     txt(bag, root, -1.95, -0.19, on ? 'HIDE HEAT MAP' : 'SOCIAL HEAT MAP', 0.24, on ? MAGENTA : CYAN)
     const n = heatMapTotal()
     txt(bag, root, -1.95, -0.37, on ? `${n} EXPLORER${n === 1 ? '' : 'S'} ACTIVE TODAY` : 'SHOW WHERE EXPLORERS ARE', 0.11, DIM)
