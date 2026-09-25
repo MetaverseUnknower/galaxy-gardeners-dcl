@@ -162,8 +162,9 @@ export function refreshNavConsole(): void {
   disc(bag, root, C2, L2, 0.08, Color3.create(0, 0.8, 0.8), { alpha: 0.28, z: -0.03 })   // the halo disc
   disc(bag, root, C2, L2, 0.035, Color3.create(0, 0.8, 0.8))
   txt(bag, root, C2 + 0.08, L2, 'WITH STATION', 0.08, DIM, LEFT)
+  // Both view tabs share one active style (magenta outline and text) so the selection reads the same either way.
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
-  btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })
+  btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'magenta', icon: ICONS.system, size: 0.22 })
 
   // Left: pause orbits + galaxy thumbnail
   if (inSystemView) {
