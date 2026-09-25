@@ -6,6 +6,7 @@ import { STAR_SPRITES, MILKY_WAY } from './sleepMode'
 import { StarSystem } from './types'
 import { hideInTopView } from './topViewHide'
 import { getTravelDestination, getTravelFraction } from './navigation'
+import { getDiscoveryScan } from './discoveryPanel'
 
 // Window glass spans roughly x 119..137, y 37..52, z 111..114 in world space (south wall of the interior model;
 // looking out, +x is to the viewer's left).
@@ -67,11 +68,36 @@ function coreBearing(from: StarSystem, to: StarSystem): number {
   return Math.atan2(hx * cy - hy * cx, hx * cx + hy * cy) * 180 / Math.PI
 }
 
-function updateBand(dest: StarSystem | null, frac: number): void {
-  const bearing = dest && current ? coreBearing(current, dest) : 180
+type BandPlacement = { x: number; y: number; width: number; alpha: number }
+
+/** Travelling: by bearing to the core and the height blend between origin and destination. */
+function travelPlacement(dest: StarSystem, frac: number): BandPlacement | null {
+  const bearing = current ? coreBearing(current, dest) : 180
   const off = Math.abs(bearing)
   const alpha = off <= 90 ? BAND_ALPHA : off >= BAND_VISIBLE_DEG ? 0 : BAND_ALPHA * (BAND_VISIBLE_DEG - off) / (BAND_VISIBLE_DEG - 90)
-  if (alpha <= 0) {
+  if (alpha <= 0) return null
+  const z = current ? current.coord_z + (dest.coord_z - current.coord_z) * frac : 0
+  return {
+    x: STAR_POSITION.x + Math.max(-1, Math.min(1, bearing / 90)) * BAND_SIDE_OFFSET,   // +x is the viewer's left
+    y: STAR_POSITION.y - Math.max(-1, Math.min(1, z / 25)) * 10,                          // above the plane → lower
+    width: BAND_WIDTH, alpha,
+  }
+}
+
+/** Searching for a new star: the sky the probe is sweeping. Inward faces the core, lateral looks along the disc
+ *  to one side, vertical climbs out of the plane (the band drops away below), outward sees the faint far side. */
+function scanPlacement(direction: string): BandPlacement {
+  const planeY = STAR_POSITION.y - Math.max(-1, Math.min(1, (current?.coord_z ?? 0) / 25)) * 10
+  switch (direction) {
+    case 'inward': return { x: STAR_POSITION.x, y: planeY, width: BAND_WIDTH, alpha: BAND_ALPHA }
+    case 'lateral': return { x: STAR_POSITION.x + BAND_SIDE_OFFSET * 0.8, y: planeY, width: BAND_WIDTH, alpha: BAND_ALPHA }
+    case 'vertical': return { x: STAR_POSITION.x, y: planeY - 14, width: BAND_WIDTH * 1.2, alpha: BAND_ALPHA * 0.8 }
+    default: return { x: STAR_POSITION.x, y: planeY + 4, width: BAND_WIDTH * 0.65, alpha: BAND_ALPHA * 0.45 }
+  }
+}
+
+function updateBand(p: BandPlacement | null): void {
+  if (!p) {
     if (band) { engine.removeEntity(band); band = null; bandAlpha = -1 }
     return
   }
@@ -81,21 +107,17 @@ function updateBand(dest: StarSystem | null, frac: number): void {
     Billboard.create(band, { billboardMode: BillboardMode.BM_ALL })
     hideInTopView(band)
   }
-  // Height: above the plane you look down on the disc, so the band sits lower (same rule as sleep mode).
-  const z = current && dest ? current.coord_z + (dest.coord_z - current.coord_z) * frac : 0
-  const y = STAR_POSITION.y - Math.max(-1, Math.min(1, z / 25)) * 10
-  const x = STAR_POSITION.x + Math.max(-1, Math.min(1, bearing / 90)) * BAND_SIDE_OFFSET   // +x is the viewer's left
-  const h = BAND_WIDTH / MILKY_WAY.aspect
+  const h = p.width / MILKY_WAY.aspect
   const t = Transform.getMutableOrNull(band)
-  if (!t) Transform.create(band, { position: Vector3.create(x, y, BAND_Z), scale: Vector3.create(BAND_WIDTH, h, 1) })
-  else if (!(t.scale.x === 0 && t.scale.y === 0)) { t.position = Vector3.create(x, y, BAND_Z); t.scale = Vector3.create(BAND_WIDTH, h, 1) }
-  if (Math.abs(alpha - bandAlpha) < 0.01) return
-  bandAlpha = alpha
+  if (!t) Transform.create(band, { position: Vector3.create(p.x, p.y, BAND_Z), scale: Vector3.create(p.width, h, 1) })
+  else if (!(t.scale.x === 0 && t.scale.y === 0)) { t.position = Vector3.create(p.x, p.y, BAND_Z); t.scale = Vector3.create(p.width, h, 1) }
+  if (Math.abs(p.alpha - bandAlpha) < 0.01) return
+  bandAlpha = p.alpha
   Material.setPbrMaterial(band, {
     texture: Material.Texture.Common({ src: MILKY_WAY.src }),
     emissiveTexture: Material.Texture.Common({ src: MILKY_WAY.src }),
-    albedoColor: Color4.create(1, 1, 1, alpha),
-    emissiveColor: Color3.create(alpha, alpha, alpha),
+    albedoColor: Color4.create(1, 1, 1, p.alpha),
+    emissiveColor: Color3.create(p.alpha, p.alpha, p.alpha),
     emissiveIntensity: 1.5,
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
     castShadows: false,
@@ -108,7 +130,8 @@ function windowStarSystem(): void {
   const sprite = spriteFor(dest ?? current)
   const frac = getTravelFraction()
   const growth = dest ? Math.max(MIN_TRAVEL_FRACTION, frac) : 1
-  updateBand(dest, frac)
+  const scan = dest ? null : getDiscoveryScan()
+  updateBand(dest ? travelPlacement(dest, frac) : scan ? scanPlacement(scan.direction) : null)
   applySprite(sprite)
   const size = sprite.size * SIZE_PER_UNIT * growth
   const t = Transform.getMutableOrNull(entity)

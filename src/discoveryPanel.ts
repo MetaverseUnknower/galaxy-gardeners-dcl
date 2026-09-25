@@ -33,6 +33,14 @@ let miniMapEntities: Entity[] = []
 let arrowEntities: Entity[] = []
 let discoveryOptions: any[] = []
 let activeDiscovery: any = null
+/** The search in progress, for the window effects: launching or probe en route (not once the signal is locked). */
+export function getDiscoveryScan(): { direction: string } | null {
+  if (pending?.kind === 'launch') return { direction: pending.direction }
+  if (!activeDiscovery) return null
+  const done = Date.now() >= new Date(activeDiscovery.completesAt).getTime()
+  return done ? null : { direction: String(activeDiscovery.direction) }
+}
+
 // Set the instant a direction (or COMPLETE) is clicked, so the desk reacts before the server answers.
 let pending: { kind: 'launch' | 'complete'; direction: string } | null = null
 let currentSystem: StarSystem | null = null
