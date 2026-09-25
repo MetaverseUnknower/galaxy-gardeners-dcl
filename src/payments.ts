@@ -6,7 +6,7 @@ import * as api from './api'
 
 export const POLYGON_CHAIN_ID = '0x89'
 export const POLYGON_MANA = '0xA1c57f48F0Deb89f569dFbE6E2B7f46D33606fD4'
-export const MANA_BENEFICIARY = '0x49489CDEB4f2cA8a8F37bb47092D60eAF8F17cA8'
+export const MANA_BENEFICIARY = '0x7e567DEaBFFCeCEea48dA456EBb9Ef84d159374C'   // MetaPetal, owner of metapetal.dcl.eth
 
 const TRANSFER_SELECTOR = '0xa9059cbb'   // transfer(address,uint256)
 const CONFIRM_POLL_MS = 3000
