@@ -51,8 +51,8 @@ const HOLO_TEXTURE = 'assets/images/hologram-1024.png'
 const HOLO_OUTER_SCALE = 1.06
 // Spin is a real rotation of each cone (degrees per second): the explorer does not animate texture offsets.
 const HOLO_LAYERS = [
-  { tiling: Vector2.create(2, 1), spin: 7, alpha: 0.16, glow: 0.7 },       // inner
-  { tiling: Vector2.create(3, 1.4), spin: -10, alpha: 0.11, glow: 0.55 },  // outer
+  { tiling: Vector2.create(2, 1), spin: 1.5, alpha: 0.16, glow: 0.7 },     // inner: one turn every 4 minutes
+  { tiling: Vector2.create(3, 1.4), spin: -2.2, alpha: 0.11, glow: 0.55 }, // outer: the other way, a little faster
 ]
 
 // View mode
