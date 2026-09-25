@@ -305,12 +305,13 @@ function createZoneRings(maxCoordRadius: number): void {
   }
 }
 
+// Emissive levels are set to hold up against the brightly lit interior model.
 function getStarColor(system: StarSystem, homeSystemId: string | null, currentSystemId: string | null): { color: Color4; emissive: Color3; size: number; intensity: number } {
-  if (system.id === homeSystemId) return { color: Color4.create(1, 0.3, 1, 1), emissive: Color3.create(1, 0.3, 1), size: 0.12, intensity: 5 }
-  if (system.id === currentSystemId) return { color: Color4.create(0, 1, 0.5, 1), emissive: Color3.create(0, 1, 0.5), size: 0.15, intensity: 5 }
-  if (system.has_station) return { color: Color4.create(0, 0.8, 0.8, 1), emissive: Color3.create(0, 0.6, 0.6), size: 0.08, intensity: 1.5 }
-  if (system.has_wormhole) return { color: Color4.create(0.6, 0.2, 1, 1), emissive: Color3.create(0.6, 0.2, 1), size: 0.07, intensity: 3 }
-  return { color: Color4.create(1, 1, 1, 1), emissive: Color3.create(0.6, 0.6, 0.6), size: 0.05, intensity: 1.5 }
+  if (system.id === homeSystemId) return { color: Color4.create(1, 0.3, 1, 1), emissive: Color3.create(1, 0.3, 1), size: 0.12, intensity: 7 }
+  if (system.id === currentSystemId) return { color: Color4.create(0, 1, 0.5, 1), emissive: Color3.create(0, 1, 0.5), size: 0.15, intensity: 7 }
+  if (system.has_station) return { color: Color4.create(0, 0.8, 0.8, 1), emissive: Color3.create(0, 0.8, 0.8), size: 0.08, intensity: 3 }
+  if (system.has_wormhole) return { color: Color4.create(0.6, 0.2, 1, 1), emissive: Color3.create(0.6, 0.2, 1), size: 0.07, intensity: 4.5 }
+  return { color: Color4.create(1, 1, 1, 1), emissive: Color3.create(1, 1, 1), size: 0.05, intensity: 3 }
 }
 
 export function hideCurrentLocationMarker(): void {
