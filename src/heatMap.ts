@@ -4,7 +4,7 @@ import { engine, Entity, Transform, MeshRenderer, Material, MaterialTransparency
 import { Color3, Color4, Vector3 } from '@dcl/sdk/math'
 import * as api from './api'
 import { getPref, setPref } from './prefs'
-import { starEntities, getGalaxyRoot, getViewMode, setMapRenderHooks } from './galaxyMap'
+import { starEntities, getGalaxyRoot, getViewMode, addMapRenderHooks } from './galaxyMap'
 
 const PREF_KEY = 'heatMap'
 const REFRESH_SECONDS = 60
@@ -22,7 +22,7 @@ export function setHeatMapChangedListener(fn: (() => void) | null): void { liste
 
 export function setupHeatMap(id: string): void {
   galaxyId = id
-  setMapRenderHooks({ rendered: renderHeatMap, cleared: clearHeatMap })
+  addMapRenderHooks({ rendered: renderHeatMap, cleared: clearHeatMap })
   engine.addSystem(heatMapSystem)
   if (isHeatMapOn()) void fetchPopulation()
 }

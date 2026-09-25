@@ -3,9 +3,11 @@ import { engine, Entity, Transform, MeshRenderer, Material, MaterialTransparency
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { TravelStatus } from './types'
-import { starEntities, getGalaxyRoot } from './galaxyMap'
+import { starEntities, getGalaxyRoot, addMapRenderHooks, hideCurrentLocationMarker } from './galaxyMap'
 
-let routeLineEntities: Entity[] = []
+let routeLineEntities: Entity[] = []    // star-selection preview
+let travelLineEntities: Entity[] = []   // the route of the trip in progress (kept apart from previews)
+let destinationId: string | null = null
 let travelMarkerEntity: Entity | null = null
 let isTraveling = false
 let travelStartTime = 0
@@ -36,8 +38,23 @@ export function getTravelProgress(): { progress: number; remainingDistance: numb
   }
 }
 
+/** Preview line from here to a selected star. Never touches the travel route. */
 export function drawRouteLine(fromPos: Vector3, toPos: Vector3): void {
   clearRouteLines()
+  routeLineEntities.push(makeLine(fromPos, toPos, Color4.create(0, 1, 1, 0.4), Color3.create(0, 0.8, 0.8)))
+}
+
+function drawTravelLine(fromPos: Vector3, toPos: Vector3): void {
+  clearTravelLine()
+  travelLineEntities.push(makeLine(fromPos, toPos, Color4.create(0, 1, 0.5, 0.55), Color3.create(0, 1, 0.5)))
+}
+
+function clearTravelLine(): void {
+  for (const e of travelLineEntities) engine.removeEntity(e)
+  travelLineEntities = []
+}
+
+function makeLine(fromPos: Vector3, toPos: Vector3, albedo: Color4, emissive: Color3): Entity {
 
   const midpoint = Vector3.create(
     (fromPos.x + toPos.x) / 2,
@@ -77,13 +94,12 @@ export function drawRouteLine(fromPos: Vector3, toPos: Vector3): void {
   })
   MeshRenderer.setCylinder(entity)
   Material.setPbrMaterial(entity, {
-    albedoColor: Color4.create(0, 1, 1, 0.4),
-    emissiveColor: Color3.create(0, 0.8, 0.8),
+    albedoColor: albedo,
+    emissiveColor: emissive,
     emissiveIntensity: 2,
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
   })
-
-  routeLineEntities.push(entity)
+  return entity
 }
 
 export function clearRouteLines(): void {
@@ -144,7 +160,8 @@ export async function updateTravelState(): Promise<void> {
       engine.removeEntity(travelMarkerEntity)
       travelMarkerEntity = null
     }
-    clearRouteLines()
+    clearTravelLine()
+    destinationId = null
     return
   }
 
@@ -153,6 +170,7 @@ export async function updateTravelState(): Promise<void> {
   const startedAt = raw.startedAt || raw.started_at || status.departure_time
   const completesAt = raw.completesAt || raw.completes_at || status.arrival_time
   const destId = raw.destinationSystemId || raw.destination_system_id || status.destination_system_id
+  destinationId = destId
 
   travelStartTime = new Date(startedAt).getTime()
   travelEndTime = new Date(completesAt).getTime()
@@ -172,10 +190,33 @@ export async function updateTravelState(): Promise<void> {
     const dy = destinationPosition.y - originPosition.y
     const dz = destinationPosition.z - originPosition.z
     totalTravelDistance = Math.sqrt(dx * dx + dy * dy + dz * dz)
-    drawRouteLine(originPosition, destinationPosition)
+    clearRouteLines()
+    drawTravelLine(originPosition, destinationPosition)
     createTravelMarker(originPosition)
+    hideCurrentLocationMarker()
   }
 }
+
+/** The map was rebuilt mid-trip: find both stars again in the new map and redraw the route and the marker. */
+function restoreTravelVisuals(): void {
+  if (!isTraveling || !destinationId) return
+  for (const [entity, system] of starEntities) {
+    if (system.id === destinationId) { destinationPosition = Transform.get(entity).position; destinationSystem = system }
+    if (currentSystemId && system.id === currentSystemId) originPosition = Transform.get(entity).position
+  }
+  if (!originPosition || !destinationPosition) return
+  drawTravelLine(originPosition, destinationPosition)
+  createTravelMarker(originPosition)
+  hideCurrentLocationMarker()
+}
+
+/** The map (and the root these hang from) is going away. */
+function dropTravelVisuals(): void {
+  clearTravelLine()
+  if (travelMarkerEntity) { engine.removeEntity(travelMarkerEntity); travelMarkerEntity = null }
+}
+
+addMapRenderHooks({ rendered: restoreTravelVisuals, cleared: dropTravelVisuals })
 
 export async function checkArrival(): Promise<boolean> {
   if (!isTraveling) return false
@@ -189,7 +230,9 @@ export async function checkArrival(): Promise<boolean> {
         engine.removeEntity(travelMarkerEntity)
         travelMarkerEntity = null
       }
+      clearTravelLine()
       clearRouteLines()
+      destinationId = null
       return true
     } catch {
       return false
