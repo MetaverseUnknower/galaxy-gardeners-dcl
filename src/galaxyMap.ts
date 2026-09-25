@@ -195,6 +195,8 @@ export function createProjectorBase(): void {
     scale: Vector3.create(1, beamHeight, 1)
   })
   MeshRenderer.setCylinder(beamOuterEntity, PROJECTOR_RADIUS * HOLO_OUTER_SCALE, NEBULA_EXTENT * currentScale * HOLO_OUTER_SCALE)
+  // Invisible until the animation fades it in (a mesh with no material would render plain white meanwhile).
+  Material.setPbrMaterial(beamOuterEntity, { albedoColor: Color4.create(0, 0, 0, 0), emissiveColor: Color3.Black(), transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND })
 }
 
 function createNebula(): void {
