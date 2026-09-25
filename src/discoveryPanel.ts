@@ -1,4 +1,4 @@
-// Discovery desk — Galactic Navigation (see docs/superpowers/specs/references/discovery-desk-concept.png).
+// Discovery desk — Stellar Discovery (see docs/superpowers/specs/references/discovery-desk-concept.png).
 // Upright panel above the desk: header, galactic coordinates, current star system.
 // Desk face: TRAVEL VECTOR direction buttons on the left, GALACTIC MAP (local sector view) on the right.
 import { engine, Entity, Transform, MeshRenderer, Material, MaterialTransparencyMode, TextAlignMode, pointerEventsSystem } from '@dcl/sdk/ecs'
@@ -81,7 +81,7 @@ function drawUpright(root: Entity): void {
   const W = 5.6, H = 1.7
   frame(bag, root, 0, 0, W, H)
   line(bag, root, -2.62, 0.62, -2.62, 0.32, CYAN3, { thickness: 0.03 })
-  header(bag, root, -2.5, 0.5, { title: 'GALACTIC NAVIGATION', subtitle: 'plot your course', size: 0.7 })
+  header(bag, root, -2.5, 0.5, { title: 'STELLAR DISCOVERY', subtitle: 'plot your course', size: 0.7 })
   icon(bag, root, 0.85, 0.5, 0.28, ICONS.coordinates)
   text(bag, root, 1.1, 0.58, 'STELLAR CARTOGRAPHY', 0.2, DIM, LEFT)
   text(bag, root, 1.1, 0.4, 'V2.4.1', 0.2, DIM, LEFT)
