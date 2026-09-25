@@ -21,6 +21,7 @@ import { setupSoloShip } from './soloShip'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
+import { setWindowStarSystem } from './windowStar'
 import { setupHeatMap } from './heatMap'
 import { isDocked, loadDockedStatus, onDockingChanged, undock } from './docking'
 import { refreshStation } from './stations'
@@ -129,6 +130,7 @@ export async function main() {
     setSoundtrackContext({ docked: isDocked(), system: currentSys ?? null })
     setSfxSystemId(playerInfo.current_system_id)
     setSleepSystem(currentSys ?? null)
+    setWindowStarSystem(currentSys ?? null)
     onDockingChanged(() => {
       setSoundtrackContext({ docked: isDocked(), system: systems.find(x => x.id === playerInfo?.current_system_id) ?? null })
       refreshStation('ship')   // docked pricing, and the UPGRADE button
@@ -267,6 +269,7 @@ async function reloadMap(): Promise<void> {
   setSoundtrackContext({ docked: isDocked(), system: systems.find(s => s.id === playerInfo!.current_system_id) ?? null })
   setSfxSystemId(playerInfo.current_system_id)
   setSleepSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
+  setWindowStarSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
 }
