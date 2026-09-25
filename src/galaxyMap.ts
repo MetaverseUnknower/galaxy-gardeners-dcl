@@ -3,12 +3,12 @@ import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { StarSystem } from './types'
 import { getSystemRoot, getSystemAutoScale } from './systemView'
 import { DECK_Y } from './environment'
+import { PROJECTOR_TOP_Y } from './environment'
 
 const FLOOR_Y = 40
 const MAP_CENTER = Vector3.create(128, FLOOR_Y + 1, 128)
 const MAP_RADIUS = 6.0
 const PROJECTOR_RADIUS = 1.5
-const PROJECTOR_HEIGHT = 0.3
 
 // Control state
 let galaxyRoot: Entity | null = null
@@ -134,9 +134,9 @@ function applyGalaxyTransform(): void {
 function updateBeamShape(): void {
   if (!beamEntity) return
   const topRadius = NEBULA_EXTENT * currentScale * transitionScale
-  const beamHeight = Math.max(0.01, (currentHeight - FLOOR_Y - PROJECTOR_HEIGHT) * transitionScale)
+  const beamHeight = Math.max(0.01, (currentHeight - PROJECTOR_TOP_Y) * transitionScale)
   const transform = Transform.getMutable(beamEntity)
-  transform.position = Vector3.create(MAP_CENTER.x, FLOOR_Y + PROJECTOR_HEIGHT + beamHeight / 2, MAP_CENTER.z)
+  transform.position = Vector3.create(MAP_CENTER.x, PROJECTOR_TOP_Y + beamHeight / 2, MAP_CENTER.z)
   transform.scale = Vector3.create(transitionScale, beamHeight, transitionScale)
   MeshRenderer.setCylinder(beamEntity, PROJECTOR_RADIUS * transitionScale, topRadius)
 }
@@ -145,9 +145,9 @@ export function createProjectorBase(): void {
   // The projector itself is the interior model's dais plus galaxy_projector_base.glb; only the beam is drawn here.
   // Cone beam
   beamEntity = engine.addEntity()
-  const beamHeight = MAP_CENTER.y - FLOOR_Y - PROJECTOR_HEIGHT
+  const beamHeight = MAP_CENTER.y - PROJECTOR_TOP_Y
   Transform.create(beamEntity, {
-    position: Vector3.create(MAP_CENTER.x, FLOOR_Y + PROJECTOR_HEIGHT + beamHeight / 2, MAP_CENTER.z),
+    position: Vector3.create(MAP_CENTER.x, PROJECTOR_TOP_Y + beamHeight / 2, MAP_CENTER.z),
     scale: Vector3.create(1, beamHeight, 1)
   })
   MeshRenderer.setCylinder(beamEntity, PROJECTOR_RADIUS, NEBULA_EXTENT * currentScale)
