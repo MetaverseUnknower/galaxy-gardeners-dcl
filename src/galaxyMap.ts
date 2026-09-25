@@ -152,7 +152,7 @@ export function createProjectorBase(): void {
   })
   MeshRenderer.setCylinder(beamEntity, PROJECTOR_RADIUS, NEBULA_EXTENT * currentScale)
   Material.setPbrMaterial(beamEntity, {
-    albedoColor: Color4.create(0, 0.5, 1, 0.03),
+    albedoColor: Color4.create(0, 0.5, 1, 0.06),
     emissiveColor: Color3.create(0, 0.3, 0.8),
     emissiveIntensity: 1,
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
@@ -168,11 +168,11 @@ function createNebula(): void {
   const maxR = MAP_RADIUS * 1.5
 
   const bands = [
-    { color: Color4.create(1, 0.85, 0.45, 0.35), emissive: Color3.create(1, 0.85, 0.45), intensity: 1.5, size: 0.04 },
-    { color: Color4.create(0.7, 0.45, 0.2, 0.3), emissive: Color3.create(0.7, 0.45, 0.2), intensity: 1, size: 0.03 },
-    { color: Color4.create(0.3, 0.65, 0.8, 0.35), emissive: Color3.create(0.3, 0.65, 0.8), intensity: 1.2, size: 0.035 },
-    { color: Color4.create(0.55, 0.3, 0.75, 0.3), emissive: Color3.create(0.55, 0.3, 0.75), intensity: 1, size: 0.03 },
-    { color: Color4.create(0.95, 0.25, 0.7, 0.35), emissive: Color3.create(0.85, 0.2, 0.65), intensity: 1.5, size: 0.03 },
+    { color: Color4.create(1, 0.85, 0.45, 0.5), emissive: Color3.create(1, 0.85, 0.45), intensity: 2.7, size: 0.04 },
+    { color: Color4.create(0.7, 0.45, 0.2, 0.45), emissive: Color3.create(0.7, 0.45, 0.2), intensity: 1.8, size: 0.03 },
+    { color: Color4.create(0.3, 0.65, 0.8, 0.5), emissive: Color3.create(0.3, 0.65, 0.8), intensity: 2.2, size: 0.035 },
+    { color: Color4.create(0.55, 0.3, 0.75, 0.45), emissive: Color3.create(0.55, 0.3, 0.75), intensity: 1.8, size: 0.03 },
+    { color: Color4.create(0.95, 0.25, 0.7, 0.5), emissive: Color3.create(0.85, 0.2, 0.65), intensity: 2.7, size: 0.03 },
   ]
 
   for (let i = 0; i < particleCount; i++) {
@@ -224,8 +224,8 @@ function createNebula(): void {
     })
     MeshRenderer.setSphere(entity)
     Material.setPbrMaterial(entity, {
-      albedoColor: Color4.create(1, 0.9, 0.55, 0.3), emissiveColor: Color3.create(1, 0.85, 0.4),
-      emissiveIntensity: 1.5, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+      albedoColor: Color4.create(1, 0.9, 0.55, 0.45), emissiveColor: Color3.create(1, 0.85, 0.4),
+      emissiveIntensity: 2.7, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
     })
     nebulaEntities.push(entity)
   }
@@ -243,8 +243,8 @@ function createNebula(): void {
     })
     MeshRenderer.setSphere(entity)
     Material.setPbrMaterial(entity, {
-      albedoColor: Color4.create(1, 0.85, 0.5, 0.2), emissiveColor: Color3.create(1, 0.8, 0.4),
-      emissiveIntensity: 1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+      albedoColor: Color4.create(1, 0.85, 0.5, 0.32), emissiveColor: Color3.create(1, 0.8, 0.4),
+      emissiveIntensity: 1.8, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
     })
     nebulaEntities.push(entity)
   }
@@ -256,8 +256,8 @@ function createNebula(): void {
   })
   MeshRenderer.setSphere(glowEntity)
   Material.setPbrMaterial(glowEntity, {
-    albedoColor: Color4.create(1, 0.8, 0.4, 0.06), emissiveColor: Color3.create(1, 0.8, 0.4),
-    emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+    albedoColor: Color4.create(1, 0.8, 0.4, 0.1), emissiveColor: Color3.create(1, 0.8, 0.4),
+    emissiveIntensity: 3.5, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
   })
   nebulaEntities.push(glowEntity)
 
@@ -272,8 +272,8 @@ function createNebula(): void {
     })
     MeshRenderer.setSphere(entity)
     Material.setPbrMaterial(entity, {
-      albedoColor: Color4.create(0.4, 0.5, 0.6, 0.15), emissiveColor: Color3.create(0.3, 0.4, 0.5),
-      emissiveIntensity: 0.5, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+      albedoColor: Color4.create(0.4, 0.5, 0.6, 0.25), emissiveColor: Color3.create(0.3, 0.4, 0.5),
+      emissiveIntensity: 1, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
     })
     nebulaEntities.push(entity)
   }
@@ -396,9 +396,9 @@ export function galaxyAnimationSystem(dt: number): void {
   if (beamEntity) {
     beamTime += dt
     const pulse = 0.5 + 0.5 * Math.sin(beamTime * 1.5)
-    const intensity = 0.5 + pulse * 1.5
+    const intensity = 1.2 + pulse * 2.3
     Material.setPbrMaterial(beamEntity, {
-      albedoColor: Color4.create(0, 0.3 + pulse * 0.2, 1, 0.02 + pulse * 0.02),
+      albedoColor: Color4.create(0, 0.3 + pulse * 0.2, 1, 0.045 + pulse * 0.035),
       emissiveColor: Color3.create(0, 0.2 + pulse * 0.3, 0.6 + pulse * 0.4),
       emissiveIntensity: intensity, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
     })
