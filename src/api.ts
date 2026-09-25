@@ -90,6 +90,11 @@ export async function joinGalaxy(galaxyId: string, username: string): Promise<{ 
   return apiPost(`/api/galaxy/${galaxyId}/join`, { username })
 }
 
+/** Players seen in the last 24 hours, counted by the system their ship is in. */
+export async function getSystemPopulation(galaxyId: string): Promise<{ windowHours: number; systems: { systemId: string; players: number }[] }> {
+  return apiGet(`/api/systems/${galaxyId}/population`)
+}
+
 export async function getSystems(galaxyId: string): Promise<StarSystem[]> {
   return apiGet<StarSystem[]>(`/api/systems/${galaxyId}`)
 }

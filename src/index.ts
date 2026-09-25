@@ -21,6 +21,7 @@ import { setupSoloShip } from './soloShip'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
+import { setupHeatMap } from './heatMap'
 import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
@@ -67,6 +68,7 @@ export async function main() {
     setStatusMessage('Loading galaxy map...')
     systems = await api.getSystems(playerInfo.galaxy_id)
 
+    setupHeatMap(playerInfo.galaxy_id)
     renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
     setupInteraction()
 

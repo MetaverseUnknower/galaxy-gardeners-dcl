@@ -405,6 +405,10 @@ export function galaxyAnimationSystem(dt: number): void {
 
 }
 
+let mapHooks: { rendered?: () => void; cleared?: () => void } = {}
+/** Overlays (the social heat map) redraw after the stars render and clear with the map. */
+export function setMapRenderHooks(hooks: { rendered?: () => void; cleared?: () => void }): void { mapHooks = hooks }
+
 export function renderStarSystems(systems: StarSystem[], homeSystemId: string | null, currentSystemId: string | null): void {
   const root = createGalaxyRoot()
   let maxRadius = 1
@@ -428,9 +432,11 @@ export function renderStarSystems(systems: StarSystem[], homeSystemId: string | 
     starEntities.set(entity, system)
     if (system.id === currentSystemId) createCurrentLocationMarker(position)
   }
+  mapHooks.rendered?.()
 }
 
 export function clearMap(): void {
+  mapHooks.cleared?.()
   for (const [entity] of starEntities) engine.removeEntity(entity)
   starEntities.clear()
   for (const entity of zoneRingEntities) engine.removeEntity(entity)

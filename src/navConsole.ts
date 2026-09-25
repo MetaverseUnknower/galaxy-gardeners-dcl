@@ -10,6 +10,7 @@ import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListene
 import { showNotification } from './ui'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, setCameraModeChangedListener } from './consoleCamera'
 import { enterSleepMode } from './sleepMode'
+import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } from './heatMap'
 import { hideInTopView } from './topViewHide'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, line, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 
@@ -72,6 +73,7 @@ export function createNavConsole(): void {
   screen = engine.addEntity()
   Transform.create(screen, { position: SCREEN_OFFSET, rotation: SCREEN_ROT, parent: desk })
   setViewModeChangedListener(refreshNavConsole)
+  setHeatMapChangedListener(refreshNavConsole)
   setCameraModeChangedListener(refreshNavConsole)   // keeps the camera buttons in step with the HUD switcher and keys
   setStationChangedListener(refreshNavConsole)
   engine.addSystem(pollSystem)
@@ -154,11 +156,14 @@ export function refreshNavConsole(): void {
     txt(bag, root, -1.95, -0.37, paused ? 'RESUME CELESTIAL MOTION' : 'FREEZE CELESTIAL MOTION', 0.11, DIM)
     clickable(pauseFill, paused ? 'Resume Orbits' : 'Pause Orbits', () => { toggleOrbits(); refreshNavConsole() })
   } else {
-    const dimGrey = Color3.create(0.3, 0.38, 0.45)
-    frame(bag, root, -1.95, -0.05, 1.5, 0.9, { border: dimGrey })
-    icon(bag, root, -1.95, 0.16, 0.34, ICONS.pause, { color: dimGrey })
-    txt(bag, root, -1.95, -0.19, 'PAUSE ORBITS', 0.24, MUTED)
-    txt(bag, root, -1.95, -0.37, 'AVAILABLE IN STAR SYSTEM VIEW', 0.11, MUTED)
+    // Galaxy view: the same slot toggles the social heat map (orbits only pause in star system view).
+    const on = isHeatMapOn()
+    const heatFill = frame(bag, root, -1.95, -0.05, 1.5, 0.9, on ? { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) } : {})
+    icon(bag, root, -1.95, 0.16, 0.34, ICONS.galaxy, { color: on ? MAGENTA3 : CYAN3 })
+    txt(bag, root, -1.95, -0.19, on ? 'HIDE HEAT MAP' : 'SOCIAL HEAT MAP', 0.24, on ? MAGENTA : CYAN)
+    const n = heatMapTotal()
+    txt(bag, root, -1.95, -0.37, on ? `${n} EXPLORER${n === 1 ? '' : 'S'} ACTIVE TODAY` : 'SHOW WHERE EXPLORERS ARE', 0.11, DIM)
+    clickable(heatFill, on ? 'Hide Heat Map' : 'Show Heat Map', () => { void toggleHeatMap() })
   }
   frame(bag, root, -1.95, -0.85, 1.2, 0.6)
   image(bag, root, -1.95, -0.85, 1.16, 0.58, IMAGES.galaxy)   // 2:1, matching the texture
