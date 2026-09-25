@@ -7,7 +7,7 @@ import { createProjectorBase, renderStarSystems, clearMap, starEntities, galaxyA
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
-import { setupUi, setSelectedSystemUI, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification } from './ui'
+import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification } from './ui'
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './systemView'
 import { createEnvironment, respawnSystem, twinkleSystem, DECK_Y } from './environment'
@@ -161,10 +161,14 @@ export async function main() {
           }
         }
       }
-      try {
-        const fuelInfo = await api.getFuelCost(system.id)
-        setSelectedSystemUI(system, fuelInfo)
-      } catch { setSelectedSystemUI(system, null) }
+      // Open the panel immediately with whatever is known; a cached quote shows at once and refreshes if stale.
+      const cached = api.peekFuelCost(system.id)
+      setSelectedSystemUI(system, cached?.value ?? null, !cached?.fresh)
+      if (!cached?.fresh) {
+        api.getFuelCost(system.id)
+          .then(fuel => setSelectedSystemFuel(system.id, fuel))
+          .catch(() => setSelectedSystemFuel(system.id, null))
+      }
     })
 
     setTravelConfirmCallback(async () => {
@@ -174,6 +178,7 @@ export async function main() {
         setStatusMessage('Initiating travel...')
         hideCurrentLocationMarker()
         await startTravel(selected.id)
+        api.invalidateFuelCosts()
         setTravelingStatus(selected.name)
         setSelectedSystemUI(null, null)
         setStatusMessage(null)
@@ -244,6 +249,7 @@ export async function main() {
 }
 
 async function reloadMap(): Promise<void> {
+  api.invalidateFuelCosts()   // arrived somewhere new: every quote changes
   clearMap()
   playerInfo = await api.getPlayerMe()
   setPodOpsSystemId(playerInfo.current_system_id)

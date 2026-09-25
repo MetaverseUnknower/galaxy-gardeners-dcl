@@ -99,9 +99,39 @@ export async function getSystems(galaxyId: string): Promise<StarSystem[]> {
   return apiGet<StarSystem[]>(`/api/systems/${galaxyId}`)
 }
 
+// --- Short-lived caches so revisiting a star or system is instant ---
+type Cached<T> = { value: T; at: number }
+const SYSTEM_DETAIL_TTL_MS = 2 * 60 * 1000
+const FUEL_COST_TTL_MS = 30 * 1000
+const systemDetailCache = new Map<string, Cached<any>>()
+const systemDetailInFlight = new Map<string, Promise<any>>()
+const fuelCostCache = new Map<string, Cached<FuelCostResponse>>()
+
+/** Planets, belts and station for a system. Cached for two minutes; concurrent callers share one request. */
 export async function getSystemDetail(systemId: string): Promise<any> {
-  return apiGet<any>(`/api/systems/detail/${systemId}`)
+  const hit = systemDetailCache.get(systemId)
+  if (hit && Date.now() - hit.at < SYSTEM_DETAIL_TTL_MS) return hit.value
+  const pending = systemDetailInFlight.get(systemId)
+  if (pending) return pending
+  const req = apiGet<any>(`/api/systems/detail/${systemId}`)
+    .then(value => { systemDetailCache.set(systemId, { value, at: Date.now() }); return value })
+    .finally(() => { systemDetailInFlight.delete(systemId) })
+  systemDetailInFlight.set(systemId, req)
+  return req
 }
+
+export function invalidateSystemDetail(systemId?: string): void {
+  if (systemId) systemDetailCache.delete(systemId); else systemDetailCache.clear()
+}
+
+/** Last fuel quote for a destination, if any, and whether it is still fresh (under 30 seconds old). */
+export function peekFuelCost(destinationId: string): { value: FuelCostResponse; fresh: boolean } | null {
+  const hit = fuelCostCache.get(destinationId)
+  return hit ? { value: hit.value, fresh: Date.now() - hit.at < FUEL_COST_TTL_MS } : null
+}
+
+/** Fuel quotes depend on where the ship is and how much fuel it has: clear them when either changes. */
+export function invalidateFuelCosts(): void { fuelCostCache.clear() }
 
 export async function getNearestSystems(systemId: string, limit: number = 20): Promise<NearestSystem[]> {
   return apiGet<NearestSystem[]>(`/api/systems/nearest/${systemId}?limit=${limit}`)
@@ -109,12 +139,14 @@ export async function getNearestSystems(systemId: string, limit: number = 20): P
 
 export async function getFuelCost(destinationId: string): Promise<FuelCostResponse> {
   const raw = await apiGet<{ fuelCost: number; distance: number; currentFuel: number; canAfford: boolean; travelMinutes: number }>(`/api/ships/fuel-cost?targetSystemId=${destinationId}`)
-  return {
+  const value: FuelCostResponse = {
     fuel_cost: raw.fuelCost,
     distance: raw.distance,
     current_fuel: raw.currentFuel,
     travel_minutes: raw.travelMinutes
   }
+  fuelCostCache.set(destinationId, { value, at: Date.now() })
+  return value
 }
 
 export async function travel(destinationId: string): Promise<void> {

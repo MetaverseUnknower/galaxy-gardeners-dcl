@@ -32,6 +32,8 @@ import * as api from './api'
 
 let selectedSystem: StarSystem | null = null
 let fuelInfo: FuelCostResponse | null = null
+let fuelLoading = false
+let fuelFailed = false
 let travelingTo: string | null = null
 let statusMessage: string | null = null
 let onTravelConfirm: (() => void) | null = null
@@ -76,6 +78,7 @@ async function handleRefine(resourceType: string): Promise<void> {
     const result = await api.refineFuel(resourceType, 1)
     refineryStatus = `+${result.fuelGained.toFixed(0)} fuel!`
     await loadRefineryInventory()
+    api.invalidateFuelCosts()
     refreshStation('ship')
   } catch (err: any) { refineryStatus = err.message || 'Refine failed' }
 }
@@ -90,6 +93,7 @@ async function handleManaPurchase(tierId: string, manaAmount: number): Promise<v
     purchaseStatus = 'Payment sent. Waiting for Polygon to confirm…'
     const result = await redeemManaPurchase(tierId, txHash, attempt => { purchaseStatus = `Waiting for Polygon to confirm… (${attempt * 3}s)` })
     purchaseStatus = `Purchased! Total cells: ${result.fuelCells}`
+    api.invalidateFuelCosts()
     refreshStation('ship')
   } catch (err: any) { purchaseStatus = paymentErrorMessage(err, 'Purchase failed') }
   finally { purchasing = false }
@@ -109,12 +113,20 @@ async function deployPod(body: BodyInfo): Promise<void> {
     if (body.type === 'belt') { await api.deployMiningPod(body.id); deployStatus = 'Mining pod deployed!' }
     else if (body.type === 'moon') { await api.deployExplorationPodToMoon(body.id); deployStatus = 'Exploration pod deployed!' }
     else { await api.deployExplorationPod(body.id); deployStatus = 'Exploration pod deployed!' }
+    api.invalidateFuelCosts()
     refreshStation('ship')
   } catch (err: any) { deployStatus = err.message || 'Deploy failed' }
 }
 
-export function setSelectedSystemUI(system: StarSystem | null, fuel: FuelCostResponse | null): void {
-  selectedSystem = system; fuelInfo = fuel; showTravelConfirm = false; deployStatus = null
+/** Opens the star panel right away; `loading` shows the route indicator until setSelectedSystemFuel arrives. */
+export function setSelectedSystemUI(system: StarSystem | null, fuel: FuelCostResponse | null, loading: boolean = false): void {
+  selectedSystem = system; fuelInfo = fuel; fuelLoading = loading; fuelFailed = false; showTravelConfirm = false; deployStatus = null
+}
+/** Fills in route data for the star that is still selected; late answers for a star the player moved on from are dropped. */
+export function setSelectedSystemFuel(systemId: string, fuel: FuelCostResponse | null): void {
+  if (selectedSystem?.id !== systemId) return
+  fuelLoading = false
+  if (fuel) { fuelInfo = fuel; fuelFailed = false } else if (!fuelInfo) fuelFailed = true
 }
 export function setTravelingStatus(systemName: string | null): void { travelingTo = systemName }
 export function setStatusMessage(msg: string | null): void { statusMessage = msg }
@@ -155,6 +167,9 @@ const SystemInfoPanel = () => {
             </UiEntity>
             {!canAfford ? <UiEntity uiTransform={{ width: '100%', height: px(22) }} uiText={{ value: 'Not enough fuel', fontSize: px(16), color: Color4.create(1, 0.3, 0.3, 0.8), textAlign: 'middle-center' }} /> : null}
           </UiEntity>
+        ) : selectedSystem.id !== currentSystemId && (fuelLoading || fuelFailed) ? (
+          <UiEntity uiTransform={{ width: '100%', height: px(28), margin: { top: px(8) } }}
+            uiText={{ value: fuelLoading ? `Plotting course${'.'.repeat(1 + Math.floor(Date.now() / 400) % 3)}` : 'Route data unavailable', fontSize: px(20), color: Color4.create(0.45, 0.65, 0.75, 1), textAlign: 'middle-center' }} />
         ) : null}
         {selectedSystem.id === currentSystemId ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.1, 0.3, 0.5, 1) }} uiText={{ value: 'VIEW SYSTEM', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onViewSystem) onViewSystem() }} /> : null}
         {selectedSystem.id !== currentSystemId && fuelInfo && !showTravelConfirm ? (() => {
