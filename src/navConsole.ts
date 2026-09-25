@@ -150,7 +150,7 @@ export function refreshNavConsole(): void {
   // View tabs
   const galaxyActive = mode === 'galaxy'
   // Map legend: the free strip left of the view tabs. Each mark has the same shape as on the map, so none of
-  // them depends on colour: cube, pinned star, plain star, ringed star.
+  // them depends on colour: cube, pinned star, plain star, haloed star.
   const L1 = 0.66, L2 = 0.5, C1 = -2.62, C2 = -1.98
   frame(bag, root, C1, L1, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
   txt(bag, root, C1 + 0.08, L1, 'YOU ARE HERE', 0.08, DIM, LEFT)
@@ -161,7 +161,7 @@ export function refreshNavConsole(): void {
   dot(bag, root, C1, L2, 0.03, Color3.create(1, 1, 1))
   txt(bag, root, C1 + 0.08, L2, 'STAR SYSTEM', 0.08, DIM, LEFT)
   dot(bag, root, C2, L2, 0.03, Color3.create(0, 0.8, 0.8))
-  ring(bag, root, C2, L2, 0.045, Color3.create(0, 0.8, 0.8), { segments: 8, dashed: true, thickness: 0.008 })
+  ring(bag, root, C2, L2, 0.045, Color3.create(0, 0.8, 0.8), { segments: 20, thickness: 0.006, alpha: 0.5 })   // the halo disc
   txt(bag, root, C2 + 0.08, L2, 'WITH STATION', 0.08, DIM, LEFT)
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
   btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'primary', icon: ICONS.system, size: 0.22 })
