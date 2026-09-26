@@ -32,7 +32,9 @@ let fuelLoading = false
 let fuelFailed = false
 let travelingTo: string | null = null
 let statusMessage: string | null = null
-let onTravelConfirm: (() => void) | null = null
+let onTravelConfirm: (() => void | Promise<void>) | null = null
+// True from CONFIRM until the server answers: a second press used to start travel again mid-request.
+let travelStarting = false
 let onViewSystem: (() => void) | null = null
 let showTravelConfirm = false
 let currentSystemId: string | null = null
@@ -183,7 +185,13 @@ export function setSelectedSystemFuel(systemId: string, fuel: FuelCostResponse |
 }
 export function setTravelingStatus(systemName: string | null): void { travelingTo = systemName }
 export function setStatusMessage(msg: string | null): void { statusMessage = msg }
-export function setTravelConfirmCallback(callback: () => void): void { onTravelConfirm = callback }
+export function setTravelConfirmCallback(callback: () => void | Promise<void>): void { onTravelConfirm = callback }
+
+function confirmTravel(): void {
+  if (travelStarting || !onTravelConfirm) return
+  travelStarting = true
+  Promise.resolve(onTravelConfirm()).catch(() => { /* the callback reports its own errors */ }).finally(() => { travelStarting = false })
+}
 export function setViewSystemCallback(callback: () => void): void { onViewSystem = callback }
 export function setCurrentSystemId(id: string | null): void { currentSystemId = id }
 
@@ -235,8 +243,8 @@ const SystemInfoPanel = () => {
           <UiEntity uiTransform={{ margin: { top: px(14) }, flexDirection: 'column', alignItems: 'center' }}>
             <UiEntity uiTransform={{ width: '100%', height: px(28), margin: { bottom: px(10) } }} uiText={{ value: `Travel to ${selectedSystem.name}? (${fuelInfo!.fuel_cost.toFixed(1)} fuel)`, fontSize: px(20), color: Color4.create(1, 1, 0, 1), textAlign: 'middle-center' }} />
             <UiEntity uiTransform={{ flexDirection: 'row' }}>
-              <UiEntity uiTransform={{ width: px(160), height: px(46), margin: { right: px(12) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0, 0.6, 0.3, 1) }} uiText={{ value: 'CONFIRM', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onTravelConfirm) onTravelConfirm() }} />
-              <UiEntity uiTransform={{ width: px(160), height: px(46), justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.4, 0.1, 0.1, 1) }} uiText={{ value: 'CANCEL', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { showTravelConfirm = false }} />
+              <UiEntity uiTransform={{ width: px(160), height: px(46), margin: { right: px(12) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: travelStarting ? Color4.create(0.15, 0.15, 0.15, 1) : Color4.create(0, 0.6, 0.3, 1) }} uiText={{ value: travelStarting ? `ENGAGING${'.'.repeat(1 + Math.floor(Date.now() / 400) % 3)}` : 'CONFIRM', fontSize: px(20), color: travelStarting ? Color4.create(0.7, 0.7, 0.7, 1) : Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { confirmTravel() }} />
+              <UiEntity uiTransform={{ width: px(160), height: px(46), justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: travelStarting ? Color4.create(0.15, 0.15, 0.15, 1) : Color4.create(0.4, 0.1, 0.1, 1) }} uiText={{ value: 'CANCEL', fontSize: px(20), color: travelStarting ? Color4.create(0.4, 0.4, 0.4, 1) : Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (!travelStarting) showTravelConfirm = false }} />
             </UiEntity>
           </UiEntity>
         ) : null}
