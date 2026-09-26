@@ -11,7 +11,7 @@ import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, spinn
 import { hideInTopView } from './topViewHide'
 import { registerDimmableScreen } from './cabinDim'
 import { redrawWhenCountdownChanges, minutesUntil } from './countdown'
-import { isCurrentlyTraveling } from './navigation'
+import { isCurrentlyTraveling, getTravelDestination, getTravelFraction } from './navigation'
 
 const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -196,6 +196,17 @@ function drawActiveDiscovery(root: Entity): void {
 }
 
 /** Mini galaxy map at (cx, cy) on the desk root, drawn in its original frame under `panelRoot`. */
+/** The ship's galactic x/y for the mini map: its system, or interpolated along the route in transit. */
+function shipPosition(): { x: number; y: number; label: string } | null {
+  const dest = getTravelDestination()
+  if (currentSystem && dest) {
+    const f = getTravelFraction()
+    return { x: currentSystem.coord_x + (dest.coord_x - currentSystem.coord_x) * f, y: currentSystem.coord_y + (dest.coord_y - currentSystem.coord_y) * f, label: 'IN TRANSIT' }
+  }
+  if (isCurrentlyTraveling()) return null   // destination not known yet: don't pin the ship to the origin
+  return currentSystem ? { x: currentSystem.coord_x, y: currentSystem.coord_y, label: currentSystem.name } : null
+}
+
 function drawMiniMap(root: Entity, cx: number, cy: number): void {
   panelRoot = engine.addEntity()
   // Half-turn sub-root: the old map code used +z toward the viewer and yaw-180 text.
@@ -205,7 +216,9 @@ function drawMiniMap(root: Entity, cx: number, cy: number): void {
   let maxR = 1
   for (const s of allSystems) { const dist = Math.sqrt(s.coord_x ** 2 + s.coord_y ** 2); if (dist > maxR) maxR = dist }
   const mapScale = MAP_RADIUS / maxR
-  const rotAngle = currentSystem ? -Math.atan2(currentSystem.coord_y, currentSystem.coord_x) - Math.PI / 2 : 0
+  // Where the ship is: its system, or partway along the route while travelling (never naming the origin).
+  const here = shipPosition()
+  const rotAngle = here ? -Math.atan2(here.y, here.x) - Math.PI / 2 : 0
   const cosR = Math.cos(rotAngle); const sinR = Math.sin(rotAngle)
   function rotatePoint(x: number, y: number) { return { rx: x * cosR - y * sinR, ry: x * sinR + y * cosR } }
 
@@ -243,8 +256,8 @@ function drawMiniMap(root: Entity, cx: number, cy: number): void {
     miniMapEntities.push(d)
   }
   // Current marker with a callout
-  if (currentSystem) {
-    const { rx, ry } = rotatePoint(currentSystem.coord_x * mapScale, currentSystem.coord_y * mapScale)
+  if (here) {
+    const { rx, ry } = rotatePoint(here.x * mapScale, here.y * mapScale)
     const marker = engine.addEntity()
     Transform.create(marker, { position: Vector3.create(mapX + rx, mapCenterY + ry, 0.05 + mapZ), scale: Vector3.create(0.035, 0.035, 0.035), parent: panelRoot })
     MeshRenderer.setSphere(marker)
@@ -255,7 +268,7 @@ function drawMiniMap(root: Entity, cx: number, cy: number): void {
     const tx = Math.min(2.45, mx + 0.35), ty = my + 0.22
     line(bag, root, mx, my, tx - 0.05, ty, CYAN3, { thickness: 0.006, z: -0.07 })
     frame(bag, root, tx + 0.3, ty, 0.7, 0.16, { fill: Color4.create(0.02, 0.05, 0.12, 1), z: -0.07 })
-    text(bag, root, tx + 0.3, ty, currentSystem.name, 0.13, WHITE, TextAlignMode.TAM_MIDDLE_CENTER, -0.085)
+    text(bag, root, tx + 0.3, ty, here.label, 0.13, WHITE, TextAlignMode.TAM_MIDDLE_CENTER, -0.085)
   }
 }
 
@@ -365,5 +378,11 @@ export function clearDiscoveryPanel(): void {
 // The active discovery's minutes-remaining ticks down and turns to SIGNAL LOCKED on time.
 redrawWhenCountdownChanges(
   () => deskRoot && activeDiscovery && !pending ? String(minutesUntil(activeDiscovery.completesAt)) : '',
+  () => redraw(),
+)
+
+// In transit the ship marker creeps along the route: redraw at each percent of the trip.
+redrawWhenCountdownChanges(
+  () => deskRoot && !pending && getTravelDestination() ? String(Math.floor(getTravelFraction() * 100)) : '',
   () => redraw(),
 )
