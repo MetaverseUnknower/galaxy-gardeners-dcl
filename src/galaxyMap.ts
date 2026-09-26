@@ -4,6 +4,7 @@ import { StarSystem } from './types'
 import { getSystemRoot, getSystemAutoScale } from './systemView'
 import { DECK_Y } from './environment'
 import { PROJECTOR_TOP_Y } from './environment'
+import { getPref, setPref } from './prefs'
 
 const FLOOR_Y = 40
 const MAP_CENTER = Vector3.create(128, FLOOR_Y + 1, 128)
@@ -21,7 +22,7 @@ const ROTATE_STEP = 15
 // Height and zoom are whole-number levels so every step is exact (no drift, no uneven end steps).
 const MIN_HEIGHT = FLOOR_Y + 0.3
 const HEIGHT_STEP = 0.3
-const HEIGHT_LEVELS = 13            // levels 0..12 → 0.3m .. 3.9m above the floor
+const HEIGHT_LEVELS = 17            // levels 0..16 → 0.3m .. 5.1m above the floor
 const MIN_SCALE = 0.4
 const SCALE_STEP = 0.2
 const SCALE_LEVELS = 9              // levels 0..8 → zoom 0.4 .. 2.0
@@ -103,10 +104,38 @@ function applyLevels(): void {
   targetScale = scaleFor(scaleLevel)
 }
 
-export function rotateMap(dir: 1 | -1): void { targetRotationY += dir * ROTATE_STEP }
-export function tiltMap(dir: 1 | -1): void { heightLevel += dir; applyLevels() }
-export function zoomMap(dir: 1 | -1): void { scaleLevel += dir; applyLevels() }
-export function resetMapView(): void { targetRotationY = 0; heightLevel = DEFAULT_HEIGHT_LEVEL; scaleLevel = DEFAULT_SCALE_LEVEL; applyLevels() }
+export function rotateMap(dir: 1 | -1): void { targetRotationY += dir * ROTATE_STEP; mapViewChanged() }
+export function tiltMap(dir: 1 | -1): void { heightLevel += dir; applyLevels(); mapViewChanged() }
+export function zoomMap(dir: 1 | -1): void { scaleLevel += dir; applyLevels(); mapViewChanged() }
+export function resetMapView(): void { targetRotationY = 0; heightLevel = DEFAULT_HEIGHT_LEVEL; scaleLevel = DEFAULT_SCALE_LEVEL; applyLevels(); mapViewChanged() }
+
+// The player's map view (height, zoom, rotation) is remembered in their preferences. Presses come in bursts,
+// so it is saved once the view has been still for a moment rather than on every press.
+const MAP_VIEW_SAVE_DELAY = 1.5
+let mapViewSaveIn = -1
+function mapViewChanged(): void { mapViewSaveIn = MAP_VIEW_SAVE_DELAY }
+function saveMapView(): void {
+  setPref('mapHeightLevel', heightLevel)
+  setPref('mapScaleLevel', scaleLevel)
+  setPref('mapRotation', ((targetRotationY % 360) + 360) % 360)
+}
+engine.addSystem((dt: number) => {
+  if (mapViewSaveIn < 0) return
+  mapViewSaveIn -= dt
+  if (mapViewSaveIn < 0) saveMapView()
+})
+
+/** Restores the saved view after preferences load; snaps straight to it instead of animating. */
+export function restoreMapView(): void {
+  heightLevel = getPref<number>('mapHeightLevel', DEFAULT_HEIGHT_LEVEL)
+  scaleLevel = getPref<number>('mapScaleLevel', DEFAULT_SCALE_LEVEL)
+  targetRotationY = getPref<number>('mapRotation', 0)
+  applyLevels()
+  currentHeight = targetHeight
+  currentScale = targetScale
+  currentRotationY = targetRotationY
+  applyGalaxyTransform()
+}
 export function getMapView(): { height: number; scale: number } { return { height: targetHeight, scale: targetScale } }
 export function setMapView(view: { height?: number; scale?: number }): void {
   if (view.height !== undefined) heightLevel = Math.round((view.height - MIN_HEIGHT) / HEIGHT_STEP)

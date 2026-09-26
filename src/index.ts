@@ -3,7 +3,7 @@ import { Vector3 } from '@dcl/sdk/math'
 import { createStation } from './stations'
 import { authenticate } from './auth'
 import * as api from './api'
-import { createProjectorBase, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker } from './galaxyMap'
+import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
@@ -64,6 +64,7 @@ export async function main() {
     setStatusMessage('Loading player data...')
     playerInfo = await api.getPlayerMe()
     await loadPrefs()
+    restoreMapView()   // the player's saved map height, zoom and rotation
     void startSoundtrack()
 
     // Apply solar recharge on scene load
