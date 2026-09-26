@@ -128,7 +128,7 @@ export const StemPanel = () => {
         {visibleMessages().map((m, i) => messageLine(m, `stem${messages.length}-${i}`))}
         {waiting ? messageLine({ role: 'stem', text: '…' }, 'stem-waiting') : null}
       </UiEntity>
-      <UiEntity uiTransform={{ width: '100%', height: px(34), flexDirection: 'row', margin: { top: px(8) } }}>
+      <UiEntity uiTransform={{ width: '100%', height: px(44), flexDirection: 'row', margin: { top: px(8) } }}>
         <Input
           key={`stem-input-${inputGeneration}`}
           uiTransform={{ flexGrow: 1, height: '100%', margin: { right: px(6) } }}
