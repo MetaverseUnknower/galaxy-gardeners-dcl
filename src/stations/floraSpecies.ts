@@ -5,7 +5,7 @@ import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { selectBody } from '../systemView'
 import { ViewDefinition, StationContext, Screens } from '../stations'
-import { Bag, clearBag, text, frame, header, bar, button, listRow, image, WHITE, DIM, MUTED, CYAN } from './draw'
+import { Bag, clearBag, text, frame, header, bar, button, listRow, image, fitSize, WHITE, DIM, MUTED, CYAN } from './draw'
 import { drawCollectionsTop, setSpeciesCount, ICONS, CollectionId } from './floraCollections'
 import { titleCase, TRAIT_KEYS } from './data'
 
@@ -77,7 +77,8 @@ function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon
     // Right: details
     frame(paneBag, low, 1.85, -0.125, 1.75, 1.65)
     if (sel) {
-      text(paneBag, low, 1.1, 0.45, sel.name.toUpperCase(), 0.4, CYAN, TextAlignMode.TAM_MIDDLE_LEFT)
+      const title = sel.name.toUpperCase()
+      text(paneBag, low, 1.1, 0.45, title, fitSize(title, 1.5, 0.4, true), CYAN, TextAlignMode.TAM_MIDDLE_LEFT)   // 1.1 → 2.6, the value column's edge
       const det = details[sel.id]
       const rows: [string, string, Color4][] = [['Rarity', titleCase(sel.rarity || 'unknown'), RARITY_COLORS[sel.rarity] || WHITE]]
       if (sel.count) rows.push(['Specimens', `${sel.count}`, WHITE])

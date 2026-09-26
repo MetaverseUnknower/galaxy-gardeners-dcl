@@ -127,6 +127,16 @@ export function tile(into: Bag, root: Entity, x: number, y: number, w: number, h
   clickable(f, opts.hover, opts.onClick)
 }
 
+// Rough text width per character at font size 1 (measured on the desks): mixed case and all caps.
+const CHAR_W = 0.15
+const CHAR_W_CAPS = 0.19
+
+/** The font size for `str` that fits in `maxWidth`: `size` when it already fits, smaller when it doesn't. */
+export function fitSize(str: string, maxWidth: number, size: number, caps: boolean = false): number {
+  const w = str.length * (caps ? CHAR_W_CAPS : CHAR_W) * size
+  return w <= maxWidth ? size : size * maxWidth / w
+}
+
 /** Selectable list row with optional thumbnail on the left. */
 export function listRow(into: Bag, root: Entity, x: number, y: number, w: number, h: number, opts: { label: string; sublabel?: string; selected?: boolean; hover: string; onClick: () => void; imageSrc?: string | null }): void {
   const border = opts.selected ? CYAN3 : Color3.create(0.1, 0.3, 0.4)
@@ -134,7 +144,8 @@ export function listRow(into: Bag, root: Entity, x: number, y: number, w: number
   const f = frame(into, root, x, y, w, h, { border, fill })
   let lx = x - w / 2 + 0.12
   if (opts.imageSrc) { image(into, root, x - w / 2 + h * 0.55, y, h * 0.8, h * 0.8, opts.imageSrc, { z: -0.03 }); lx = x - w / 2 + h * 1.1 }
-  text(into, root, lx, y + (opts.sublabel ? 0.05 : 0), opts.label, 0.36, opts.selected ? WHITE : DIM, TextAlignMode.TAM_MIDDLE_LEFT)
+  const room = x + w / 2 - lx - (opts.selected ? 0.22 : 0.1)   // leave the › marker its space
+  text(into, root, lx, y + (opts.sublabel ? 0.05 : 0), opts.label, fitSize(opts.label, room, 0.36), opts.selected ? WHITE : DIM, TextAlignMode.TAM_MIDDLE_LEFT)
   if (opts.sublabel) text(into, root, lx, y - 0.08, opts.sublabel, 0.26, MUTED, TextAlignMode.TAM_MIDDLE_LEFT)
   if (opts.selected) text(into, root, x + w / 2 - 0.12, y, '›', 0.5, CYAN, TextAlignMode.TAM_MIDDLE_RIGHT)
   clickable(f, opts.hover, opts.onClick)
