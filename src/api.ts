@@ -165,8 +165,10 @@ export async function solarRecharge(): Promise<any> {
   return apiPost<any>('/api/ships/recharge')
 }
 
+/** Full ship state: ship (with effective fuel), inventory, samples, pods, docked flag, and the active fabrication,
+ *  installation, expeditions and discovery. (The older /api/ships route lacks everything after pods.) */
 export async function getShipDashboard(): Promise<any> {
-  return apiGet<any>('/api/ships')
+  return apiGet<any>('/api/ship/dashboard')
 }
 
 export async function getExpeditions(): Promise<any[]> {
