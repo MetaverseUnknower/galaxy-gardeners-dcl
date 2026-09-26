@@ -43,6 +43,12 @@ let panelsHidden = false
 let appliedCamera: ReturnType<typeof engine.addEntity> | null = null
 let active = false        // player is at the console
 let timer = 0
+// While the ship tour holds the camera, this module leaves MainCamera alone; on release it re-applies its own
+// choice on the next tick (even when that choice is the free camera, which appliedCamera alone can't signal).
+let suspended = false
+let forceReapply = false
+export function setCameraSuspended(on: boolean): void { suspended = on; if (!on) forceReapply = true }
+export function isCameraSuspended(): boolean { return suspended }
 
 /** True while the player stands at the Stellar Navigation console (drives the cabin dimming). */
 export function isAtConsole(): boolean { return active }
@@ -121,10 +127,12 @@ function consoleCameraSystem(dt: number): void {
   if (!p || !cameraEntity) return
   const inZone = p.x >= ZONE.minX && p.x <= ZONE.maxX && p.z >= ZONE.minZ && p.z <= ZONE.maxZ
   if (inZone !== active) { setConsoleLowered(inZone); active = inZone }
+  if (suspended) return
   const mode = getCameraMode()
   const want = mode === 'top' ? topCameraEntity : mode === 'fixed' && inZone ? cameraEntity : null
-  if (want !== appliedCamera) {
+  if (want !== appliedCamera || forceReapply) {
     MainCamera.createOrReplace(engine.CameraEntity, { virtualCameraEntity: want ?? undefined })
     appliedCamera = want
+    forceReapply = false
   }
 }

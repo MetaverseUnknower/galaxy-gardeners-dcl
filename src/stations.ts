@@ -49,6 +49,12 @@ export function refreshStation(id: string): Promise<void> {
   return s ? s.refresh() : Promise.resolve()
 }
 
+/** Shows a station's view (a desk tab), e.g. the ship tour pointing at Ship Systems. */
+export function showStationView(stationId: string, viewId: string): Promise<void> {
+  const s = stations.get(stationId)
+  return s ? s.setView(viewId) : Promise.resolve()
+}
+
 export function createStation(config: StationConfig): Station {
   const rotation = Quaternion.fromEulerDegrees(180, config.yaw, 180)
   const tallDesk = engine.addEntity()

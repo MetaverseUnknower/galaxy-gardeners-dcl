@@ -11,7 +11,7 @@ export function clearSelectedFlora(): void { selectedFlora = null }
 export function setCloseDetailCallback(cb: () => void): void { onCloseDetailPanel = cb }
 import { isCurrentlyTraveling } from './navigation'
 import { refreshStation } from './stations'
-import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS } from './consoleCamera'
+import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, isCameraSuspended } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
 import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
@@ -19,6 +19,7 @@ import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { px } from './uiScale'
 import { StemButton, StemPanel } from './stemChat'
 import { GuideButton, GuidePanel } from './guide'
+import { emitTourEvent } from './tour/events'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
@@ -149,6 +150,7 @@ async function deployPod(body: BodyInfo): Promise<void> {
     else if (body.type === 'moon') await api.deployExplorationPodToMoon(body.id)
     else await api.deployExplorationPod(body.id)
     showNotification(body.type === 'belt' ? 'Mining pod deployed!' : 'Exploration pod deployed!', Color4.create(0, 1, 0.5, 1))
+    emitTourEvent(body.type === 'belt' ? 'mining_deployed' : 'exploration_deployed')
     api.invalidateFuelCosts()
     refreshStation('ship')
   } catch (err: any) {
@@ -449,6 +451,7 @@ const RefineryDialog = () => {
 
 
 const CameraSwitch = () => {
+  if (isCameraSuspended()) return null   // the ship tour holds the camera
   const current = getCameraMode()
   if (current === 'free') return null   // only shown while a fixed view is active, as the way back
   return (

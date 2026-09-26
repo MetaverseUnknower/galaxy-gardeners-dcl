@@ -4,6 +4,7 @@
 import { Color4 } from '@dcl/sdk/math'
 import * as api from './api'
 import { showNotification } from './ui'
+import { emitTourEvent } from './tour/events'
 
 let docked = false
 let stationName: string | null = null
@@ -36,6 +37,7 @@ export async function dockAt(stationId: string, name: string): Promise<void> {
   showNotification(
     `Clamps locked, Captain. We're docked at ${name}. The airlock seal still hasn't cleared engineering's integrity check, so no one's going aboard, but ${name}'s EVA crews can reach us through the external service ports. Open Ship Systems and they'll install any upgrade we can pay for.`,
     Color4.create(0, 1, 0.8, 1), 12)
+  emitTourEvent('docked')
   changed()
 }
 

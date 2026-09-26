@@ -305,3 +305,18 @@ export type StemReply = {
 export async function askStem(message: string, history: { role: 'user' | 'stem'; text: string }[]): Promise<StemReply> {
   return apiPost<StemReply>('/api/stem/query', { message, history, client: 'dcl' })
 }
+
+// Walkthrough (the STEM ship tour). Progress and per-scene data live on the server.
+export type WalkthroughState = { walkthroughScene: number; walkthroughCompleted: boolean; walkthroughSkipped: boolean }
+
+export async function getWalkthroughState(): Promise<WalkthroughState> {
+  return apiGet<WalkthroughState>('/api/walkthrough/state')
+}
+
+export async function walkthroughProgress(action: 'advance' | 'skip' | 'complete' | 'restart', scene?: number): Promise<void> {
+  await apiPost('/api/walkthrough/progress', scene === undefined ? { action } : { action, scene })
+}
+
+export async function getWalkthroughSceneData(scene: number): Promise<Record<string, any>> {
+  return apiGet<Record<string, any>>(`/api/walkthrough/scene-data/${scene}`)
+}
