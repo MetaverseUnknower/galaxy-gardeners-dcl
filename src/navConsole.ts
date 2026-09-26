@@ -14,7 +14,7 @@ import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } f
 import { isDocked, dockAt, undock, onDockingChanged } from './docking'
 import { hideInTopView } from './topViewHide'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, disc, pin, line, ring, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
-import { isCurrentlyTraveling } from './navigation'
+import { isCurrentlyTraveling, getTravelDestination } from './navigation'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
 // This desk is scaled down (0.85), so its text gets a local boost on top of the global scale.
@@ -135,10 +135,16 @@ export function refreshNavConsole(): void {
   frame(bag, root, 1.55, 1.0, 2.4, 0.42)
   line(bag, root, 1.55, 1.18, 1.55, 0.82, CYAN3, { thickness: 0.008, alpha: 0.6 })
   icon(bag, root, 0.5, 1.0, 0.24, ICONS.galaxy)
-  txt(bag, root, 0.68, 1.08, 'CURRENT SYSTEM', 0.13, DIM, LEFT)
-  txt(bag, root, 0.68, 0.92, systemName || 'Unknown', 0.22, CYAN, LEFT)
-  icon(bag, root, 1.75, 1.0, 0.24, ICONS.station)
-  if (station) {
+  // In transit the ship has left its system: name the destination, never the system or station left behind.
+  const inTransit = isCurrentlyTraveling()
+  const destination = getTravelDestination()
+  txt(bag, root, 0.68, 1.08, inTransit ? 'EN ROUTE TO' : 'CURRENT SYSTEM', 0.13, DIM, LEFT)
+  txt(bag, root, 0.68, 0.92, inTransit ? (destination?.name ?? 'Deep space') : (systemName || 'Unknown'), 0.22, CYAN, LEFT)
+  icon(bag, root, 1.75, 1.0, 0.24, ICONS.station, inTransit ? { color: Color3.create(0.3, 0.38, 0.45) } : {})
+  if (inTransit) {
+    txt(bag, root, 1.93, 1.08, 'STATION STATUS', 0.13, DIM, LEFT)
+    txt(bag, root, 1.93, 0.92, 'OUT OF RANGE', 0.2, MUTED, LEFT)
+  } else if (station) {
     txt(bag, root, 1.93, 1.08, 'STELLAR STATION', 0.13, DIM, LEFT)
     txt(bag, root, 1.93, 0.92, station.name, 0.2, CYAN, LEFT)
   } else {
@@ -201,21 +207,23 @@ export function refreshNavConsole(): void {
   iconButton(root, 0.52, -0.62, ICONS.zoomOut, 'ZOOM OUT', 'Zoom Out', () => zoomMap(-1))
   iconButton(root, 0.98, -0.37, ICONS.recenter, 'RECENTER', 'Recenter Map', () => resetMapView())
 
-  // Right: station card + thumbnail (dock when a station exists, build when the slot is free)
-  if (station) {
+  // Right: station card + thumbnail (dock when a station exists, build when the slot is free, nothing named in transit)
+  if (inTransit) {
+    const grey = Color3.create(0.3, 0.38, 0.45)
+    txt(bag, root, 1.5, 0.31, 'DEEP SPACE', 0.15, MUTED, LEFT)
+    dot(bag, root, 1.55, 0.19, 0.05, grey)
+    txt(bag, root, 1.63, 0.19, 'IN TRANSIT  //  DOCKING UNAVAILABLE', 0.12, MUTED, LEFT)
+    frame(bag, root, 2.1, -0.25, 1.3, 0.75, { border: grey })
+    icon(bag, root, 2.1, -0.05, 0.3, ICONS.station, { color: grey })
+    txt(bag, root, 2.1, -0.32, 'IN TRANSIT', 0.26, MUTED)
+    txt(bag, root, 2.1, -0.5, 'DOCK AFTER ARRIVAL', 0.11, MUTED)
+  } else if (station) {
     const stationId: string | undefined = (station as any).id ?? fetchedStation?.info?.id
     const docked = isDocked()
-    const inTransit = isCurrentlyTraveling()   // the server refuses to dock mid-trip; the station shown is the one left behind
-    txt(bag, root, 1.5, 0.31, station.name, 0.15, inTransit ? MUTED : WHITE, LEFT)
-    dot(bag, root, 1.55, 0.19, 0.05, inTransit ? Color3.create(0.3, 0.38, 0.45) : docked ? MAGENTA3 : GREEN3)
-    txt(bag, root, 1.63, 0.19, inTransit ? 'IN TRANSIT  //  DOCKING UNAVAILABLE' : docked ? 'DOCKED  //  EXTERNAL SERVICE' : 'DOCKING AVAILABLE', 0.12, inTransit ? MUTED : docked ? MAGENTA : GREEN, LEFT)
-    if (inTransit) {
-      const grey = Color3.create(0.3, 0.38, 0.45)
-      frame(bag, root, 2.1, -0.25, 1.3, 0.75, { border: grey })
-      icon(bag, root, 2.1, -0.05, 0.3, ICONS.station, { color: grey })
-      txt(bag, root, 2.1, -0.32, 'IN TRANSIT', 0.26, MUTED)
-      txt(bag, root, 2.1, -0.5, 'DOCK AFTER ARRIVAL', 0.11, MUTED)
-    } else {
+    txt(bag, root, 1.5, 0.31, station.name, 0.15, WHITE, LEFT)
+    dot(bag, root, 1.55, 0.19, 0.05, docked ? MAGENTA3 : GREEN3)
+    txt(bag, root, 1.63, 0.19, docked ? 'DOCKED  //  EXTERNAL SERVICE' : 'DOCKING AVAILABLE', 0.12, docked ? MAGENTA : GREEN, LEFT)
+    {
       const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, docked ? { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) } : { fill: Color4.create(0.02, 0.1, 0.16, 1) })
       icon(bag, root, 2.1, -0.05, 0.3, ICONS.station, docked ? { color: MAGENTA3 } : {})
       txt(bag, root, 2.1, -0.32, docked ? 'UNDOCK' : 'DOCK', 0.3, docked ? MAGENTA : CYAN)
