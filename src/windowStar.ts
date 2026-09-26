@@ -11,7 +11,8 @@ import { getDiscoveryScan } from './discoveryPanel'
 // Window glass spans roughly x 119..137, y 37..52, z 111..114 in world space (south wall of the interior model;
 // looking out, +x is to the viewer's left).
 const STAR_POSITION = Vector3.create(128, 46, 58)   // 70m south of the ship centre; the skybox radius is ~88m
-const SIZE_PER_UNIT = 90                             // sprite size (fraction of the sleep view) → metres at this distance
+const SIZE_PER_UNIT = 90
+const STAR_GLOW = 3.5                                // emissive strength of the star sprite (was 2)                             // sprite size (fraction of the sleep view) → metres at this distance
 
 const MIN_TRAVEL_FRACTION = 0.06   // a distant speck at departure, still findable in the window
 
@@ -53,7 +54,7 @@ function applySprite(sprite: { src: string; tint: [number, number, number] }): v
     emissiveTexture: Material.Texture.Common({ src: sprite.src }),
     albedoColor: Color4.create(tint.r, tint.g, tint.b, 1),
     emissiveColor: tint,
-    emissiveIntensity: 2,
+    emissiveIntensity: STAR_GLOW,
     transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
     castShadows: false,
   })
