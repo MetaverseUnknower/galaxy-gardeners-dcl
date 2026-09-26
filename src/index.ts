@@ -1,5 +1,5 @@
 import { engine, Transform } from '@dcl/sdk/ecs'
-import { Vector3 } from '@dcl/sdk/math'
+import { Vector3, Color4 } from '@dcl/sdk/math'
 import { createStation } from './stations'
 import { authenticate } from './auth'
 import * as api from './api'
@@ -18,6 +18,7 @@ import { createNavConsole, setNavConsoleSystem, refreshNavConsole } from './navC
 import { setupConsoleCamera } from './consoleCamera'
 import { loadPrefs } from './prefs'
 import { setupSoloShip } from './soloShip'
+import { setGuideNotifyCallback } from './guide'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
@@ -46,6 +47,7 @@ export async function main() {
   createNavConsole()
   setupConsoleCamera()
   void setupSoloShip()
+  setGuideNotifyCallback(text => showNotification(text, Color4.create(1, 0.25, 0.85, 1)))
 
   try {
     setStatusMessage('Authenticating...')

@@ -18,6 +18,7 @@ import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepView, sleepView
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { px } from './uiScale'
 import { StemButton, StemPanel } from './stemChat'
+import { GuideButton, GuidePanel } from './guide'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
@@ -607,6 +608,8 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <ReturnToTerminal />
     <StemButton />
     <StemPanel />
+    <GuideButton />
+    <GuidePanel />
     <SleepCurtain />
   </UiEntity>
 )
