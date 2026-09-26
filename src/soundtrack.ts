@@ -4,7 +4,7 @@
 // distance from the core (inner < 300, central < 600, else outer rim). The title theme plays until
 // the player's system is known. Advances on the track's known duration (the explorer does not report
 // stream end for static files).
-import { engine, AudioStream, Entity } from '@dcl/sdk/ecs'
+import { engine, AudioStream, Entity, MediaState } from '@dcl/sdk/ecs'
 import * as api from './api'
 import { getPref, setPref } from './prefs'
 import { StarSystem } from './types'
@@ -13,7 +13,11 @@ export type Track = { id: string; title: string; artist: string | null; url: str
 export type Theme = 'theme' | 'inner-galaxy' | 'central-ring' | 'outer-rim' | 'black-hole' | 'space-station'
 
 const VOLUME = 0.5
-const TRACK_GAP_SECONDS = 2     // slack for buffering before moving on
+// The explorer reports no "ended" state for streams, and a finished stream can start over. So the playing time
+// is counted only while the stream reports PLAYING (loading/buffering don't count), and the next track starts
+// just before the end, before a restart can happen.
+const END_LEAD_SECONDS = 0.75
+let wasPlaying = false
 const MUTED_PREF = 'soundtrackMuted'
 
 let tracks: Track[] = []
@@ -79,6 +83,7 @@ function play(): void {
   if (!player || queue.length === 0) return
   AudioStream.createOrReplace(player, { url: queue[position].url, playing: !muted, volume: VOLUME })
   elapsed = 0
+  wasPlaying = false
   listener?.()
 }
 
@@ -91,6 +96,7 @@ export function nextTrack(): void {
 
 export function setMuted(on: boolean): void {
   muted = on
+  wasPlaying = false   // a deliberate pause, not the track finishing
   setPref(MUTED_PREF, on)
   if (player && AudioStream.has(player)) AudioStream.getMutable(player).playing = !on && holdSeconds <= 0
   listener?.()
@@ -101,6 +107,7 @@ export function toggleMuted(): void { setMuted(!muted) }
 /** Pause the music for a fanfare and resume afterwards (the track picks up where it stopped). */
 export function holdSoundtrack(seconds: number): void {
   holdSeconds = Math.max(holdSeconds, seconds)
+  wasPlaying = false   // a deliberate pause, not the track finishing
   if (player && AudioStream.has(player)) AudioStream.getMutable(player).playing = false
 }
 
@@ -111,6 +118,12 @@ function soundtrackSystem(dt: number): void {
     if (holdSeconds <= 0 && player && AudioStream.has(player)) AudioStream.getMutable(player).playing = true
     return
   }
-  elapsed += dt
-  if (elapsed >= queue[position].durationSeconds + TRACK_GAP_SECONDS) nextTrack()
+  const state = player ? AudioStream.getAudioState(player)?.state : undefined
+  const playing = state === undefined ? true : state === MediaState.MS_PLAYING   // no reports: fall back to wall time
+  const duration = queue[position].durationSeconds
+  if (playing) elapsed += dt
+  // Backstop: the stream stopped by itself near the end (finished) — move on now rather than let it restart.
+  if (wasPlaying && !playing && state !== MediaState.MS_BUFFERING && elapsed >= duration * 0.9) { wasPlaying = false; nextTrack(); return }
+  wasPlaying = playing
+  if (elapsed >= duration - END_LEAD_SECONDS) nextTrack()
 }
