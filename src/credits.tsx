@@ -10,7 +10,7 @@ const CREDITS: [string, string][] = [
   ['Lead Developer', 'Unknower'],
   ['Game Mechanics Design', 'Unknower'],
   ['AI Developer', 'Claude Opus'],
-  ['3D Modeling', 'LowPolyModels, Unknower via ChatGPT'],
+  ['3D Modeling', 'LowPolyModels, Unknower, ChatGPT'],
   ['Music', 'Unknower via Suno'],
   ['Web & API Hosting', 'Livication'],
 ]
