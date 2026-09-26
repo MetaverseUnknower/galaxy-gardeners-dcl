@@ -40,7 +40,8 @@ let onTravelConfirm: (() => void) | null = null
 let onViewSystem: (() => void) | null = null
 let showTravelConfirm = false
 let currentSystemId: string | null = null
-let deployStatus: string | null = null
+let deployStatus: string | null = null   // only 'Deploying...' while a request is in flight; results go to notifications
+let deploying = false                     // the button's lock: set only while a deploy request is pending
 let lastSelectedBodyId: string | null = null
 let discoveryDescription: string | null = null
 let notification: { text: string; color: Color4; timer: number } | null = null
@@ -108,14 +109,31 @@ export function showNotification(text: string, color: Color4, duration: number =
 export function setDiscoveryDescription(text: string | null): void { discoveryDescription = text }
 
 async function deployPod(body: BodyInfo): Promise<void> {
+  if (deploying) return
+  deploying = true
   deployStatus = 'Deploying...'
   try {
-    if (body.type === 'belt') { await api.deployMiningPod(body.id); deployStatus = 'Mining pod deployed!' }
-    else if (body.type === 'moon') { await api.deployExplorationPodToMoon(body.id); deployStatus = 'Exploration pod deployed!' }
-    else { await api.deployExplorationPod(body.id); deployStatus = 'Exploration pod deployed!' }
+    if (body.type === 'belt') await api.deployMiningPod(body.id)
+    else if (body.type === 'moon') await api.deployExplorationPodToMoon(body.id)
+    else await api.deployExplorationPod(body.id)
+    showNotification(body.type === 'belt' ? 'Mining pod deployed!' : 'Exploration pod deployed!', Color4.create(0, 1, 0.5, 1))
     api.invalidateFuelCosts()
     refreshStation('ship')
-  } catch (err: any) { deployStatus = err.message || 'Deploy failed' }
+  } catch (err: any) {
+    showNotification(deployErrorMessage(err), Color4.create(1, 0.3, 0.3, 1))
+  } finally {
+    // Re-enable right away: the server allows several pods on one body as long as an idle pod is available.
+    deploying = false
+    deployStatus = null
+  }
+}
+
+/** "API error 400: {"error":"No idle mining pods"}" → "No idle mining pods" */
+function deployErrorMessage(err: any): string {
+  const msg = String(err?.message ?? '')
+  const m = /^API error \d+: (.*)$/s.exec(msg)
+  if (m) { try { return JSON.parse(m[1]).error ?? 'Deploy failed' } catch { return 'Deploy failed' } }
+  return msg || 'Deploy failed'
 }
 
 /** Opens the star panel right away; `loading` shows the route indicator until setSelectedSystemFuel arrives. */
@@ -194,8 +212,8 @@ const SystemInfoPanel = () => {
 
 const BodyDetailPanel = () => {
   const body = getSelectedBody() || selectedFlora
-  if (!body) return null
-  if (body.id !== lastSelectedBodyId) { lastSelectedBodyId = body.id; deployStatus = null }
+  if (!body) { lastSelectedBodyId = null; return null }   // closing the panel forgets the body, so reopening starts fresh
+  if (body.id !== lastSelectedBodyId) { lastSelectedBodyId = body.id; if (!deploying) deployStatus = null }
   const typeColors: Record<string, Color4> = { planet: Color4.create(0.2, 0.8, 0.4, 1), moon: Color4.create(0.7, 0.7, 0.6, 1), belt: Color4.create(0.9, 0.7, 0.3, 1), flora: Color4.create(0.9, 0.4, 0.7, 1) }
   const titleColor = typeColors[body.type] || Color4.create(0, 1, 1, 1)
   const detailEntries = Object.entries(body.details) as [string, string][]
@@ -223,7 +241,7 @@ const BodyDetailPanel = () => {
             <UiEntity uiTransform={{ height: px(30) }} uiText={{ value: val.charAt(0).toUpperCase() + val.slice(1), fontSize: px(22), color: Color4.create(0.9, 0.9, 0.9, 1), textAlign: 'middle-left' }} />
           </UiEntity>
         ))}
-        {body.canDeploy ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: deployStatus ? Color4.create(0.15, 0.15, 0.15, 1) : Color4.create(0, 0.4, 0.5, 1) }} uiText={{ value: deployStatus || (body.type === 'belt' ? 'DEPLOY MINING POD' : 'DEPLOY EXPLORATION POD'), fontSize: px(20), color: deployStatus ? Color4.create(0.7, 0.7, 0.7, 1) : Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (!deployStatus) deployPod(body) }} /> : null}
+        {body.canDeploy ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: deploying ? Color4.create(0.15, 0.15, 0.15, 1) : Color4.create(0, 0.4, 0.5, 1) }} uiText={{ value: deploying ? (deployStatus ?? 'Deploying...') : (body.type === 'belt' ? 'DEPLOY MINING POD' : 'DEPLOY EXPLORATION POD'), fontSize: px(20), color: deploying ? Color4.create(0.7, 0.7, 0.7, 1) : Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (!deploying) void deployPod(body) }} /> : null}
       </UiEntity>
     </UiEntity>
   )
