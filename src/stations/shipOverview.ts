@@ -5,11 +5,12 @@ import { engine, Entity, Transform, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { playSfx, playMiningFanfare } from '../sfx'
-import { openRefineryDialog, openPurchaseDialog } from '../ui'
+import { openRefineryDialog, openPurchaseDialog, openRecallDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN } from './draw'
 import { cargoUsed } from './data'
 import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
+import { podPhase, canRecall } from './podPhase'
 
 // Blueprint line-art of the ship, drawn flat on the glass (see assets/icons/manifest.json for the art spec).
 export const SHIP_BLUEPRINT = 'assets/images/ship-blueprint.png'
@@ -122,9 +123,12 @@ function drawMissions(): void {
     else if (isComplete) timeText = 'READY'
     else { const mins = Math.max(0, Math.ceil((new Date(exp.completes_at).getTime() - Date.now()) / 60000)); const hrs = Math.floor(mins / 60); timeText = hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m` }
     const mining = exp.expedition_type === 'mining'
-    text(missionBag, low, 0.25, y, mining ? 'Mining' : 'Exploration', 0.34, mining ? Color4.create(0.9, 0.7, 0.3, 1) : GREEN, TextAlignMode.TAM_MIDDLE_LEFT)
+    const phase = isComplete ? null : podPhase(exp)
+    const label = mining ? 'Mining' : 'Exploration'
+    text(missionBag, low, 0.25, y, phase ? `${label} · ${phase}` : label, 0.3, mining ? Color4.create(0.9, 0.7, 0.3, 1) : GREEN, TextAlignMode.TAM_MIDDLE_LEFT)
     text(missionBag, low, 1.75, y, timeText, 0.34, isComplete ? Color4.create(1, 1, 0.3, 1) : DIM, TextAlignMode.TAM_MIDDLE_RIGHT)
     if (isComplete && !status) button(missionBag, low, 2.25, y, 0.75, 0.24, 'COLLECT', 'Complete Mission', () => collect(exp.id), { size: 0.26 })
+    else if (!status && canRecall(exp)) button(missionBag, low, 2.25, y, 0.75, 0.24, 'RECALL', `Recall ${label.toLowerCase()} pod`, () => openRecallDialog(exp.id, label), { size: 0.24, variant: 'magenta' })
   })
   if (page > 0) button(missionBag, low, 0.7, -0.62, 0.7, 0.22, '‹ PREV', 'Previous Page', () => { page--; drawMissions() }, { size: 0.24 })
   if (page < totalPages - 1) button(missionBag, low, 2.1, -0.62, 0.7, 0.22, 'NEXT ›', 'Next Page', () => { page++; drawMissions() }, { size: 0.24 })
@@ -181,6 +185,6 @@ export const shipOverviewView: ViewDefinition = {
 
 // Mission timers tick down on screen (and flip to READY) without reopening the panel.
 redrawWhenCountdownChanges(
-  () => screens ? expeditions.map((e: any) => `${e.id}:${minutesUntil(e.completes_at)}`).join('|') : '',
+  () => screens ? expeditions.map((e: any) => `${e.id}:${minutesUntil(e.completes_at)}:${podPhase(e) ?? ''}`).join('|') : '',
   () => drawMissions(),
 )

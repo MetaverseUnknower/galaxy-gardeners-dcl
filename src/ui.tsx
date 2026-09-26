@@ -48,6 +48,44 @@ let notification: { text: string; color: Color4; timer: number } | null = null
 
 // Fuel dialogs
 let showPurchaseDialog = false
+
+type RecallDialogState = { expeditionId: string; label: string; preview: api.RecallPreview | null; working: boolean; error: string | null }
+let recallDialog: RecallDialogState | null = null
+
+const fmtMinutes = (m: number): string => {
+  const total = Math.max(1, Math.ceil(m))
+  const h = Math.floor(total / 60)
+  return h > 0 ? `${h}h ${String(total % 60).padStart(2, '0')}m` : `${total}m`
+}
+const serverError = (err: any): string => {
+  const m = /^API error \d+: (.*)$/s.exec(String(err?.message ?? ''))
+  if (m) { try { return JSON.parse(m[1]).error ?? 'Recall failed' } catch { return 'Recall failed' } }
+  return err?.message || 'Recall failed'
+}
+
+/** Opens the recall confirmation for one expedition and loads its preview. */
+export function openRecallDialog(expeditionId: string, label: string): void {
+  recallDialog = { expeditionId, label, preview: null, working: false, error: null }
+  api.getRecallPreview(expeditionId)
+    .then(p => { if (recallDialog?.expeditionId === expeditionId) recallDialog.preview = p })
+    .catch(err => { if (recallDialog?.expeditionId === expeditionId) recallDialog.error = serverError(err) })
+}
+
+async function confirmRecall(): Promise<void> {
+  const d = recallDialog
+  if (!d || d.working) return
+  d.working = true
+  try {
+    const r = await api.recallExpedition(d.expeditionId)
+    showNotification(`Recall signal sent. The ${d.label.toLowerCase()} pod is back in ${fmtMinutes(r.recallMinutes)}.`, Color4.create(0, 0.9, 1, 1))
+    recallDialog = null
+    refreshStation('ship')
+  } catch (err: any) {
+    d.working = false
+    d.error = serverError(err)
+  }
+}
+
 let showRefineryDialog = false
 let purchaseStatus: string | null = null
 let refineryStatus: string | null = null
@@ -297,6 +335,40 @@ const StatusBar = () => {
   )
 }
 
+const RecallDialog = () => {
+  const d = recallDialog
+  if (!d) return null
+  const p = d.preview
+  const lines: string[] = d.error ? [d.error]
+    : !p ? ['Contacting the pod…']
+    : !p.allowed ? [p.reason ?? 'Recall not possible']
+    : [
+      `Recall: back in ${fmtMinutes(p.recallMinutes)} · ${p.share > 0 ? `~${Math.round(p.share * 100)}% of the haul` : 'returns empty'} · ${Math.round(p.lossChance * 100)}% loss risk`,
+      `Or wait: back in ${fmtMinutes(p.waitMinutes)} with the full result`,
+    ]
+  const canConfirm = !!p && p.allowed && !d.error && !d.working
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', justifyContent: 'center', alignItems: 'center' }}>
+      <UiEntity uiTransform={{ width: px(640), flexDirection: 'column', padding: { top: px(20), bottom: px(20), left: px(24), right: px(24) } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.95) }}>
+        <UiEntity uiTransform={{ width: '100%', height: px(36), margin: { bottom: px(12) } }} uiText={{ value: `RECALL ${d.label.toUpperCase()} POD?`, fontSize: px(26), color: Color4.create(0, 1, 1, 1), textAlign: 'middle-center' }} />
+        {lines.map((line, i) => (
+          <UiEntity key={`rl${i}`} uiTransform={{ width: '100%', height: px(28), margin: { bottom: px(6) } }} uiText={{ value: line, fontSize: px(18), color: i === 0 ? Color4.White() : Color4.create(0.6, 0.7, 0.8, 1), textAlign: 'middle-center' }} />
+        ))}
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'center', margin: { top: px(12) } }}>
+          <UiEntity uiTransform={{ width: px(200), height: px(44), margin: { right: px(12) }, justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: canConfirm ? Color4.create(0.6, 0.1, 0.5, 1) : Color4.create(0.15, 0.15, 0.15, 1) }}
+            uiText={{ value: d.working ? 'SENDING…' : 'RECALL', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { if (canConfirm) void confirmRecall() }} />
+          <UiEntity uiTransform={{ width: px(200), height: px(44), justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0, 0.4, 0.5, 1) }}
+            uiText={{ value: 'KEEP WORKING', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { recallDialog = null }} />
+        </UiEntity>
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
 const PurchaseDialog = () => {
   if (!showPurchaseDialog) return null
   const tiers = [
@@ -530,6 +602,7 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <DiscoveryDescriptionBar />
     <StatusBar />
     <PurchaseDialog />
+    <RecallDialog />
     <RefineryDialog />
     <CameraSwitch />
     <MusicBar />

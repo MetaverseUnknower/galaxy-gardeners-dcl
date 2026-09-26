@@ -94,7 +94,7 @@ export async function renderSectorMap(bag: Bag, root: Entity, cx: number, cy: nu
     const soonest = Math.min(...pods.filter(e => !isReady(e)).map(e => minutesLeft(e.completes_at)))
     const label = ready > 0
       ? (pods.length > 1 ? `${ready}/${pods.length} READY` : 'READY')
-      : (pods.length > 1 ? `${pods.length} OUT · ${formatMinutes(soonest)}` : formatMinutes(soonest))
+      : (pods.length > 1 ? `${pods.length} OUT · ${formatMinutes(soonest)}` : `${pods[0].recalled_at ? 'RETURNING ' : ''}${formatMinutes(soonest)}`)
     text(bag, root, (shipX + b.x) / 2, (shipY + b.y) / 2 + 0.06, label, 0.14, ready > 0 ? GREEN : Color3ToColor4(c), TextAlignMode.TAM_MIDDLE_CENTER)
   }
 

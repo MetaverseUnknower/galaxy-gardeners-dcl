@@ -175,6 +175,18 @@ export async function getExpeditions(): Promise<any[]> {
   return apiGet<any[]>('/api/expeditions')
 }
 
+export type RecallPreview = { allowed: boolean; reason?: string; phase: string; recallMinutes: number; waitMinutes: number; lossChance: number; share: number }
+
+/** What recalling this pod now would do (server-computed, nothing rolled yet). */
+export async function getRecallPreview(expeditionId: string): Promise<RecallPreview> {
+  return apiGet<RecallPreview>(`/api/expeditions/${expeditionId}/recall-preview`)
+}
+
+/** Call the pod home early. The outcome is rolled now and revealed on collection. */
+export async function recallExpedition(expeditionId: string): Promise<{ completesAt: string; recallMinutes: number }> {
+  return apiPost(`/api/expeditions/${expeditionId}/recall`)
+}
+
 export async function completeExpedition(expeditionId: string): Promise<any> {
   return apiPost<any>(`/api/expeditions/complete/${expeditionId}`)
 }
