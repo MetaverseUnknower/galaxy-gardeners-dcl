@@ -19,6 +19,7 @@ import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { px } from './uiScale'
 import { StemButton, StemPanel } from './stemChat'
 import { GuideButton, GuidePanel } from './guide'
+import { CreditsButton, CreditsPanel } from './credits'
 import { emitTourEvent } from './tour/events'
 import { TourDialog } from './tour/dialog'
 import { selectSystem } from './interaction'
@@ -622,6 +623,8 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <StemPanel />
     <GuideButton />
     <GuidePanel />
+    <CreditsButton />
+    <CreditsPanel />
     <TourDialog />
     <SleepCurtain />
   </UiEntity>
