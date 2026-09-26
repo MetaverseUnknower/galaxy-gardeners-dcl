@@ -26,7 +26,7 @@ import './windowScan'
 import { setupHeatMap } from './heatMap'
 import { isDocked, loadDockedStatus, onDockingChanged, undock } from './docking'
 import { refreshStation } from './stations'
-import { createDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
+import { createDiscoveryPanel, refreshDiscoveryPanel, setDiscoveryNotifyCallback, setDiscoveryCompleteCallback } from './discoveryPanel'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { summaryView, inventoryView } from './stations/floraCollections'
 import { catalogView, vaultView, setFloraSelectCallback } from './stations/floraSpecies'
@@ -192,6 +192,7 @@ export async function main() {
         api.invalidateFuelCosts()
         setTravelingStatus(selected.name)
         refreshNavConsole()   // the station card switches to IN TRANSIT
+        refreshDiscoveryPanel()   // the current system reads Deep space
         setSelectedSystemUI(null, null)
         setStatusMessage(null)
       } catch (err: any) { setStatusMessage(`Travel failed: ${err.message}`) }
@@ -226,6 +227,8 @@ export async function main() {
     await updateTravelState()
     if (isCurrentlyTraveling()) {
       hideCurrentLocationMarker()
+      refreshDiscoveryPanel()   // loaded mid-trip: panels were drawn before the travel state was known
+      refreshNavConsole()
       const status = await api.getTravelStatus()
       const destId = (status as any).destinationSystemId || status.destination_system_id
       const destSystem = systems.find(s => s.id === destId)
@@ -274,4 +277,5 @@ async function reloadMap(): Promise<void> {
   setWindowStarSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
+  void createDiscoveryPanel(systems, playerInfo.current_system_id)   // new system: name, coordinates and search options
 }

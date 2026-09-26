@@ -11,6 +11,7 @@ import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, spinn
 import { hideInTopView } from './topViewHide'
 import { registerDimmableScreen } from './cabinDim'
 import { redrawWhenCountdownChanges, minutesUntil } from './countdown'
+import { isCurrentlyTraveling } from './navigation'
 
 const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -107,11 +108,13 @@ function drawUpright(root: Entity): void {
   // Flush left in the cell: icon against the border, label and value sharing one left edge.
   icon(bag, root, -2.45, -0.12, 0.3, ICONS.coordinates)
   text(bag, root, -2.22, -0.12, 'GALACTIC COORDINATES', 0.24, DIM, LEFT)
-  const coordText = currentSystem ? `R: ${currentSystem.coord_r.toFixed(1)}   Θ: ${(currentSystem.coord_theta * 180 / Math.PI).toFixed(1)}°   Z: ${currentSystem.coord_z.toFixed(1)}` : 'R: ?   Θ: ?   Z: ?'
+  // In transit the ship is between systems: no system name, and the origin's coordinates no longer apply.
+  const inTransit = isCurrentlyTraveling()
+  const coordText = inTransit ? 'R: —   Θ: —   Z: —' : currentSystem ? `R: ${currentSystem.coord_r.toFixed(1)}   Θ: ${(currentSystem.coord_theta * 180 / Math.PI).toFixed(1)}°   Z: ${currentSystem.coord_z.toFixed(1)}` : 'R: ?   Θ: ?   Z: ?'
   text(bag, root, -2.22, -0.48, coordText, 0.34, WHITE, LEFT)
   icon(bag, root, 0.2, -0.12, 0.3, ICONS.system)
   text(bag, root, 0.43, -0.12, 'CURRENT STAR SYSTEM', 0.24, DIM, LEFT)
-  text(bag, root, 0.43, -0.48, currentSystem?.name || 'Unknown', 0.5, CYAN, LEFT)
+  text(bag, root, 0.43, -0.48, inTransit ? 'Deep space' : (currentSystem?.name || 'Unknown'), 0.5, CYAN, LEFT)
 }
 
 function drawDesk(root: Entity): void {
@@ -168,6 +171,8 @@ function drawPending(root: Entity): void {
 }
 
 /** Redraw both screens from the state already in hand (no server round trip). */
+export function refreshDiscoveryPanel(): void { redraw() }
+
 function redraw(): void {
   if (!deskRoot || !topRoot) return
   hideArrows()
