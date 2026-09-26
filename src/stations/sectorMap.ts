@@ -81,23 +81,29 @@ export async function renderSectorMap(bag: Bag, root: Entity, cx: number, cy: nu
   const shipX = left + 0.22, shipY = bottom + 0.3
   dot(bag, root, shipX, shipY, 0.09, WHITE); text(bag, root, shipX + 0.08, shipY, 'SHIP', 0.14, DIM, LEFT)
   const active = (exps || []).filter((e: any) => e.status !== 'collected')
-  const outAt = new Map<string, any>()
-  for (const e of active) { const id = e.belt_id || e.moon_id || e.planet_id; if (id) outAt.set(id, e) }
+  // Several pods may work the same body (the server allows it), so group them per body.
+  const outAt = new Map<string, any[]>()
+  for (const e of active) { const id = e.belt_id || e.moon_id || e.planet_id; if (id) outAt.set(id, [...(outAt.get(id) ?? []), e]) }
+  const isReady = (e: any) => e.status === 'completed' || (e.completes_at && new Date(e.completes_at).getTime() <= Date.now())
   for (const b of bodies) {
-    const e = outAt.get(b.id)
-    if (!e) continue
-    const c = e.expedition_type === 'mining' ? MAGENTA3 : CYAN3
+    const pods = outAt.get(b.id)
+    if (!pods) continue
+    const c = pods.some(e => e.expedition_type === 'mining') ? MAGENTA3 : CYAN3
     line(bag, root, shipX, shipY, b.x, b.y, c, { thickness: 0.01, alpha: 0.85 })
-    const ready = e.status === 'completed' || (e.completes_at && new Date(e.completes_at).getTime() <= Date.now())
-    text(bag, root, (shipX + b.x) / 2, (shipY + b.y) / 2 + 0.06, ready ? 'READY' : formatMinutes(minutesLeft(e.completes_at)), 0.14, ready ? GREEN : Color3ToColor4(c), TextAlignMode.TAM_MIDDLE_CENTER)
+    const ready = pods.filter(isReady).length
+    const soonest = Math.min(...pods.filter(e => !isReady(e)).map(e => minutesLeft(e.completes_at)))
+    const label = ready > 0
+      ? (pods.length > 1 ? `${ready}/${pods.length} READY` : 'READY')
+      : (pods.length > 1 ? `${pods.length} OUT · ${formatMinutes(soonest)}` : formatMinutes(soonest))
+    text(bag, root, (shipX + b.x) / 2, (shipY + b.y) / 2 + 0.06, label, 0.14, ready > 0 ? GREEN : Color3ToColor4(c), TextAlignMode.TAM_MIDDLE_CENTER)
   }
 
-  // Body markers and labels
+  // Body markers and labels: every deployable body stays clickable, even with pods already out there.
   for (const b of bodies) {
     const out = outAt.has(b.id)
     const c = b.kind === 'belt' ? BELT : out ? CYAN3 : b.deployable ? CYAN3 : Color3.create(0.35, 0.45, 0.55)
     const size = b.kind === 'moon' ? 0.045 : b.kind === 'belt' ? 0.06 : 0.08
-    const hover = b.deployable && !out ? (b.kind === 'belt' ? `Deploy mining pod to ${b.name}` : `Deploy exploration pod to ${b.name}`) : undefined
+    const hover = b.deployable ? (b.kind === 'belt' ? `Deploy mining pod to ${b.name}` : `Deploy exploration pod to ${b.name}`) : undefined
     dot(bag, root, b.x, b.y, size, c, hover ? { hover, onClick: () => deploy(b, ctx) } : {})
     if (b.kind !== 'moon') text(bag, root, b.x + 0.07, b.y - 0.07, b.name, 0.14, out ? WHITE : DIM, LEFT)
   }
@@ -113,6 +119,14 @@ async function deploy(body: Body, ctx: StationContext): Promise<void> {
     ctx.notify(body.kind === 'belt' ? 'Mining pod deployed!' : 'Exploration pod deployed!', GREEN)
     await ctx.refresh()
   } catch (err: any) {
-    ctx.notify(err?.message || 'Deploy failed', RED)
+    ctx.notify(deployErrorMessage(err), RED)
   }
+}
+
+/** "API error 400: {"error":"No idle mining pods"}" → "No idle mining pods" */
+function deployErrorMessage(err: any): string {
+  const msg = String(err?.message ?? '')
+  const m = /^API error \d+: (.*)$/s.exec(msg)
+  if (m) { try { return JSON.parse(m[1]).error ?? 'Deploy failed' } catch { return 'Deploy failed' } }
+  return msg || 'Deploy failed'
 }
