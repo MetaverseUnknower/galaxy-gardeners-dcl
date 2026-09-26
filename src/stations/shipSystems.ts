@@ -17,7 +17,7 @@ import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
 const CATEGORY_LABELS: Record<string, string> = {
   fuel_tank: 'Fuel Tank', fuel_efficiency: 'Fuel Efficiency', cargo_hold: 'Cargo Hold', specimen_vault: 'Specimen Vault',
   mining_bay: 'Mining Bay', exploration_bay: 'Exploration Bay', expedition_speed: 'Expedition Speed',
-  hull_reinforcement: 'Blast Shielding', pod_shielding: 'Env. Shielding', discovery_array: 'Discovery Array',
+  blast_shielding: 'Blast Shielding', environmental_shielding: 'Env. Shielding', discovery_array: 'Discovery Array',
 }
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   fuel_tank: 'Increases maximum fuel capacity.',
@@ -27,8 +27,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   mining_bay: 'Adds a mining pod bay.',
   exploration_bay: 'Adds an exploration pod bay.',
   expedition_speed: 'Pods complete missions faster.',
-  hull_reinforcement: 'Protects pods from blast damage.',
-  pod_shielding: 'Protects pods from harsh environments.',
+  blast_shielding: 'Lowers mining pod loss chance.',
+  environmental_shielding: 'Lowers exploration pod loss chance.',
   discovery_array: 'Improves discovery range and odds.',
 }
 function labelFor(c: string): string { return CATEGORY_LABELS[c] || titleCase(c) }
@@ -137,8 +137,9 @@ function drawLow(): void {
       ['FUEL', ship.fuel_capacity ? ship.fuel_current / ship.fuel_capacity : 0, `${Math.round(ship.fuel_capacity ? ship.fuel_current / ship.fuel_capacity * 100 : 0)}%`],
       ['CARGO', ship.resource_storage ? used / ship.resource_storage : 0, `${Math.round(ship.resource_storage ? used / ship.resource_storage * 100 : 0)}%`],
       ['VAULT', ship.specimen_vault ? jars / ship.specimen_vault : 0, `${jars} / ${ship.specimen_vault}`],
-      ['BLAST SHIELDING', ship.hull_reinforcement || 0, `${Math.round((ship.hull_reinforcement || 0) * 100)}%`],
-      ['ENV. SHIELDING', ship.pod_shielding || 0, `${Math.round((ship.pod_shielding || 0) * 100)}%`],
+      // Shielding is percentage points off pod loss chance: blast 3 per tier, environmental 2 per tier, 3 tiers
+      ['BLAST SHIELDING', (ship.blast_shielding || 0) / 9, `-${ship.blast_shielding || 0}% LOSS`],
+      ['ENV. SHIELDING', (ship.environmental_shielding || 0) / 6, `-${ship.environmental_shielding || 0}% LOSS`],
     ]
     rows.forEach(([k, pct, v], i) => {
       const y = 0.65 - i * 0.3

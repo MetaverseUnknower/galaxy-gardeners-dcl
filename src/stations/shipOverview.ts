@@ -21,7 +21,7 @@ let solarRechargeRate = 0
 export function setSolarRechargeRate(rate: number): void { solarRechargeRate = rate }
 
 // Cosmetic bar scaling for the stats panel (the concept shows bars; the API has no maxima).
-const STAT_SCALE: Record<string, number> = { fuel_efficiency: 3, resource_storage: 500, specimen_vault: 50, expedition_speed: 3, hull_reinforcement: 1, pod_shielding: 1 }
+const STAT_SCALE: Record<string, number> = { fuel_efficiency: 3, resource_storage: 500, specimen_vault: 50, expedition_speed: 3, blast_shielding: 9, environmental_shielding: 6 }
 const MISSIONS_PER_PAGE = 4   // leaves room for the Pod Operations button under the list
 
 const topBag: Bag = []
@@ -86,8 +86,9 @@ function drawStats(low: Entity, ctx: StationContext): void {
     ['Cargo Capacity', `${ship.resource_storage}`, ship.resource_storage / STAT_SCALE.resource_storage],
     ['Vault Capacity', `${ship.specimen_vault}`, ship.specimen_vault / STAT_SCALE.specimen_vault],
     ['Expedition Speed', `${ship.expedition_speed.toFixed(1)}x`, ship.expedition_speed / STAT_SCALE.expedition_speed],
-    ['Blast Shielding', `${((ship.hull_reinforcement || 0) * 100).toFixed(0)}%`, (ship.hull_reinforcement || 0) / STAT_SCALE.hull_reinforcement],
-    ['Env. Shielding', `${((ship.pod_shielding || 0) * 100).toFixed(0)}%`, (ship.pod_shielding || 0) / STAT_SCALE.pod_shielding],
+    // Shielding is percentage points off pod loss chance
+    ['Blast Shielding', `-${ship.blast_shielding || 0}%`, (ship.blast_shielding || 0) / STAT_SCALE.blast_shielding],
+    ['Env. Shielding', `-${ship.environmental_shielding || 0}%`, (ship.environmental_shielding || 0) / STAT_SCALE.environmental_shielding],
   ]
   rows.forEach(([label, value, pct], i) => {
     const y = 0.5 - i * 0.28
