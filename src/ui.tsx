@@ -20,6 +20,7 @@ import { px } from './uiScale'
 import { StemButton, StemPanel } from './stemChat'
 import { GuideButton, GuidePanel } from './guide'
 import { emitTourEvent } from './tour/events'
+import { TourDialog } from './tour/dialog'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
@@ -613,6 +614,7 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <StemPanel />
     <GuideButton />
     <GuidePanel />
+    <TourDialog />
     <SleepCurtain />
   </UiEntity>
 )
