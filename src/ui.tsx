@@ -16,15 +16,8 @@ import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
 import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
-
-// HUD sizes are authored for a 1080-tall canvas and scaled to the actual canvas height, so every
-// button and label keeps the same size relative to the screen on any display (retina included).
-const REFERENCE_HEIGHT = 1080
-function uiScale(): number {
-  const c = UiCanvasInformation.getOrNull(engine.RootEntity)
-  return c && c.height > 0 ? c.height / REFERENCE_HEIGHT : 1
-}
-const px = (n: number): number => Math.round(n * uiScale())
+import { px } from './uiScale'
+import { StemButton, StemPanel } from './stemChat'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
@@ -607,6 +600,8 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <CameraSwitch />
     <MusicBar />
     <ReturnToTerminal />
+    <StemButton />
+    <StemPanel />
     <SleepCurtain />
   </UiEntity>
 )

@@ -293,3 +293,15 @@ export async function getPreferences(): Promise<Record<string, any>> {
 export async function savePreferences(patch: Record<string, string | number | boolean | null>): Promise<Record<string, any>> {
   return apiPut('/api/galaxy/player/me/preferences', patch)
 }
+
+// STEM, the ship's assistant. 'escalate' means the templates had no answer (the iOS app hands those to an on-device model).
+export type StemReply = {
+  type: 'response' | 'escalate' | 'command'
+  text?: string
+  command?: { action: string; confirmText: string; canExecute: boolean; blockedReason?: string }
+  warnings: { triggerId: string; tier: number; text: string }[]
+}
+
+export async function askStem(message: string, history: { role: 'user' | 'stem'; text: string }[]): Promise<StemReply> {
+  return apiPost<StemReply>('/api/stem/query', { message, history, client: 'dcl' })
+}
