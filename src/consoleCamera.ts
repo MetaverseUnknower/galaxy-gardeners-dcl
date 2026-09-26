@@ -77,7 +77,7 @@ export function setupConsoleCamera(): void {
 // Top view: keep the camera fitted to the map and fade the backdrop in and out.
 function topViewSystem(dt: number): void {
   if (!topCameraEntity || !topTargetEntity || !backdropEntity) return
-  const top = getCameraMode() === 'top'
+  const top = getCameraMode() === 'top' && !suspended   // the ship tour's shots replace the top view
   if (top) {
     const view = getMapView()
     const distance = Math.max(TOP_MIN_DISTANCE, TOP_DISTANCE_PER_ZOOM * view.scale)

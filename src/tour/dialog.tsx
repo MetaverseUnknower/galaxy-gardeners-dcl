@@ -4,8 +4,8 @@ import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { px } from '../uiScale'
 
-export type DialogState = { lines: string[]; index: number; panel?: { title: string; text: string }; waiting: boolean; last: boolean; confirmSkip: boolean; offer: boolean }
-export type DialogHandlers = { next(): void; skip(): void; confirmSkip(yes: boolean): void; offer(yes: boolean): void }
+export type DialogState = { lines: string[]; index: number; panel?: { title: string; text: string }; waiting: boolean; busy: boolean; last: boolean; confirmSkip: boolean; offer: boolean }
+export type DialogHandlers = { next(): void; moveOn(): void; skip(): void; confirmSkip(yes: boolean): void; offer(yes: boolean): void }
 
 let state: DialogState | null = null
 let handlers: DialogHandlers | null = null
@@ -55,7 +55,8 @@ export const TourDialog = () => {
           {!s.offer && s.confirmSkip ? btn('skipyes', 'SKIP TOUR', () => h.confirmSkip(true), true, MAGENTA) : null}
           {!s.offer && !s.confirmSkip ? <Label key="w" value={s.waiting ? 'Waiting for you, Captain…' : ''} fontSize={px(14)} color={DIM} uiTransform={{ flexGrow: 1 }} textAlign="middle-left" /> : null}
           {!s.offer && !s.confirmSkip ? btn('skip', 'SKIP TOUR', () => h.skip(), false, MAGENTA) : null}
-          {!s.offer && !s.confirmSkip && !s.waiting ? btn('next', finishing ? 'FINISH' : 'NEXT', () => h.next(), true) : null}
+          {!s.offer && !s.confirmSkip && s.waiting ? btn('moveon', 'MOVE ON', () => h.moveOn()) : null}
+          {!s.offer && !s.confirmSkip && !s.waiting && !s.busy ? btn('next', finishing ? 'FINISH' : 'NEXT', () => h.next(), true) : null}
         </UiEntity>
       </UiEntity>
     </UiEntity>

@@ -17,7 +17,8 @@ import { getPref, setPref } from '../prefs'
 const OFFER_PREF = 'tourOffered'
 const OFFER_LINE = 'Want a tour of the ship, Captain? I can show you the desks and get your first pods out.'
 
-type Run = { sceneIdx: number; stepIdx: number; lineIdx: number; waiting: boolean; confirmSkip: boolean; tracked: boolean; resumeLine: string | null; blocked: string | null }
+// busy: a step change is awaiting the server; NEXT is hidden so repeated presses can't skip steps.
+type Run = { sceneIdx: number; stepIdx: number; lineIdx: number; waiting: boolean; busy: boolean; confirmSkip: boolean; tracked: boolean; resumeLine: string | null; blocked: string | null }
 let run: Run | null = null
 let offering = false
 let data: Record<number, Record<string, any>> = {}
@@ -43,10 +44,13 @@ async function blockedReason(wait: TourEvent): Promise<string | null> {
   const d = sceneData()
   if (wait === 'exploration_deployed') {
     if (!home) return "We're away from your home system, so we'll skip the first scan for now."
-    if (!d.targetPlanet) return "There's no living planet in range for a first scan, so let's move on."
+    if (!d.targetPlanet || d.targetPlanet.supportsLife === false) return "There's no living planet in range for a first scan, so let's move on."
     if (d.availableExplorationPods === 0) return 'Every exploration pod is already out, so let\'s move on.'
   }
-  if (wait === 'mining_deployed' && (!home || !d.targetBelt)) return "There's no safe belt in range right now, so let's move on."
+  if (wait === 'mining_deployed') {
+    if (!home || !d.targetBelt || d.targetBelt.riskLevel !== 'low') return "There's no safe belt in range right now, so let's move on."
+    if (d.availableMiningPods === 0) return "Every mining pod is already out, so let's move on."
+  }
   if (wait === 'docked' && (!home || !d.homeStationId)) return "There's no station in this system, so docking will have to wait."
   return null
 }
@@ -57,7 +61,8 @@ async function alreadyDone(wait: TourEvent): Promise<boolean> {
   try {
     const dash = await api.getShipDashboard()
     const type = wait === 'mining_deployed' ? 'mining' : 'exploration'
-    return (dash?.activeExpeditions || []).some((e: any) => e.expedition_type === type && e.status === 'in_progress')
+    // Finished but not yet collected counts too (a safe scan is done in minutes)
+    return (dash?.activeExpeditions || []).some((e: any) => e.expedition_type === type && e.status !== 'collected')
   } catch { return false }
 }
 
@@ -75,7 +80,7 @@ function applySetup(st: Step): void {
 
 function render(): void {
   if (offering) {
-    const s: DialogState = { lines: [OFFER_LINE], index: 0, waiting: false, last: false, confirmSkip: false, offer: true }
+    const s: DialogState = { lines: [OFFER_LINE], index: 0, waiting: false, busy: false, last: false, confirmSkip: false, offer: true }
     setTourDialog(s, handlers)
     return
   }
@@ -87,7 +92,7 @@ function render(): void {
   setTourDialog({
     lines, index: Math.min(run.lineIdx, lines.length - 1),
     panel: st.panel ? { title: st.panel.title, text: fill(st.panel.text, sceneData()) } : undefined,
-    waiting: run.waiting, last: lastStep, confirmSkip: run.confirmSkip, offer: false,
+    waiting: run.waiting, busy: run.busy, last: lastStep, confirmSkip: run.confirmSkip, offer: false,
   }, handlers)
 }
 
@@ -96,6 +101,7 @@ async function enterStep(): Promise<void> {
   if (!run || !st) return
   run.lineIdx = 0
   run.waiting = false
+  run.busy = false
   run.blocked = null
   applySetup(st)
   applyShot(st.shot)
@@ -105,11 +111,18 @@ async function enterStep(): Promise<void> {
 /** Called when the player has read the last line of a step. */
 async function finishStepLines(): Promise<void> {
   const st = step()
-  if (!run || !st) return
-  if (run.blocked) return advanceStep()   // the player has read why the step can't be done
+  const r = run
+  if (!r || !st) return
+  if (r.blocked) return advanceStep()   // the player has read why the step can't be done
   if (st.waitFor) {
-    if (await alreadyDone(st.waitFor)) return advanceStep()
+    r.busy = true
+    render()
+    const done = await alreadyDone(st.waitFor)
+    if (run !== r) return   // skipped or replaced while waiting on the server
+    if (done) return advanceStep()
     const why = await blockedReason(st.waitFor)
+    if (run !== r) return
+    r.busy = false
     if (why) {
       // Say why; NEXT then moves on (finishStepLines sees run.blocked).
       run.blocked = why
@@ -126,22 +139,27 @@ async function finishStepLines(): Promise<void> {
 }
 
 async function advanceStep(): Promise<void> {
-  if (!run) return
-  run.resumeLine = null
+  const r = run
+  if (!r) return
+  r.resumeLine = null
+  r.waiting = false
   const sc = scene()!
-  if (run.stepIdx < sc.steps.length - 1) { run.stepIdx++; return enterStep() }
+  if (r.stepIdx < sc.steps.length - 1) { r.stepIdx++; return enterStep() }
+  r.busy = true
+  render()
   // Next scene
-  if (run.sceneIdx < TOUR.length - 1) {
-    run.sceneIdx++
-    run.stepIdx = 0
-    const n = TOUR[run.sceneIdx].number
-    if (run.tracked) { try { await api.walkthroughProgress('advance', n) } catch { /* progress is best effort */ } }
+  if (r.sceneIdx < TOUR.length - 1) {
+    const n = TOUR[r.sceneIdx + 1].number
+    if (r.tracked) { try { await api.walkthroughProgress('advance', n) } catch { /* progress is best effort */ } }
     await loadSceneData(n)
+    if (run !== r) return   // skipped or replaced while waiting on the server
+    r.sceneIdx++
+    r.stepIdx = 0
     return enterStep()
   }
   // Finished
-  if (run.tracked) { try { await api.walkthroughProgress('complete') } catch { /* best effort */ } }
-  end()
+  if (r.tracked) { try { await api.walkthroughProgress('complete') } catch { /* best effort */ } }
+  if (run === r) end()
 }
 
 function end(): void {
@@ -152,11 +170,18 @@ function end(): void {
 
 const handlers = {
   next(): void {
-    if (!run || run.waiting) return
+    if (!run || run.waiting || run.busy) return
     const st = step()
     const total = run.blocked ? 1 : (run.resumeLine ? 1 : 0) + (st?.lines.length ?? 0)
     if (run.lineIdx < total - 1) { run.lineIdx++; render(); return }
+    run.busy = true
+    render()
     void finishStepLines()
+  },
+  // A hands-on step the player can't or won't do (e.g. the deploy failed): move on without it.
+  moveOn(): void {
+    if (!run || !run.waiting || run.busy) return
+    void advanceStep()
   },
   skip(): void { if (run) { run.confirmSkip = true; render() } },
   confirmSkip(yes: boolean): void {
@@ -180,7 +205,7 @@ const handlers = {
 async function begin(sceneIdx: number, tracked: boolean, resumeLine: string | null): Promise<void> {
   data = {}
   await loadSceneData(TOUR[sceneIdx].number)
-  run = { sceneIdx, stepIdx: 0, lineIdx: 0, waiting: false, confirmSkip: false, tracked, resumeLine, blocked: null }
+  run = { sceneIdx, stepIdx: 0, lineIdx: 0, waiting: false, busy: false, confirmSkip: false, tracked, resumeLine, blocked: null }
   await enterStep()
 }
 
