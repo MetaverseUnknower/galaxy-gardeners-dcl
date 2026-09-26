@@ -122,6 +122,7 @@ function drawDesk(root: Entity): void {
   header(bag, root, -2.65, 1.0, { icon: ICONS.travel, title: 'TRAVEL VECTOR', subtitle: 'select direction', size: 0.55 })
   if (pending) drawPending(root)
   else if (activeDiscovery) drawActiveDiscovery(root)
+  else if (isCurrentlyTraveling()) drawInTransit(root)
   else drawDirectionButtons(root)
 
   // Right: galactic map
@@ -158,6 +159,15 @@ function drawDirectionButtons(root: Entity): void {
     pointerEventsSystem.onPointerHoverEnter({ entity: btn }, () => { showDirectionArrows(d.dir, d.color); setDiscoveryDescription(`${description}  —  Est. ${timeStr}`) })
     pointerEventsSystem.onPointerHoverLeave({ entity: btn }, () => { hideArrows(); setDiscoveryDescription(null) })
   }
+}
+
+/** The server refuses discovery scans while travelling, so the direction buttons wait for arrival. */
+function drawInTransit(root: Entity): void {
+  const grey = Color3.create(0.3, 0.38, 0.45)
+  frame(bag, root, -1.4, -0.16, 2.5, 1.7, { border: grey })
+  icon(bag, root, -1.4, 0.2, 0.4, ICONS.travel, { color: grey })
+  text(bag, root, -1.4, -0.2, 'IN TRANSIT', 0.4, MUTED)
+  text(bag, root, -1.4, -0.48, 'DISCOVER AFTER ARRIVAL', 0.16, MUTED)
 }
 
 /** Launch / completion in flight: the direction buttons are gone (nothing to double-click) and a spinner shows. */

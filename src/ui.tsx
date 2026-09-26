@@ -1,7 +1,7 @@
 import ReactEcs, { ReactEcsRenderer, UiEntity, Label } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { StarSystem, FuelCostResponse } from './types'
-import { getTravelProgress } from './navigation'
+import { getTravelProgress, getTravelRemainingMs } from './navigation'
 import { getSelectedBody, BodyInfo } from './systemView'
 
 let selectedFlora: any = null
@@ -282,10 +282,15 @@ const TravelStatusPanel = () => {
   if (!travelingTo) return null
   const { progress, remainingDistance } = getTravelProgress()
   const pct = Math.floor(progress * 100)
+  const secs = Math.ceil(getTravelRemainingMs() / 1000)
+  const h = Math.floor(secs / 3600), m = Math.floor(secs % 3600 / 60), sec = secs % 60
+  const two = (n: number) => (n < 10 ? `0${n}` : `${n}`)
+  const eta = secs <= 0 ? 'ARRIVING' : `ARRIVES IN  ${h > 0 ? `${h}:${two(m)}` : m}:${two(sec)}`
   return (
     <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { top: px(20) }, justifyContent: 'center' }}>
       <UiEntity uiTransform={{ width: px(500), flexDirection: 'column', padding: { top: px(20), bottom: px(20), left: px(20), right: px(20) } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.92) }}>
         <UiEntity uiTransform={{ width: '100%', height: px(32), margin: { bottom: px(8) } }} uiText={{ value: `Traveling to ${travelingTo}`, fontSize: px(24), color: Color4.create(0, 1, 0.5, 1), textAlign: 'middle-center' }} />
+        <UiEntity uiTransform={{ width: '100%', height: px(30), margin: { bottom: px(4) } }} uiText={{ value: eta, fontSize: px(22), color: Color4.create(0, 0.9, 1, 1), textAlign: 'middle-center' }} />
         <UiEntity uiTransform={{ width: '100%', height: px(24), margin: { bottom: px(8) } }} uiText={{ value: `${pct}% — ${remainingDistance.toFixed(1)} units remaining`, fontSize: px(18), color: Color4.create(0.7, 0.7, 0.7, 1), textAlign: 'middle-center' }} />
         <UiEntity uiTransform={{ width: '100%', height: px(8) }} uiBackground={{ color: Color4.create(0.15, 0.15, 0.15, 1) }}>
           <UiEntity uiTransform={{ width: `${pct}%`, height: '100%' }} uiBackground={{ color: Color4.create(0, 1, 0.5, 0.8) }} />

@@ -27,6 +27,11 @@ export function getTravelFraction(): number {
   return Math.max(0, Math.min(1, (Date.now() - travelStartTime) / (travelEndTime - travelStartTime)))
 }
 
+/** Milliseconds until arrival from the server's end time (0 when not travelling or already due). */
+export function getTravelRemainingMs(): number {
+  return isTraveling ? Math.max(0, travelEndTime - Date.now()) : 0
+}
+
 export function isCurrentlyTraveling(): boolean {
   return isTraveling
 }
