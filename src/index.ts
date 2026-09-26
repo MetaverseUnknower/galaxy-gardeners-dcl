@@ -19,6 +19,7 @@ import { setupConsoleCamera } from './consoleCamera'
 import { loadPrefs } from './prefs'
 import { setupSoloShip } from './soloShip'
 import { setGuideNotifyCallback } from './guide'
+import { setupTour, startTourIfNeeded } from './tour/runner'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
@@ -46,6 +47,7 @@ export async function main() {
   createProjectorBase()
   createNavConsole()
   setupConsoleCamera()
+  setupTour()
   void setupSoloShip()
   setGuideNotifyCallback(text => showNotification(text, Color4.create(1, 0.25, 0.85, 1)))
 
@@ -240,6 +242,7 @@ export async function main() {
 
     setStatusMessage(null)
     playSfx('game_start')
+    void startTourIfNeeded()   // after the desks, docking and travel state exist: the tour reads all three
   } catch (err: any) {
     setStatusMessage(`Error: ${err.message}`)
     console.error('Galaxy Gardeners init error:', err)

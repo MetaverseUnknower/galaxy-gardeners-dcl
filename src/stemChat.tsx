@@ -4,6 +4,7 @@ import ReactEcs, { UiEntity, Label, Input } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { px } from './uiScale'
 import * as api from './api'
+import { replayTour } from './tour/runner'
 
 type Message = { role: 'user' | 'stem' | 'warning' | 'error'; text: string }
 
@@ -47,6 +48,14 @@ function replyMessages(reply: api.StemReply): Message[] {
 function send(): void {
   const text = draft.trim()
   if (!text || waiting) return
+  if (/\b(tour|walkthrough)\b/i.test(text)) {
+    messages.push({ role: 'user', text }, { role: 'stem', text: 'Starting the tour, Captain.' })
+    draft = ''
+    inputGeneration++
+    open = false
+    replayTour()
+    return
+  }
   const history = messages
     .filter(m => m.role === 'user' || m.role === 'stem')
     .slice(-HISTORY_SENT)
@@ -118,6 +127,11 @@ export const StemPanel = () => {
       uiBackground={{ color: PANEL_BG }}>
       <UiEntity uiTransform={{ width: '100%', height: px(24), flexDirection: 'row', alignItems: 'center', margin: { bottom: px(8) } }}>
         <Label value="STEM  //  SHIP ASSISTANT" fontSize={px(13)} color={DIM} uiTransform={{ flexGrow: 1 }} textAlign="middle-left" />
+        <UiEntity uiTransform={{ width: px(56), height: px(24), margin: { right: px(6) }, justifyContent: 'center', alignItems: 'center' }}
+          uiBackground={{ color: Color4.create(0.05, 0.12, 0.2, 1) }}
+          onMouseDown={() => { open = false; replayTour() }}>
+          <Label value="TOUR" fontSize={px(12)} color={CYAN} />
+        </UiEntity>
         <UiEntity uiTransform={{ width: px(24), height: px(24), justifyContent: 'center', alignItems: 'center' }}
           uiBackground={{ color: Color4.create(0.05, 0.12, 0.2, 1) }}
           onMouseDown={() => { open = false }}>
