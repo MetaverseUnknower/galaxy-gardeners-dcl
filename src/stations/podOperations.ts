@@ -8,6 +8,7 @@ import { ViewDefinition, StationContext, Screens } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN, RED, CYAN, CYAN3 } from './draw'
 import { titleCase } from './data'
 import { renderSectorMap, minutesLeft, formatMinutes } from './sectorMap'
+import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
 
 type BayType = 'mining' | 'exploration'
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -170,3 +171,19 @@ export const podOperationsView: ViewDefinition = {
   },
   clear(): void { clearBag(topBag); clearBag(cardBag); clearBag(mapBag); clearBag(lowBag); screens = null },
 }
+
+// Expedition ETAs, the fabricator countdown and the sector map's READY labels all tick without reopening the panel.
+redrawWhenCountdownChanges(
+  () => {
+    if (!screens || !ctxRef?.dashboard) return ''
+    const exps: any[] = ctxRef.dashboard.activeExpeditions || []
+    return exps.map(e => `${e.id}:${minutesUntil(e.completes_at)}`).join('|') + `#${minutesUntil(ctxRef.dashboard.activeFabrication?.completes_at)}`
+  },
+  () => {
+    if (!screens || !ctxRef) return
+    drawLow()
+    const top = screens.top, ctx = ctxRef
+    clearBag(mapBag)
+    void renderSectorMap(mapBag, top, 1.4, -0.3, 2.6, 2.1, ctx, currentSystemId).then(names => { bodyNames = names })
+  },
+)

@@ -10,6 +10,7 @@ import { DECK_Y } from './environment'
 import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, spinner, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN } from './stations/draw'
 import { hideInTopView } from './topViewHide'
 import { registerDimmableScreen } from './cabinDim'
+import { redrawWhenCountdownChanges, minutesUntil } from './countdown'
 
 const DISPLAY_CENTER = Vector3.create(128, DECK_Y + 0.55, 114.9)
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -355,3 +356,9 @@ export function clearDiscoveryPanel(): void {
   if (topRoot) { engine.removeEntity(topRoot); topRoot = null }
   discoveryOptions = []; activeDiscovery = null; pending = null
 }
+
+// The active discovery's minutes-remaining ticks down and turns to SIGNAL LOCKED on time.
+redrawWhenCountdownChanges(
+  () => deskRoot && activeDiscovery && !pending ? String(minutesUntil(activeDiscovery.completesAt)) : '',
+  () => redraw(),
+)

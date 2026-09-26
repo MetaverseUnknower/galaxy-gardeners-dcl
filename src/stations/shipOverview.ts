@@ -9,6 +9,7 @@ import { openRefineryDialog, openPurchaseDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN } from './draw'
 import { cargoUsed } from './data'
+import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
 
 // Blueprint line-art of the ship, drawn flat on the glass (see assets/icons/manifest.json for the art spec).
 export const SHIP_BLUEPRINT = 'assets/images/ship-blueprint.png'
@@ -177,3 +178,9 @@ export const shipOverviewView: ViewDefinition = {
   },
   clear(): void { clearBag(topBag); clearBag(missionBag); clearBag(lowBag); screens = null; lowShifted = null },
 }
+
+// Mission timers tick down on screen (and flip to READY) without reopening the panel.
+redrawWhenCountdownChanges(
+  () => screens ? expeditions.map((e: any) => `${e.id}:${minutesUntil(e.completes_at)}`).join('|') : '',
+  () => drawMissions(),
+)

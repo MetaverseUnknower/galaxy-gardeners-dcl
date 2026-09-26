@@ -12,6 +12,7 @@ const SHIP_BLUEPRINT_SYSTEMS = 'assets/images/ship-blueprint-systems.png'
 const CARD_FILL = Color4.create(0.02, 0.05, 0.12, 1)
 const CARD_FILL_SELECTED = Color4.create(0.15, 0.02, 0.12, 1)
 import { cargoUsed, titleCase } from './data'
+import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
 
 const CATEGORY_LABELS: Record<string, string> = {
   fuel_tank: 'Fuel Tank', fuel_efficiency: 'Fuel Efficiency', cargo_hold: 'Cargo Hold', specimen_vault: 'Specimen Vault',
@@ -200,3 +201,9 @@ export const shipSystemsView: ViewDefinition = {
   },
   clear(): void { clearBag(topBag); clearBag(holoBag); clearBag(lowBag); screens = null },
 }
+
+// The field-install countdown ticks down, and FINISH INSTALL appears on time.
+redrawWhenCountdownChanges(
+  () => screens ? String(minutesUntil(ctxRef?.dashboard?.activeInstallation?.completes_at)) : '',
+  () => drawLow(),
+)
