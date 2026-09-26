@@ -142,13 +142,19 @@ async function collect(expeditionId: string): Promise<void> {
   try {
     let result: any = null
     try { result = await ctx.busy(api.completeExpedition(expeditionId)) } catch {}
-    if (result?.pod_lost) {
+    // The completion result is camelCase (podLost); pod_lost kept as a fallback.
+    if (result?.podLost ?? result?.pod_lost) {
       playSfx('pod_destroyed')
       ctx.notify('Expedition failed — pod destroyed!', Color4.create(1, 0.3, 0.3, 1))
+      // Clear the finished row too, so the lost mission does not linger with a second COLLECT.
+      try { await ctx.busy(api.collectExpedition(expeditionId)) } catch {}
     } else {
       try {
         await ctx.busy(api.collectExpedition(expeditionId))
-        if (result?.type === 'exploration') {
+        if (result?.type === 'exploration' && !result.rewards && !result.newSpecies && !result.sampleCollected) {
+          // A recalled scan that never finished comes home with nothing.
+          ctx.notify('Pod returned empty', Color4.create(0.7, 0.7, 0.7, 1))
+        } else if (result?.type === 'exploration') {
           playSfx('specimen')
           const parts: string[] = []
           if (result.newSpecies) parts.push('New species!')
