@@ -14,7 +14,7 @@ import { createEnvironment, respawnSystem, twinkleSystem, DECK_Y } from './envir
 import { shipOverviewView, setSolarRechargeRate } from './stations/shipOverview'
 import { shipSystemsView } from './stations/shipSystems'
 import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
-import { createNavConsole, setNavConsoleSystem } from './navConsole'
+import { createNavConsole, setNavConsoleSystem, refreshNavConsole } from './navConsole'
 import { setupConsoleCamera } from './consoleCamera'
 import { loadPrefs } from './prefs'
 import { setupSoloShip } from './soloShip'
@@ -191,6 +191,7 @@ export async function main() {
         await startTravel(selected.id)
         api.invalidateFuelCosts()
         setTravelingStatus(selected.name)
+        refreshNavConsole()   // the station card switches to IN TRANSIT
         setSelectedSystemUI(null, null)
         setStatusMessage(null)
       } catch (err: any) { setStatusMessage(`Travel failed: ${err.message}`) }

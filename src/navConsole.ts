@@ -14,6 +14,7 @@ import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } f
 import { isDocked, dockAt, undock, onDockingChanged } from './docking'
 import { hideInTopView } from './topViewHide'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, disc, pin, line, ring, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
+import { isCurrentlyTraveling } from './navigation'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
 // This desk is scaled down (0.85), so its text gets a local boost on top of the global scale.
@@ -204,18 +205,27 @@ export function refreshNavConsole(): void {
   if (station) {
     const stationId: string | undefined = (station as any).id ?? fetchedStation?.info?.id
     const docked = isDocked()
-    txt(bag, root, 1.5, 0.31, station.name, 0.15, WHITE, LEFT)
-    dot(bag, root, 1.55, 0.19, 0.05, docked ? MAGENTA3 : GREEN3)
-    txt(bag, root, 1.63, 0.19, docked ? 'DOCKED  //  EXTERNAL SERVICE' : 'DOCKING AVAILABLE', 0.12, docked ? MAGENTA : GREEN, LEFT)
-    const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, docked ? { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) } : { fill: Color4.create(0.02, 0.1, 0.16, 1) })
-    icon(bag, root, 2.1, -0.05, 0.3, ICONS.station, docked ? { color: MAGENTA3 } : {})
-    txt(bag, root, 2.1, -0.32, docked ? 'UNDOCK' : 'DOCK', 0.3, docked ? MAGENTA : CYAN)
-    txt(bag, root, 2.1, -0.5, docked ? 'RELEASE CLAMPS  »' : 'APPROACH & DOCK  »', 0.11, DIM)
-    clickable(dockFill, docked ? `Undock from ${station.name}` : `Dock at ${station.name}`, () => {
-      if (docked) { void undock(); return }
-      if (!stationId) { showNotification('Station registry unavailable. Try again in a moment, Captain.', Color4.create(1, 0.4, 0.4, 1)); return }
-      void dockAt(stationId, station.name)
-    })
+    const inTransit = isCurrentlyTraveling()   // the server refuses to dock mid-trip; the station shown is the one left behind
+    txt(bag, root, 1.5, 0.31, station.name, 0.15, inTransit ? MUTED : WHITE, LEFT)
+    dot(bag, root, 1.55, 0.19, 0.05, inTransit ? Color3.create(0.3, 0.38, 0.45) : docked ? MAGENTA3 : GREEN3)
+    txt(bag, root, 1.63, 0.19, inTransit ? 'IN TRANSIT  //  DOCKING UNAVAILABLE' : docked ? 'DOCKED  //  EXTERNAL SERVICE' : 'DOCKING AVAILABLE', 0.12, inTransit ? MUTED : docked ? MAGENTA : GREEN, LEFT)
+    if (inTransit) {
+      const grey = Color3.create(0.3, 0.38, 0.45)
+      frame(bag, root, 2.1, -0.25, 1.3, 0.75, { border: grey })
+      icon(bag, root, 2.1, -0.05, 0.3, ICONS.station, { color: grey })
+      txt(bag, root, 2.1, -0.32, 'IN TRANSIT', 0.26, MUTED)
+      txt(bag, root, 2.1, -0.5, 'DOCK AFTER ARRIVAL', 0.11, MUTED)
+    } else {
+      const dockFill = frame(bag, root, 2.1, -0.25, 1.3, 0.75, docked ? { border: MAGENTA3, fill: Color4.create(0.12, 0.02, 0.1, 1) } : { fill: Color4.create(0.02, 0.1, 0.16, 1) })
+      icon(bag, root, 2.1, -0.05, 0.3, ICONS.station, docked ? { color: MAGENTA3 } : {})
+      txt(bag, root, 2.1, -0.32, docked ? 'UNDOCK' : 'DOCK', 0.3, docked ? MAGENTA : CYAN)
+      txt(bag, root, 2.1, -0.5, docked ? 'RELEASE CLAMPS  »' : 'APPROACH & DOCK  »', 0.11, DIM)
+      clickable(dockFill, docked ? `Undock from ${station.name}` : `Dock at ${station.name}`, () => {
+        if (docked) { void undock(); return }
+        if (!stationId) { showNotification('Station registry unavailable. Try again in a moment, Captain.', Color4.create(1, 0.4, 0.4, 1)); return }
+        void dockAt(stationId, station.name)
+      })
+    }
     frame(bag, root, 2.1, -0.87, 1.0, 0.5)
     image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationOrbit)   // 2:1
   } else {
