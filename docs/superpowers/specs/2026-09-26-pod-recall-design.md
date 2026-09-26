@@ -48,12 +48,17 @@ recallMinutes = min( min(elapsed, out) × (1 + difficulty),  T − elapsed )
 
 An en-route pod simply turns around (it has flown `elapsed`, so it returns in about that long). An on-site pod must break away and fly the whole out leg, slowed by how hostile the site is. The time is capped at the time the trip had left, so recalling is never slower than waiting.
 
-**2. Loss chance on the way out.** A fresh roll replaces the loss that was rolled at launch:
+**2. Loss chance on the way back.** *Revised after final review (2026-09-26).*
 
 ```
 exposure   = min(1, elapsed / out)
-lossChance = max( tierLoss × 0.5 × exposure − shielding / 100,  POD_LOSS_FLOOR )
+share      = clamp( (elapsed − out) / site, 0, 1 )
+lossChance = max( tierLoss × (0.5 + 0.5 × share) × exposure − shielding / 100,  POD_LOSS_FLOOR )
 ```
+
+En route (share 0) the risk is half the launch risk scaled by exposure; by the last moment on site (share → 1) it reaches the full launch risk, so a last-second recall never beats waiting.
+
+The recall is coupled to the launch roll rather than replacing it: a pod that would have survived the full trip always survives a recall; a pod doomed at launch is rescued in proportion (lost with chance `lossChance ÷ launchLoss`, where `launchLoss = max(tierLoss − shielding / 100, POD_LOSS_FLOOR)`, or 0 in the walkthrough, when it always survives). The overall recall loss chance is therefore exactly `lossChance`. A rescued doomed pod has fresh loot rolled for it before the share is applied.
 
 `tierLoss` is the tier's launch loss (5 / 15 / 30 / 50 %). Shielding is the same stat the launch roll uses: `blast_shielding` for mining, `environmental_shielding` for exploration. `POD_LOSS_FLOOR` is the existing 2 % floor. Walkthrough protection (no losses during the tutorial) applies as at launch.
 
@@ -68,12 +73,17 @@ share = clamp( (elapsed − out) / site, 0, 1 )
 
 A pod lost on recall returns nothing and is destroyed, exactly like a pod lost on a normal trip.
 
+*Revised after final review (2026-09-26):*
+
+- An exploration pod that returns empty discovers nothing: no species claim, no catalog entry, no sample.
+- In-progress outcomes (`pod_lost`, `rewards`) are hidden from the API (expedition list and ship dashboard) until collection.
+
 ## Worked example
 
 Hostile planet, T = 12 h → out 1.5 h, on site 9 h, back 1.5 h. Recalled at elapsed 4.5 h (3 h into the site phase):
 
 - recall time = min(1.5 h × 1.5, 7.5 h) = **2 h 15 m**
-- loss chance = 50 % × 0.5 × 1 − shielding = **25 %** (before shielding)
+- loss chance = 50 % × (0.5 + 0.5 × ⅓) × 1 − shielding = **33 %** (before shielding; revised after final review, 2026-09-26)
 - share = 3 h / 9 h = **33 %** → the scan result comes back with 33 % probability
 
 ## Server
@@ -88,7 +98,7 @@ Hostile planet, T = 12 h → out 1.5 h, on site 9 h, back 1.5 h. Recalled at ela
 ## Scene (DCL)
 
 - **Active Missions** (ship overview): each running pod shows its phase — `EN ROUTE`, `ON SITE`, or `RETURNING` (back leg or recalled) — next to its countdown, and a `RECALL` button while recall is allowed.
-- **Recall confirmation:** a small 2D dialog built from the preview: "Recall: back in 2h 15m · ~33 % of the haul · 25 % loss risk. Or wait: back in 7h 30m with the full result." Buttons RECALL / KEEP WORKING.
+- **Recall confirmation:** a small 2D dialog built from the preview: "Recall: back in 2h 15m · ~33 % of the haul · 33 % loss risk. Or wait: back in 7h 30m with the full result." Buttons RECALL / KEEP WORKING.
 - **Pod Operations** sector map: recalled pods read `RETURNING` in the route label.
 - Countdowns use the existing live countdown watcher.
 
