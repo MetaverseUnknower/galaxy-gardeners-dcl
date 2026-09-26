@@ -24,7 +24,7 @@ const SLOT_BG = Color4.create(0.05, 0.12, 0.2, 1)
 const DARK = Color4.create(0.02, 0.05, 0.1, 1)
 
 export const CreditsButton = () => (
-  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(68), left: px(360) }, width: px(90), height: px(28), justifyContent: 'center', alignItems: 'center' }}
+  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(20), left: px(330) }, width: px(90), height: px(28), justifyContent: 'center', alignItems: 'center' }}
     uiBackground={{ color: open ? CYAN : PANEL_BG }}
     onMouseDown={() => { open = !open }}>
     <Label value="CREDITS" fontSize={px(12)} color={open ? DARK : CYAN} />
