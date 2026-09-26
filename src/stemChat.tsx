@@ -27,6 +27,9 @@ let open = false
 let messages: Message[] = [{ role: 'stem', text: GREETING }]
 let draft = ''
 let waiting = false
+// The explorer keeps the typed text inside the input, so setting value back to '' doesn't clear it.
+// A new key after each send rebuilds the input empty.
+let inputGeneration = 0
 
 function replyMessages(reply: api.StemReply): Message[] {
   const out: Message[] = []
@@ -50,6 +53,7 @@ function send(): void {
     .map(m => ({ role: m.role as 'user' | 'stem', text: m.text }))
   messages.push({ role: 'user', text })
   draft = ''
+  inputGeneration++
   waiting = true
   api.askStem(text, history)
     .then(reply => { messages.push(...replyMessages(reply)) })
@@ -126,6 +130,7 @@ export const StemPanel = () => {
       </UiEntity>
       <UiEntity uiTransform={{ width: '100%', height: px(34), flexDirection: 'row', margin: { top: px(8) } }}>
         <Input
+          key={`stem-input-${inputGeneration}`}
           uiTransform={{ flexGrow: 1, height: '100%', margin: { right: px(6) } }}
           uiBackground={{ color: Color4.create(0.05, 0.12, 0.2, 1) }}
           fontSize={px(FONT)}
