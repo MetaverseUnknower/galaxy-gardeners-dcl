@@ -5,7 +5,7 @@ import { Entity, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { ViewDefinition, StationContext, Screens } from '../stations'
-import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN, RED, CYAN, CYAN3 } from './draw'
+import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN, RED, CYAN, CYAN3, MAGENTA } from './draw'
 import { titleCase } from './data'
 import { renderSectorMap, minutesLeft, formatMinutes } from './sectorMap'
 import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
@@ -32,6 +32,10 @@ let screens: Screens | null = null
 let ctxRef: StationContext | null = null
 let busyAction = false
 
+/** -1 while a delivery is still on its way; after its arrival time, a count that goes up every 10 s. */
+function deliveryDueTick(d: any): number { const late = Date.now() - new Date(d.arrives_at).getTime(); return late < 0 ? -1 : Math.floor(late / 10000) }
+/** The emergency pod on its way to this bay, if any (from the dashboard). */
+function deliveryFor(ctx: StationContext, type: BayType): any | null { return (ctx.dashboard?.emergencyDeliveries || []).find((d: any) => d.pod_type === type) ?? null }
 function podsOf(ctx: StationContext, type: BayType): any[] { return (ctx.dashboard?.pods || []).filter((p: any) => p.pod_type === type && !p.is_destroyed) }
 function activeExpeditions(ctx: StationContext, type: BayType): any[] { return (ctx.dashboard?.activeExpeditions || []).filter((e: any) => e.expedition_type === type && e.status !== 'collected') }
 
@@ -129,7 +133,12 @@ function drawLow(): void {
   text(lowBag, low, 1.1, -0.22, 'IDLE', 0.2, DIM, LEFT); text(lowBag, low, 2.6, -0.22, `${pods.length - deployed}`, 0.24, WHITE, RIGHT)
   // Emergency delivery: 20 fuel for a pod once this bay has run dry (the server's per-bay rule).
   // `pods` excludes destroyed pods and includes deployed ones, as the server counts them.
-  if (pods.length === 0) {
+  const enRoute = deliveryFor(ctx, bay.type)
+  if (enRoute) {
+    const mins = minutesUntil(enRoute.arrives_at)
+    text(lowBag, low, 1.85, -0.52, `POD EN ROUTE FROM ${String(enRoute.station_name ?? 'A STATION').toUpperCase()}`, 0.15, MAGENTA)
+    text(lowBag, low, 1.85, -0.72, mins > 0 ? `ARRIVES IN ${formatMinutes(mins)}` : 'ARRIVING…', 0.2, WHITE)
+  } else if (pods.length === 0) {
     const canAfford = (ship?.fuel_current ?? 0) >= EMERGENCY_POD_FUEL
     button(lowBag, low, 1.85, -0.62, 1.5, 0.3, `EMERGENCY POD  −${EMERGENCY_POD_FUEL} FUEL`, canAfford ? `Emergency ${bay.type} pod delivery` : `Needs ${EMERGENCY_POD_FUEL} fuel`, () => emergency(bay.type), { variant: canAfford && !busyAction ? 'magenta' : 'disabled', size: 0.2 })
   } else {
@@ -155,7 +164,11 @@ function collectFabrication(): Promise<void> {
   return withAction('Fabrication', async () => { const r = await api.getFabricationStatus(); return r?.completed ? 'Pod online' : 'Fabrication still in progress' })
 }
 function emergency(type: BayType): Promise<void> {
-  return withAction('Emergency trade', async () => { await api.emergencyPod(type); return `Emergency ${type} pod acquired` })
+  return withAction('Emergency trade', async () => {
+    const r = await api.emergencyPod(type)
+    if (r?.deliveryId) return `${titleCase(type)} pod on its way from ${r.station ?? 'the nearest station'} — arrives in ${formatMinutes(minutesUntil(r.arrivesAt))}`
+    return `Emergency ${type} pod delivered`
+  })
 }
 
 export const podOperationsView: ViewDefinition = {
@@ -179,10 +192,14 @@ redrawWhenCountdownChanges(
   () => {
     if (!screens || !ctxRef?.dashboard) return ''
     const exps: any[] = ctxRef.dashboard.activeExpeditions || []
+    const deliveries: any[] = ctxRef.dashboard.emergencyDeliveries || []
     return exps.map(e => `${e.id}:${minutesUntil(e.completes_at)}`).join('|') + `#${minutesUntil(ctxRef.dashboard.activeFabrication?.completes_at)}`
+      // A due delivery changes the reading every 10 s until the server has turned it into a pod
+      + deliveries.map(d => `@${d.id}:${minutesUntil(d.arrives_at)}:${deliveryDueTick(d)}`).join('')
   },
   () => {
     if (!screens || !ctxRef) return
+    if ((ctxRef.dashboard?.emergencyDeliveries || []).some((d: any) => deliveryDueTick(d) >= 0)) { void ctxRef.refresh(); return }   // the pod has arrived: reload
     drawLow()
     const top = screens.top, ctx = ctxRef
     clearBag(mapBag)

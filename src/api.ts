@@ -277,7 +277,8 @@ export async function getFabricationStatus(): Promise<any> {
   return apiGet('/api/ship/fabrication-status')
 }
 
-export async function emergencyPod(podType: 'mining' | 'exploration'): Promise<any> {
+/** Instant at a station ({ podId }); elsewhere flown in from the nearest station ({ deliveryId, arrivesAt, station }). */
+export async function emergencyPod(podType: 'mining' | 'exploration'): Promise<{ podId?: string; deliveryId?: string; arrivesAt?: string; station?: string }> {
   return apiPost('/api/ships/emergency-pod', { podType })
 }
 
