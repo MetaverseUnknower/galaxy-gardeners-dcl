@@ -20,6 +20,7 @@ import { loadPrefs } from './prefs'
 import { setupSoloShip } from './soloShip'
 import { setGuideNotifyCallback } from './guide'
 import { setupTour, startTourIfNeeded } from './tour/runner'
+import { refreshSystemProgress } from './systemProgress'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
@@ -80,6 +81,7 @@ export async function main() {
     setupHeatMap(playerInfo.galaxy_id)
     renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
     setupInteraction()
+    void refreshSystemProgress()   // visited / explored rings on the map
 
     setDiscoveryNotifyCallback((text, color) => showNotification(text, color))
     setDiscoveryCompleteCallback(async (newSystemId, newSystemName) => {
@@ -283,5 +285,6 @@ async function reloadMap(): Promise<void> {
   setWindowStarSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
+  void refreshSystemProgress()   // the system just arrived at is now visited
   void createDiscoveryPanel(systems, playerInfo.current_system_id)   // new system: name, coordinates and search options
 }

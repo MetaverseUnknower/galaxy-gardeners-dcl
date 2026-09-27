@@ -5,6 +5,7 @@ import { getSystemRoot, getSystemAutoScale } from './systemView'
 import { DECK_Y } from './environment'
 import { PROJECTOR_TOP_Y } from './environment'
 import { getPref, setPref } from './prefs'
+import { systemProgress, onSystemProgressChanged } from './systemProgress'
 
 const FLOOR_Y = 40
 const MAP_CENTER = Vector3.create(128, FLOOR_Y + 1, 128)
@@ -395,6 +396,47 @@ function addHomePin(root: Entity, pos: Vector3, starSize: number): void {
 }
 
 /** A faint flat halo disc around a station system: one soft circle, quiet even when most systems have one. */
+// Visited / fully explored rings: segments laid in a circle just outside the station halo. Visited is a faint
+// dashed ring, explored a bright solid one, so the two differ by shape as well as colour.
+const VISITED_COLOR = Color3.create(0.75, 0.9, 1)
+const EXPLORED_COLOR = Color3.create(0.35, 1, 0.55)
+const progressRingEntities: Entity[] = []
+
+function addProgressRing(root: Entity, pos: Vector3, starSize: number, explored: boolean): void {
+  const r = starSize / 2 + 0.1
+  const n = explored ? 24 : 16
+  const arc = (2 * Math.PI * r) / n
+  for (let i = 0; i < n; i++) {
+    if (!explored && i % 2 === 1) continue   // dashes
+    const a = (i / n) * Math.PI * 2
+    const seg = engine.addEntity()
+    Transform.create(seg, {
+      position: Vector3.create(pos.x + Math.cos(a) * r, pos.y, pos.z + Math.sin(a) * r),
+      scale: Vector3.create(arc * (explored ? 1.05 : 0.8), 0.006, explored ? 0.016 : 0.01),
+      rotation: Quaternion.fromEulerDegrees(0, 90 - (a * 180) / Math.PI, 0),
+      parent: root,
+    })
+    MeshRenderer.setBox(seg)
+    const c = explored ? EXPLORED_COLOR : VISITED_COLOR
+    Material.setPbrMaterial(seg, { albedoColor: Color4.create(c.r, c.g, c.b, explored ? 1 : 0.55), emissiveColor: c, emissiveIntensity: explored ? 1.6 : 0.6, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND, castShadows: false })
+    progressRingEntities.push(seg)
+  }
+}
+
+/** Draws a ring around every visited or fully explored star (redrawn when the progress data changes). */
+export function drawProgressRings(): void {
+  for (const e of progressRingEntities) engine.removeEntity(e)
+  progressRingEntities.length = 0
+  if (!galaxyRoot) return
+  for (const [entity, system] of starEntities) {
+    const p = systemProgress(system.id)
+    if (!p || !(p.visited || p.explored)) continue
+    const t = Transform.get(entity)
+    addProgressRing(galaxyRoot, t.position, t.scale.x, p.explored)
+  }
+}
+onSystemProgressChanged(() => drawProgressRings())
+
 function addStationRing(root: Entity, pos: Vector3, starSize: number): void {
   const d = (starSize / 2 + 0.06) * 2
   const halo = engine.addEntity()
@@ -537,6 +579,7 @@ export function renderStarSystems(systems: StarSystem[], homeSystemId: string | 
     if (system.id === homeSystemId) addHomePin(root, position, size)
     if (system.has_station) addStationRing(root, position, size)
   }
+  drawProgressRings()
   for (const h of mapHooks) h.rendered?.()
 }
 
@@ -548,6 +591,8 @@ export function clearMap(): void {
   zoneRingEntities.length = 0
   for (const entity of nebulaEntities) engine.removeEntity(entity)
   nebulaEntities.length = 0
+  for (const entity of progressRingEntities) engine.removeEntity(entity)
+  progressRingEntities.length = 0
   if (currentLocationMarker) { engine.removeEntity(currentLocationMarker); currentLocationMarker = null }
   if (galaxyRoot) {
     engine.removeEntity(galaxyRoot)

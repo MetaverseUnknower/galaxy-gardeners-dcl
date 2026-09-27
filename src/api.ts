@@ -321,3 +321,10 @@ export async function walkthroughProgress(action: 'advance' | 'skip' | 'complete
 export async function getWalkthroughSceneData(scene: number): Promise<Record<string, any>> {
   return apiGet<Record<string, any>>(`/api/walkthrough/scene-data/${scene}?at=current`)   // the tour runs wherever the ship is
 }
+
+// Star systems the player has visited, and how fully each one's flora is cataloged.
+export type SystemProgress = { systemId: string; visited: boolean; lifeBodies: number; cataloged: number; explored: boolean }
+
+export async function getSystemsProgress(): Promise<SystemProgress[]> {
+  return apiGet<SystemProgress[]>('/api/galaxy/player/me/systems-progress')
+}

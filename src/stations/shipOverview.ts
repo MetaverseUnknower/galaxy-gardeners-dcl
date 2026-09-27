@@ -11,6 +11,7 @@ import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUT
 import { cargoUsed } from './data'
 import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
 import { displayedFuel, isCurrentlyTraveling } from '../navigation'
+import { refreshSystemProgress } from '../systemProgress'
 import { podPhase, canRecall } from './podPhase'
 
 // Blueprint line-art of the ship, drawn flat on the glass (see assets/icons/manifest.json for the art spec).
@@ -145,6 +146,7 @@ async function collect(expeditionId: string): Promise<void> {
   try {
     let result: any = null
     try { result = await ctx.busy(api.completeExpedition(expeditionId)) } catch {}
+    void refreshSystemProgress()   // a scan may have cataloged a new species (explored rings)
     // The completion result is camelCase (podLost); pod_lost kept as a fallback.
     if (result?.podLost ?? result?.pod_lost) {
       playSfx('pod_destroyed')

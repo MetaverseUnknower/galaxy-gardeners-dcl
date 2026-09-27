@@ -169,6 +169,12 @@ export function refreshNavConsole(): void {
   disc(bag, root, C2, L2, 0.08, Color3.create(0, 0.8, 0.8), { alpha: 0.28, z: -0.03 })   // the halo disc
   disc(bag, root, C2, L2, 0.035, Color3.create(0, 0.8, 0.8))
   txt(bag, root, C2 + 0.09, L2, 'STATION', LS, DIM, LEFT)
+  // Third column: the map's visited (dashed) and fully explored (solid) rings
+  const C3 = -1.66
+  ring(bag, root, C3, L1, 0.04, Color3.create(0.75, 0.9, 1), { dashed: true, segments: 12, thickness: 0.008, alpha: 0.8 })
+  txt(bag, root, C3 + 0.07, L1, 'VISITED', LS, DIM, LEFT)
+  ring(bag, root, C3, L2, 0.04, Color3.create(0.35, 1, 0.55), { segments: 16, thickness: 0.012 })
+  txt(bag, root, C3 + 0.07, L2, 'EXPLORED', LS, DIM, LEFT)
   // Both view tabs share one active style (magenta outline and text) so the selection reads the same either way.
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
   btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'magenta', icon: ICONS.system, size: 0.22 })

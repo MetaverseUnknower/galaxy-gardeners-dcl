@@ -22,6 +22,7 @@ import { GuideButton, GuidePanel } from './guide'
 import { InfoMenu, CreditsPanel, LegalPanel } from './credits'
 import { emitTourEvent } from './tour/events'
 import { TourDialog } from './tour/dialog'
+import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
@@ -216,6 +217,7 @@ const SystemInfoPanel = () => {
           {selectedSystem.has_station ? <UiEntity uiTransform={{ height: px(24), margin: { right: px(16) } }} uiText={{ value: 'STATION', fontSize: px(18), color: Color4.create(0, 1, 1, 1) }} /> : null}
           {selectedSystem.has_wormhole ? <UiEntity uiTransform={{ height: px(24) }} uiText={{ value: 'WORMHOLE', fontSize: px(18), color: Color4.create(0.6, 0.2, 1, 1) }} /> : null}
         </UiEntity>
+        {progressLabel(selectedSystem.id) ? <UiEntity uiTransform={{ width: '100%', height: px(24), margin: { bottom: px(8) } }} uiText={{ value: progressLabel(selectedSystem.id)!, fontSize: px(18), color: systemProgress(selectedSystem.id)?.explored ? Color4.create(0.35, 1, 0.55, 1) : Color4.create(0.75, 0.9, 1, 1), textAlign: 'middle-center' }} /> : null}
         {selectedSystem.discovered_by_name ? <UiEntity uiTransform={{ width: '100%', height: px(24), margin: { bottom: px(8) } }} uiText={{ value: `Discovered by ${selectedSystem.discovered_by_name}`, fontSize: px(18), color: Color4.create(0.5, 0.5, 0.5, 1), textAlign: 'middle-center' }} /> : null}
         {fuelInfo ? (
           <UiEntity uiTransform={{ width: '100%', flexDirection: 'column', margin: { top: px(8) } }}>
