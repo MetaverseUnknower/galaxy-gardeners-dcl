@@ -306,7 +306,8 @@
     "ALLOW_TO_TRIGGER_AVATAR_EMOTE",
     "ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE",
     "ALLOW_MEDIA_HOSTNAMES",
-    "USE_WEB3_API"
+    "USE_WEB3_API",
+    "OPEN_EXTERNAL_LINK"
   ],
   "allowedMediaHostnames": [
     "galaxygardeners.app",
