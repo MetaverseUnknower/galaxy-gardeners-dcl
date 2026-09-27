@@ -127,12 +127,13 @@ function drawLow(): void {
   bar(lowBag, low, 1.85, 0.18, 1.5, capacity ? pods.length / capacity : 0, { h: 0.08 })
   text(lowBag, low, 1.1, -0.02, 'DEPLOYED', 0.2, DIM, LEFT); text(lowBag, low, 2.6, -0.02, `${deployed}`, 0.24, WHITE, RIGHT)
   text(lowBag, low, 1.1, -0.22, 'IDLE', 0.2, DIM, LEFT); text(lowBag, low, 2.6, -0.22, `${pods.length - deployed}`, 0.24, WHITE, RIGHT)
-  const totalPods = (ctx.dashboard?.pods || []).filter((p: any) => !p.is_destroyed).length
-  if (totalPods === 0) {
+  // Emergency delivery: 20 fuel for a pod once this bay has run dry (the server's per-bay rule).
+  // `pods` excludes destroyed pods and includes deployed ones, as the server counts them.
+  if (pods.length === 0) {
     const canAfford = (ship?.fuel_current ?? 0) >= EMERGENCY_POD_FUEL
-    button(lowBag, low, 1.85, -0.62, 1.5, 0.3, `EMERGENCY POD  −${EMERGENCY_POD_FUEL} FUEL`, 'Trade fuel for a pod', () => emergency(bay.type), { variant: canAfford && !busyAction ? 'magenta' : 'disabled', size: 0.2 })
+    button(lowBag, low, 1.85, -0.62, 1.5, 0.3, `EMERGENCY POD  −${EMERGENCY_POD_FUEL} FUEL`, canAfford ? `Emergency ${bay.type} pod delivery` : `Needs ${EMERGENCY_POD_FUEL} fuel`, () => emergency(bay.type), { variant: canAfford && !busyAction ? 'magenta' : 'disabled', size: 0.2 })
   } else {
-    text(lowBag, low, 1.85, -0.62, 'EMERGENCY TRADE UNAVAILABLE\nWHILE ANY POD IS ONLINE', 0.16, MUTED)
+    text(lowBag, low, 1.85, -0.62, 'EMERGENCY DELIVERY WHEN\nTHIS BAY HAS NO PODS LEFT', 0.16, MUTED)
   }
   button(lowBag, low, -2.05, -1.08, 1.4, 0.22, '‹ BACK TO OVERVIEW', 'Back to Overview', () => ctx.setView('overview'), { size: 0.22 })
 }
