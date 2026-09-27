@@ -1,7 +1,8 @@
-// Docking at a station. Lore: the airlock seal failed its integrity check and engineering still hasn't cleared it,
-// so nobody can board the station. Clamped on, though, the station's EVA crews service the ship through the
+// Docking at a station. Once docked the crew can board the station (the Stellar Station world, see boardStation),
+// and the station's EVA crews service the ship through the
 // external service ports, which is how upgrades get installed while docked.
 import { Color4 } from '@dcl/sdk/math'
+import { changeRealm } from '~system/RestrictedActions'
 import * as api from './api'
 import { showNotification } from './ui'
 import { emitTourEvent } from './tour/events'
@@ -35,7 +36,7 @@ export async function dockAt(stationId: string, name: string): Promise<void> {
   stationName = name
   api.invalidateFuelCosts()
   showNotification(
-    `Clamps locked, Captain. We're docked at ${name}. The airlock seal still hasn't cleared engineering's integrity check, so no one's going aboard, but ${name}'s EVA crews can reach us through the external service ports. Open Ship Systems and they'll install any upgrade we can pay for.`,
+    `Clamps locked, Captain. We're docked at ${name}. The airlock is open: press BOARD STATION on the Stellar Navigation console to go aboard. ${name}'s EVA crews can reach us through the external service ports too, so open Ship Systems and they'll install any upgrade we can pay for.`,
     Color4.create(0, 1, 0.8, 1), 12)
   emitTourEvent('docked')
   changed()
@@ -51,6 +52,15 @@ export async function undock(quiet: boolean = false): Promise<void> {
   stationName = null
   if (!quiet) showNotification(`Clamps released${from ? `. Clear of ${from}` : ''}, Captain. Service crews are back inside.`, Color4.create(0, 0.9, 1, 1), 6)
   changed()
+}
+
+const STATION_WORLD = 'stellarstation.dcl.eth'
+
+/** Moves the player to the Stellar Station world. The station scene reads which station from the server. */
+export function boardStation(): void {
+  if (!docked) return
+  void changeRealm({ realm: STATION_WORLD, message: `Board ${stationName ?? 'the station'}? Your ship stays docked while you're aboard.` })
+    .catch((err) => console.log('[docking] changeRealm failed', err))
 }
 
 /** "API error 400: {"error":"Station is full"}" → "Station is full" */

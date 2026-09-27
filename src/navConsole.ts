@@ -11,7 +11,7 @@ import { showNotification } from './ui'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, setCameraModeChangedListener } from './consoleCamera'
 import { enterSleepMode } from './sleepMode'
 import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } from './heatMap'
-import { isDocked, dockAt, undock, onDockingChanged } from './docking'
+import { isDocked, dockAt, undock, onDockingChanged, boardStation } from './docking'
 import { hideInTopView } from './topViewHide'
 import { Bag, clearBag, text, frame, header, button, icon, image, dot, disc, pin, line, ring, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 import { isCurrentlyTraveling, getTravelDestination } from './navigation'
@@ -234,8 +234,16 @@ export function refreshNavConsole(): void {
         void dockAt(stationId, station.name)
       })
     }
-    frame(bag, root, 2.1, -0.87, 1.0, 0.5)
-    image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationOrbit)   // 2:1
+    if (docked) {
+      // Docked: the thumbnail slot becomes the way aboard.
+      const boardFill = frame(bag, root, 2.1, -0.87, 1.0, 0.5, { border: GREEN3, fill: Color4.create(0.02, 0.16, 0.08, 1) })
+      txt(bag, root, 2.1, -0.82, 'BOARD STATION', 0.2, GREEN)
+      txt(bag, root, 2.1, -0.97, 'THROUGH THE AIRLOCK  »', 0.09, DIM)
+      clickable(boardFill, `Board ${station.name}`, boardStation)
+    } else {
+      frame(bag, root, 2.1, -0.87, 1.0, 0.5)
+      image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationOrbit)   // 2:1
+    }
   } else {
     txt(bag, root, 2.1, 0.3, 'NO STATION PRESENT', 0.16, WHITE)
     txt(bag, root, 2.1, 0.14, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
