@@ -43,7 +43,7 @@ const MENU_ITEMS: [string, (() => void) | null][] = [
 const MUTED = Color4.create(0.3, 0.38, 0.45, 1)
 
 export const InfoMenu = () => (
-  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(64), left: px(330) }, flexDirection: 'column' }}>
+  <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(64), left: px(322) }, flexDirection: 'column' }}>
     <UiEntity uiTransform={{ width: px(28), height: px(28), flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}
       uiBackground={{ color: menuOpen ? CYAN : PANEL_BG }}
       onMouseDown={() => { menuOpen = !menuOpen }}>
