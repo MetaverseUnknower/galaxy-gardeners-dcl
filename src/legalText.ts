@@ -11,7 +11,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "updated",
-      "text": "Last updated: March 23, 2026"
+      "text": "Last updated: September 26, 2026"
     },
     {
       "kind": "h2",
@@ -19,7 +19,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "By downloading, installing, or using Galaxy Gardeners (\"the App\"), you agree to be bound by these Terms of Service (\"Terms\"). If you do not agree to these Terms, do not use the App. We may update these Terms from time to time; continued use of the App after changes constitutes acceptance of the revised Terms."
+      "text": "By downloading, installing, or using Galaxy Gardeners (\"the Game\") — in the Galaxy Gardeners iOS app or in Decentraland — you agree to be bound by these Terms of Service (\"Terms\"). If you do not agree to these Terms, do not use the Game. We may update these Terms from time to time; continued use of the Game after changes constitutes acceptance of the revised Terms."
     },
     {
       "kind": "h2",
@@ -27,15 +27,15 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "You may create one account per person. You are responsible for maintaining the security of your account credentials. You must not share, transfer, or sell your account to another person. You must provide accurate information when creating your account. We reserve the right to suspend or terminate accounts that violate these Terms."
+      "text": "You may create one account per person. You are responsible for maintaining the security of your account credentials. In Decentraland, your game account is tied to the wallet you sign in with, and you are responsible for the security of that wallet. You must not share, transfer, or sell your account to another person. You must provide accurate information when creating your account. We reserve the right to suspend or terminate accounts that violate these Terms."
     },
     {
       "kind": "h2",
-      "text": "3. In-App Purchases"
+      "text": "3. Purchases"
     },
     {
       "kind": "p",
-      "text": "The App offers optional in-app purchases (such as fuel and cosmetic items) processed through the Apple App Store. All purchases are subject to Apple's terms and refund policies. Prices are displayed before confirmation. Virtual items and currency have no real-world monetary value and cannot be exchanged, refunded, or transferred outside the App except as required by applicable law."
+      "text": "The Game offers optional purchases (such as fuel and cosmetic items). In the iOS app, purchases are processed through the Apple App Store and are subject to Apple's terms and refund policies. In Decentraland, purchases are paid in MANA on the Polygon network, sent from your wallet to MetaPetal's wallet; items are credited once the transaction is confirmed on the blockchain. Blockchain transactions are final and cannot be reversed by us, and you are responsible for any network fees and for sending payment from the wallet you play with. Prices are displayed before confirmation. Virtual items and currency have no real-world monetary value and cannot be exchanged, refunded, or transferred outside the Game except as required by applicable law."
     },
     {
       "kind": "h2",
@@ -43,7 +43,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "When using the App, including chat and social features, you agree not to:"
+      "text": "When using the Game, including chat and social features, you agree not to:"
     },
     {
       "kind": "li",
@@ -75,7 +75,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "We reserve the right to moderate content and take action — including warnings, temporary suspensions, or permanent bans — against players who violate these rules."
+      "text": "We reserve the right to moderate content and take action — including warnings, temporary suspensions, or permanent bans — against players who violate these rules. In Decentraland, Decentraland's own terms and community rules also apply to your conduct, including in voice and text chat."
     },
     {
       "kind": "h2",
@@ -83,7 +83,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "The App uses artificial intelligence (xAI Aurora) to generate botanical specimen artwork and planetary visuals. AI-generated content is created procedurally based on in-game traits and does not incorporate personal user data. Generated artwork may vary in style and accuracy. MetaPetal does not guarantee that AI-generated content will be free from imperfections. AI-generated content within the App is provided for entertainment purposes as part of the game experience."
+      "text": "The Game uses artificial intelligence (xAI Aurora) to generate botanical specimen artwork and planetary visuals. AI-generated content is created procedurally based on in-game traits and does not incorporate personal user data. Generated artwork may vary in style and accuracy. MetaPetal does not guarantee that AI-generated content will be free from imperfections. AI-generated content within the Game is provided for entertainment purposes as part of the game experience."
     },
     {
       "kind": "h2",
@@ -91,7 +91,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "All content in the App — including game design, code, artwork, sound, text, and the Galaxy Gardeners name and branding — is owned by or licensed to MetaPetal and is protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works from the App's content without prior written permission. Screenshots and gameplay recordings for personal, non-commercial use (such as social media posts) are permitted."
+      "text": "All content in the Game — including game design, code, artwork, sound, text, and the Galaxy Gardeners name and branding — is owned by or licensed to MetaPetal and is protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works from the Game's content without prior written permission. Screenshots and gameplay recordings for personal, non-commercial use (such as social media posts) are permitted."
     },
     {
       "kind": "h2",
@@ -99,7 +99,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "You may stop using the App at any time. You may delete your account from the Settings menu within the App, which permanently removes all associated data. We may suspend or terminate your access to the App at our discretion if you violate these Terms or engage in conduct we determine to be harmful to other players or the service. Upon termination, your license to use the App is revoked."
+      "text": "You may stop using the Game at any time. In the iOS app you may delete your account from the Settings menu; if you play in Decentraland, you can request deletion by emailing us with your wallet address. Deletion permanently removes all associated data from our servers. We may suspend or terminate your access to the Game at our discretion if you violate these Terms or engage in conduct we determine to be harmful to other players or the service. Upon termination, your license to use the Game is revoked."
     },
     {
       "kind": "h2",
@@ -107,7 +107,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "The App is provided \"as is\" and \"as available\" without warranties of any kind, express or implied. We do not guarantee that the App will be uninterrupted, error-free, or free of harmful components. We are not responsible for any loss of game progress, virtual items, or data resulting from technical issues, service outages, or account termination. To the maximum extent permitted by applicable law, MetaPetal's total liability for any claim arising from your use of the App is limited to the amount you paid for in-app purchases in the 12 months preceding the claim, or $50, whichever is greater."
+      "text": "The Game is provided \"as is\" and \"as available\" without warranties of any kind, express or implied. We do not guarantee that the Game will be uninterrupted, error-free, or free of harmful components. We are not responsible for any loss of game progress, virtual items, or data resulting from technical issues, service outages, or account termination. We do not operate Decentraland, the Polygon network, or your wallet, and are not responsible for their availability or for losses arising from them. To the maximum extent permitted by applicable law, MetaPetal's total liability for any claim arising from your use of the Game is limited to the amount you paid for purchases in the Game in the 12 months preceding the claim, or $50, whichever is greater."
     },
     {
       "kind": "h2",
@@ -115,7 +115,7 @@ export const TERMS: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "These Terms are governed by and construed in accordance with applicable law. Any disputes arising from these Terms or your use of the App will be resolved through good-faith negotiation first, and if necessary, through binding arbitration or the courts of competent jurisdiction."
+      "text": "These Terms are governed by and construed in accordance with applicable law. Any disputes arising from these Terms or your use of the Game will be resolved through good-faith negotiation first, and if necessary, through binding arbitration or the courts of competent jurisdiction."
     },
     {
       "kind": "h2",
@@ -137,7 +137,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "updated",
-      "text": "Last updated: March 23, 2026"
+      "text": "Last updated: September 26, 2026"
     },
     {
       "kind": "h2",
@@ -145,7 +145,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "Galaxy Gardeners (\"the App\") is developed by MetaPetal. This policy explains how we collect, use, and protect your information."
+      "text": "Galaxy Gardeners (\"the Game\") is developed by MetaPetal. You can play it in the Galaxy Gardeners iOS app or in Decentraland. This policy explains how we collect, use, and protect your information on both."
     },
     {
       "kind": "h2",
@@ -153,19 +153,27 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "Account Information: When you sign in with Apple or email, we store your authentication ID, username, and friend code. Apple Sign In may share your email if you choose."
+      "text": "Account Information (iOS): When you sign in with Apple or email, we store your authentication ID, username, and friend code. Apple Sign In may share your email if you choose."
     },
     {
       "kind": "p",
-      "text": "Gameplay Data: Your game progress including discovered systems, specimens, ship status, expeditions, and in-app purchases are stored on our servers."
+      "text": "Account Information (Decentraland): When you play in Decentraland, we receive your wallet address and your Decentraland display name from Decentraland, and link your game account to that wallet address. We do not receive your email address, and we never have access to your wallet's private keys."
     },
     {
       "kind": "p",
-      "text": "Chat Messages: Direct messages and station chat are stored to deliver them to recipients. Messages are filtered for profanity server-side."
+      "text": "Gameplay Data: Your game progress including discovered systems, specimens, ship status, expeditions, purchases, and game settings (such as your map and camera preferences) are stored on our servers."
     },
     {
       "kind": "p",
-      "text": "Purchase History: We record in-app purchase transaction IDs for fulfillment and support purposes."
+      "text": "Chat Messages: Direct messages and station chat in the iOS app are stored to deliver them to recipients. Messages are filtered for profanity server-side."
+    },
+    {
+      "kind": "p",
+      "text": "STEM Questions: Questions you ask STEM, the ship's assistant, are logged without your account ID or wallet address so we can improve its answers."
+    },
+    {
+      "kind": "p",
+      "text": "Purchase History: For purchases in the iOS app we record App Store transaction IDs. For purchases paid in MANA in Decentraland we record the transaction hash, the wallet it was sent from, and the amount. We use these records for fulfillment and support."
     },
     {
       "kind": "h2",
@@ -173,7 +181,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "The App uses AI image generation services (xAI Aurora) to create botanical specimen and planetary artwork. Only procedural trait descriptions (atmosphere, temperature, soil type, etc.) and base reference images are sent to generate images. No personal user data — including your username, account ID, location, or any identifying information — is transmitted to AI providers."
+      "text": "The Game uses AI image generation services (xAI Aurora) to create botanical specimen and planetary artwork. Only procedural trait descriptions (atmosphere, temperature, soil type, etc.) and base reference images are sent to generate images. No personal user data — including your username, account ID, wallet address, location, or any identifying information — is transmitted to AI providers."
     },
     {
       "kind": "h2",
@@ -189,11 +197,15 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "li",
-      "text": "To process in-app purchases"
+      "text": "To process and verify purchases"
     },
     {
       "kind": "li",
       "text": "To generate specimen artwork via AI"
+    },
+    {
+      "kind": "li",
+      "text": "To improve STEM's answers"
     },
     {
       "kind": "li",
@@ -209,7 +221,11 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "li",
-      "text": "Apple: For authentication and in-app purchase processing"
+      "text": "Apple: For authentication and in-app purchase processing in the iOS app"
+    },
+    {
+      "kind": "li",
+      "text": "Polygon network: To verify a MANA payment, we look up its transaction on the public Polygon blockchain through a blockchain data provider. Blockchain transactions, including your wallet address, are public by nature."
     },
     {
       "kind": "li",
@@ -224,12 +240,16 @@ export const PRIVACY: LegalDoc = {
       "text": "AWS: For image storage and delivery (CloudFront CDN)"
     },
     {
+      "kind": "p",
+      "text": "In Decentraland, your avatar, voice chat, and text chat are provided by Decentraland, not by us, and are covered by Decentraland's own privacy policy. Other players in Decentraland can see your display name and avatar."
+    },
+    {
       "kind": "h2",
       "text": "Data Retention & Deletion"
     },
     {
       "kind": "p",
-      "text": "Your data is retained as long as your account is active. You can delete your account at any time from Settings within the App. Account deletion permanently removes all your data from our servers, including game progress, messages, and purchase records."
+      "text": "Your data is retained as long as your account is active. In the iOS app you can delete your account at any time from Settings. If you play in Decentraland, email us from any address with your wallet address to request deletion; we may ask you to prove you control the wallet. Account deletion permanently removes all your data from our servers, including game progress, messages, and purchase records. MANA transactions recorded on the Polygon blockchain are public and permanent, and cannot be deleted by us or anyone else."
     },
     {
       "kind": "h2",
@@ -237,7 +257,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "Galaxy Gardeners includes chat features and in-app purchases. We do not knowingly collect personal information from children under 13. The app's age rating reflects its interactive features."
+      "text": "Galaxy Gardeners includes chat features and purchases. We do not knowingly collect personal information from children under 13. The iOS app's age rating reflects its interactive features."
     },
     {
       "kind": "h2",
@@ -249,7 +269,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "li",
-      "text": "Access your data (viewable in-app)"
+      "text": "Access your data (viewable in the Game)"
     },
     {
       "kind": "li",
@@ -257,7 +277,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "li",
-      "text": "Block other players from contacting you"
+      "text": "Block other players from contacting you (in the iOS app)"
     },
     {
       "kind": "li",
@@ -269,7 +289,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       "kind": "p",
-      "text": "For privacy questions or concerns: support@galaxygardeners.app"
+      "text": "For privacy questions, concerns, or deletion requests: support@galaxygardeners.app"
     }
   ]
 }
