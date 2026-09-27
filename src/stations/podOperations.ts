@@ -54,7 +54,8 @@ function drawBayCards(): void {
     text(cardBag, top, -1.55, cy - 0.08, `${pods.length} / ${capacity}`, 0.55, WHITE, LEFT)
     text(cardBag, top, -1.55, cy - 0.27, 'PODS ONLINE', 0.22, DIM, LEFT)
     text(cardBag, top, -1.55, cy - 0.42, `● ${status}`, 0.22, statusColor, LEFT)
-    button(cardBag, top, -0.62, cy - 0.34, 0.8, 0.24, 'MANAGE ›', `Manage ${bay.title.toLowerCase()}`, () => { selectedBay = bay.type; drawBayCards(); drawLow() }, { size: 0.24, variant: selected ? 'primary' : 'outline' })
+    // Narrower and further right than the status line's longest text ("● ALL DEPLOYED" ends near x -0.97)
+    button(cardBag, top, -0.52, cy - 0.34, 0.68, 0.24, 'MANAGE ›', `Manage ${bay.title.toLowerCase()}`, () => { selectedBay = bay.type; drawBayCards(); drawLow() }, { size: 0.24, variant: selected ? 'primary' : 'outline' })
   })
 }
 
