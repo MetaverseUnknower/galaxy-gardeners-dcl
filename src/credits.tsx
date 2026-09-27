@@ -1,4 +1,5 @@
-// Info menu: a small meatball (•••) HUD button with the credits and links to the terms of service and privacy policy.
+// Info menu: a small kebab (⋮) HUD button with the credits, the terms of service and privacy policy, and (soon)
+// connecting the mobile app.
 import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { openExternalUrl } from '~system/RestrictedActions'
@@ -32,25 +33,33 @@ function openLink(url: string): void {
   void openExternalUrl({ url }).catch((err) => console.log('[menu] openExternalUrl failed', err))   // the explorer asks to confirm
 }
 
-const MENU_ITEMS: [string, () => void][] = [
+// A null action shows the item disabled with a SOON tag.
+const MENU_ITEMS: [string, (() => void) | null][] = [
+  ['CONNECT MOBILE APP', null],   // will link a Decentraland wallet to the iOS app's account
   ['CREDITS', () => { menuOpen = false; legal = null; open = true }],
   ['TERMS OF SERVICE', () => { menuOpen = false; open = false; legal = TERMS }],
   ['PRIVACY POLICY', () => { menuOpen = false; open = false; legal = PRIVACY }],
 ]
+const MUTED = Color4.create(0.3, 0.38, 0.45, 1)
 
 export const InfoMenu = () => (
   <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(64), left: px(330) }, flexDirection: 'column' }}>
-    <UiEntity uiTransform={{ width: px(44), height: px(28), justifyContent: 'center', alignItems: 'center' }}
+    <UiEntity uiTransform={{ width: px(28), height: px(28), flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}
       uiBackground={{ color: menuOpen ? CYAN : PANEL_BG }}
       onMouseDown={() => { menuOpen = !menuOpen }}>
-      <Label value="•••" fontSize={px(14)} color={menuOpen ? DARK : CYAN} />
+      {/* Three drawn dots rather than a ⋮ glyph, which the explorer's font may not have */}
+      {[0, 1, 2].map(i => (
+        <UiEntity key={`kebab${i}`} uiTransform={{ width: px(4), height: px(4), margin: { top: px(i === 0 ? 0 : 3) } }}
+          uiBackground={{ color: menuOpen ? DARK : CYAN }} />
+      ))}
     </UiEntity>
     {menuOpen ? (
-      <UiEntity uiTransform={{ width: px(180), flexDirection: 'column', padding: px(4), margin: { top: px(4) } }} uiBackground={{ color: PANEL_BG }}>
+      <UiEntity uiTransform={{ width: px(220), flexDirection: 'column', padding: px(4), margin: { top: px(4) } }} uiBackground={{ color: PANEL_BG }}>
         {MENU_ITEMS.map(([label, onClick]) => (
-          <UiEntity key={label} uiTransform={{ width: '100%', height: px(30), margin: { bottom: px(2) }, padding: { left: px(10) }, alignItems: 'center' }}
-            uiBackground={{ color: SLOT_BG }} onMouseDown={onClick}>
-            <Label value={label} fontSize={px(12)} color={CYAN} textAlign="middle-left" />
+          <UiEntity key={label} uiTransform={{ width: '100%', height: px(30), margin: { bottom: px(2) }, padding: { left: px(10), right: px(8) }, flexDirection: 'row', alignItems: 'center' }}
+            uiBackground={{ color: SLOT_BG }} onMouseDown={() => { onClick?.() }}>
+            <Label value={label} fontSize={px(12)} color={onClick ? CYAN : MUTED} uiTransform={{ flexGrow: 1 }} textAlign="middle-left" />
+            {onClick ? null : <Label value="SOON" fontSize={px(10)} color={MUTED} textAlign="middle-right" />}
           </UiEntity>
         ))}
       </UiEntity>
