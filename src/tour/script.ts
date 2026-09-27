@@ -25,9 +25,9 @@ export const TOUR: TourScene[] = [
       { shot: 'hologram', setup: 'systemView',
         panel: { title: 'SYSTEM SCAN', text: 'HOME SYSTEM: {starName}\nSTAR TYPE: {starType} — {starDescription}\nPLANETS: {planetCount}\nASTEROID BELTS: {beltCount}' },
         lines: [
-          'This is your home system on the hologram. Every explorer gets one — a patch of the galaxy to call their own.',
+          '{introLine}',
           "Some of these planets support life — alien flora that's never been cataloged. Barren worlds and gas giants won't have any, but the ones that do each host a unique species. That's where you come in.",
-          'Your system also has a space station — {stationName}. We\'ll dock there later.',
+          '{stationLine}',
         ] },
     ],
   },
@@ -80,7 +80,7 @@ export const TOUR: TourScene[] = [
         'Three ways to refuel: refine Helium-3 or Plasma Crystals, wait for the star to recharge you, or buy Fuel Cells with BUY FUEL.',
       ] },
       { shot: 'navConsole', lines: [
-        'This is the Stellar Navigation console. Your home station, {homeStationName}, is right here in your system. Press DOCK on the console.',
+        'This is the Stellar Navigation console. {homeStationName} is right here in this system. Press DOCK on the console.',
       ], waitFor: 'docked' },
       { shot: 'navConsole', lines: [
         "Docked. Stations mean cheaper repairs and instant upgrades. When you're ready to move on, press UNDOCK on this console.",
@@ -104,7 +104,7 @@ export const TOUR: TourScene[] = [
     steps: [
       { shot: 'galaxyTop', setup: 'galaxyView', panel: { title: 'TOUR COMPLETE', text: 'MINE · UPGRADE · EXPLORE · DISCOVER · TRADE' }, lines: [
         "This is the galaxy. Every dot is a star system. Most haven't been discovered yet.",
-        'Your exploration pod is still scanning {firstExpeditionPlanet}. When it returns you\'ll have your first sample and your first catalog entry.',
+        '{scanLine}',
         "I'll be here whenever you need me — press STEM at the top of the screen. The galaxy is yours, Captain.",
       ] },
     ],

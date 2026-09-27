@@ -23,6 +23,7 @@ let run: Run | null = null
 let offering = false
 let data: Record<number, Record<string, any>> = {}
 let sleptWith = false
+let scannedThisRun = false   // an exploration pod went out during this tour run (the wrap-up mentions it)
 
 export function isTourRunning(): boolean { return run !== null }
 
@@ -32,26 +33,34 @@ function sceneData(): Record<string, any> { const s = scene(); return s ? data[s
 
 async function loadSceneData(n: number): Promise<void> {
   if (data[n]) return
-  try { data[n] = await api.getWalkthroughSceneData(n) } catch { data[n] = {} }
+  let d: Record<string, any> = {}
+  try { d = await api.getWalkthroughSceneData(n) } catch { /* lines fall back to their generic wording */ }
+  // Lines that depend on where the ship is (scene data describes the current system) or on what happened this run
+  d.introLine = d.isHome === false
+    ? `This is ${d.starName ?? 'the system we\'re in'} on the hologram — where we are right now. Your home system is elsewhere, but every system works the same way.`
+    : 'This is your home system on the hologram. Every explorer gets one — a patch of the galaxy to call their own.'
+  d.stationLine = d.hasStation === false
+    ? "There's no space station in this system. Stations are scattered across the galaxy — we'll dock at one later."
+    : `This system has a space station — ${d.stationName ?? 'right here'}. We'll dock there later.`
+  d.scanLine = scannedThisRun
+    ? `Your exploration pod is still scanning ${d.firstExpeditionPlanet ?? 'its planet'}. When it returns you'll have your first sample and your first catalog entry.`
+    : 'Send an exploration pod to a living planet whenever you\'re ready — the first scan gives you your first sample and your first catalog entry.'
+  data[n] = d
 }
 
 /** Why a hands-on step can't be done right now (null when it can). */
 async function blockedReason(wait: TourEvent): Promise<string | null> {
   if (isCurrentlyTraveling()) return "We're in transit, Captain, so that will have to wait until we arrive."
-  let player: any = null
-  try { player = await api.getPlayerMe() } catch { /* treat as home */ }
-  const home = !player || !player.home_system_id || player.home_system_id === player.current_system_id
-  const d = sceneData()
+  const d = sceneData()   // describes the system the ship is in
   if (wait === 'exploration_deployed') {
-    if (!home) return "We're away from your home system, so we'll skip the first scan for now."
     if (!d.targetPlanet || d.targetPlanet.supportsLife === false) return "There's no living planet in range for a first scan, so let's move on."
     if (d.availableExplorationPods === 0) return 'Every exploration pod is already out, so let\'s move on.'
   }
   if (wait === 'mining_deployed') {
-    if (!home || !d.targetBelt || d.targetBelt.riskLevel !== 'low') return "There's no safe belt in range right now, so let's move on."
+    if (!d.targetBelt || d.targetBelt.riskLevel !== 'low') return "There's no safe belt in range right now, so let's move on."
     if (d.availableMiningPods === 0) return "Every mining pod is already out, so let's move on."
   }
-  if (wait === 'docked' && (!home || !d.homeStationId)) return "There's no station in this system, so docking will have to wait."
+  if (wait === 'docked' && !d.homeStationId) return "There's no station in this system, so docking will have to wait."
   return null
 }
 
@@ -119,7 +128,7 @@ async function finishStepLines(): Promise<void> {
     render()
     const done = await alreadyDone(st.waitFor)
     if (run !== r) return   // skipped or replaced while waiting on the server
-    if (done) return advanceStep()
+    if (done) { if (st.waitFor === 'exploration_deployed') scannedThisRun = true; return advanceStep() }
     const why = await blockedReason(st.waitFor)
     if (run !== r) return
     r.busy = false
@@ -204,6 +213,7 @@ const handlers = {
 
 async function begin(sceneIdx: number, tracked: boolean, resumeLine: string | null): Promise<void> {
   data = {}
+  scannedThisRun = false
   await loadSceneData(TOUR[sceneIdx].number)
   run = { sceneIdx, stepIdx: 0, lineIdx: 0, waiting: false, busy: false, confirmSkip: false, tracked, resumeLine, blocked: null }
   await enterStep()
@@ -214,6 +224,7 @@ export function setupTour(): void {
   onTourEvent((e) => {
     const st = step()
     if (!run || !run.waiting || st?.waitFor !== e) return
+    if (e === 'exploration_deployed') scannedThisRun = true
     void advanceStep()
   })
   // Sleep: release the tour camera while asleep, re-apply the step's shot on waking.

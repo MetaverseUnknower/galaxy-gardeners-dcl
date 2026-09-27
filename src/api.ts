@@ -318,5 +318,5 @@ export async function walkthroughProgress(action: 'advance' | 'skip' | 'complete
 }
 
 export async function getWalkthroughSceneData(scene: number): Promise<Record<string, any>> {
-  return apiGet<Record<string, any>>(`/api/walkthrough/scene-data/${scene}`)
+  return apiGet<Record<string, any>>(`/api/walkthrough/scene-data/${scene}?at=current`)   // the tour runs wherever the ship is
 }
