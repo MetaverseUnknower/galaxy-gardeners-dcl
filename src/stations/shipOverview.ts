@@ -10,6 +10,7 @@ import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '..
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN } from './draw'
 import { cargoUsed } from './data'
 import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
+import { displayedFuel, isCurrentlyTraveling } from '../navigation'
 import { podPhase, canRecall } from './podPhase'
 
 // Blueprint line-art of the ship, drawn flat on the glass (see assets/icons/manifest.json for the art spec).
@@ -59,9 +60,10 @@ function drawTop(top: Entity, ctx: StationContext): void {
   frame(topBag, top, -1.4, -0.35, 2.6, 1.85)
   header(topBag, top, -2.6, 0.3, { icon: icons('fuel'), title: 'FUEL', size: 0.7 })
   if (ship) {
-    const pct = ship.fuel_capacity > 0 ? ship.fuel_current / ship.fuel_capacity : 0
+    const fuel = displayedFuel(ship.fuel_current)   // burns down over a trip
+    const pct = ship.fuel_capacity > 0 ? fuel / ship.fuel_capacity : 0
     bar(topBag, top, -1.85, -0.15, 1.5, pct, { h: 0.2 })   // ends at -1.1; the reading sits right of it
-    text(topBag, top, -0.15, -0.15, `${ship.fuel_current.toFixed(0)} / ${ship.fuel_capacity.toFixed(0)}`, 0.42, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
+    text(topBag, top, -0.15, -0.15, `${fuel.toFixed(0)} / ${ship.fuel_capacity.toFixed(0)}`, 0.42, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
     if (solarRechargeRate > 0) text(topBag, top, -2.55, -0.45, `Solar Recharge: +${solarRechargeRate.toFixed(1)} fuel/hr`, 0.32, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
   } else {
     text(topBag, top, -1.4, -0.15, 'Fuel data unavailable', 0.4, MUTED)
@@ -189,6 +191,12 @@ export const shipOverviewView: ViewDefinition = {
   },
   clear(): void { clearBag(topBag); clearBag(missionBag); clearBag(lowBag); screens = null; lowShifted = null },
 }
+
+// In transit the fuel gauge burns down: redraw the top screen each time the whole-number reading changes.
+redrawWhenCountdownChanges(
+  () => screens && ctxRef?.dashboard?.ship && isCurrentlyTraveling() ? displayedFuel(ctxRef.dashboard.ship.fuel_current).toFixed(0) : '',
+  () => { if (screens && ctxRef) drawTop(screens.top, ctxRef) },
+)
 
 // Mission timers tick down on screen (and flip to READY) without reopening the panel.
 redrawWhenCountdownChanges(

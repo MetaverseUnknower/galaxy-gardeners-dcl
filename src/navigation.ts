@@ -32,6 +32,18 @@ export function getTravelRemainingMs(): number {
   return isTraveling ? Math.max(0, travelEndTime - Date.now()) : 0
 }
 
+// Fuel is charged in full at departure; the server also sends the fuel at departure and on arrival so the gauges
+// can burn it down over the trip instead of dropping all at once.
+let travelFuelStart: number | null = null
+let travelFuelEnd: number | null = null
+
+/** The fuel to show right now: the server's value (already charged for the whole trip) plus the part of the
+ *  trip's burn still ahead. Anything added mid-trip (refining, purchases) stays on top. */
+export function displayedFuel(serverFuel: number): number {
+  if (!isTraveling || travelFuelStart === null || travelFuelEnd === null) return serverFuel
+  return serverFuel + Math.max(0, travelFuelStart - travelFuelEnd) * (1 - getTravelFraction())
+}
+
 export function isCurrentlyTraveling(): boolean {
   return isTraveling
 }
@@ -161,6 +173,8 @@ export async function updateTravelState(): Promise<void> {
   const traveling = (status as any).isTraveling ?? status.is_traveling
   if (!traveling) {
     isTraveling = false
+    travelFuelStart = null
+    travelFuelEnd = null
     if (travelMarkerEntity) {
       engine.removeEntity(travelMarkerEntity)
       travelMarkerEntity = null
@@ -172,6 +186,10 @@ export async function updateTravelState(): Promise<void> {
 
   isTraveling = true
   const raw = status as any
+  const fuelStart = raw.fuelStart ?? raw.fuel_start ?? raw.travel_fuel_start
+  const fuelEnd = raw.fuelEnd ?? raw.fuel_end ?? raw.travel_fuel_end
+  travelFuelStart = typeof fuelStart === 'number' ? fuelStart : null
+  travelFuelEnd = typeof fuelEnd === 'number' ? fuelEnd : null
   const startedAt = raw.startedAt || raw.started_at || status.departure_time
   const completesAt = raw.completesAt || raw.completes_at || status.arrival_time
   const destId = raw.destinationSystemId || raw.destination_system_id || status.destination_system_id

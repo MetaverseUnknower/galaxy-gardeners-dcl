@@ -13,6 +13,7 @@ const CARD_FILL = Color4.create(0.02, 0.05, 0.12, 1)
 const CARD_FILL_SELECTED = Color4.create(0.15, 0.02, 0.12, 1)
 import { cargoUsed, titleCase } from './data'
 import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
+import { displayedFuel, isCurrentlyTraveling } from '../navigation'
 
 const CATEGORY_LABELS: Record<string, string> = {
   fuel_tank: 'Fuel Tank', fuel_efficiency: 'Fuel Efficiency', cargo_hold: 'Cargo Hold', specimen_vault: 'Specimen Vault',
@@ -134,7 +135,7 @@ function drawLow(): void {
     const used = cargoUsed(ctx.dashboard)
     const jars = (ctx.dashboard?.specimenSamples || []).length
     const rows: [string, number, string][] = [
-      ['FUEL', ship.fuel_capacity ? ship.fuel_current / ship.fuel_capacity : 0, `${Math.round(ship.fuel_capacity ? ship.fuel_current / ship.fuel_capacity * 100 : 0)}%`],
+      ['FUEL', ship.fuel_capacity ? displayedFuel(ship.fuel_current) / ship.fuel_capacity : 0, `${Math.round(ship.fuel_capacity ? displayedFuel(ship.fuel_current) / ship.fuel_capacity * 100 : 0)}%`],   // burns down over a trip
       ['CARGO', ship.resource_storage ? used / ship.resource_storage : 0, `${Math.round(ship.resource_storage ? used / ship.resource_storage * 100 : 0)}%`],
       ['VAULT', ship.specimen_vault ? jars / ship.specimen_vault : 0, `${jars} / ${ship.specimen_vault}`],
       // Shielding is percentage points off pod loss chance: blast 3 per tier, environmental 2 per tier, 3 tiers
@@ -202,6 +203,12 @@ export const shipSystemsView: ViewDefinition = {
   },
   clear(): void { clearBag(topBag); clearBag(holoBag); clearBag(lowBag); screens = null },
 }
+
+// In transit the FUEL row burns down with the trip.
+redrawWhenCountdownChanges(
+  () => screens && ctxRef?.dashboard?.ship?.fuel_capacity && isCurrentlyTraveling() ? String(Math.round(displayedFuel(ctxRef.dashboard.ship.fuel_current) / ctxRef.dashboard.ship.fuel_capacity * 100)) : '',
+  () => drawLow(),
+)
 
 // The field-install countdown ticks down, and FINISH INSTALL appears on time.
 redrawWhenCountdownChanges(
