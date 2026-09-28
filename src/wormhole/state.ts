@@ -57,9 +57,10 @@ export async function refreshWormhole(): Promise<void> {
   checkWarnings()
 }
 
-// STEM warns at 15 and 2 minutes before closing while the player is at the target with pods out
+// STEM warns at 15 and 2 minutes before closing while the player jumped, hasn't come back through, and has pods out
+// (flying off elsewhere doesn't count: only the wormhole keeps contact with the pods)
 function checkWarnings(): void {
-  if (!current || !current.canReturn || current.podsOut <= 0) return
+  if (!current || !current.trip || current.podsOut <= 0) return
   const left = msLeft()
   for (const [mark, ms] of [['15', 15 * 60_000], ['2', 2 * 60_000]] as const) {
     const key = `${current.id}:${mark}`
@@ -85,7 +86,7 @@ async function travel(call: () => Promise<{ systemId: string; systemName: string
   }
   await playWormholeCutscene('jump', async () => { await arrived?.() })   // the map and window swap while the screen is white
   await refreshWormhole()
-  if (isJump && current?.canReturn && current.podsOut > 0) {
+  if (isJump && current?.trip && current.podsOut > 0) {
     warned.add(`${current.id}:arrive`)
     notify?.(podWarning(current.podsOut), true)
   }

@@ -31,7 +31,7 @@ export const WormholeBanner = () => {
           </UiEntity>
         </UiEntity>
         {!returning && !ev.canJump && ev.jumpBlockedReason ? <Label value={ev.jumpBlockedReason} fontSize={px(12)} color={DIM} uiTransform={{ margin: { top: px(4) } }} /> : null}
-        {returning && ev.podsOut > 0 ? <Label value={podWarning(ev.podsOut)} fontSize={px(12)} color={AMBER} uiTransform={{ margin: { top: px(4) } }} /> : null}
+        {ev.trip && ev.podsOut > 0 ? <Label value={podWarning(ev.podsOut)} fontSize={px(12)} color={AMBER} uiTransform={{ margin: { top: px(4) } }} /> : null}
       </UiEntity>
     </UiEntity>
   )

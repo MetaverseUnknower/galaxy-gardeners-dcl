@@ -28,7 +28,8 @@ you left pods working back home.
   jump, anywhere) is warned by STEM: on arrival, 15 minutes before closing and 2 minutes before closing:
   "Captain, we have to get back to the wormhole or we'll lose contact with {n} pods!"
 - **Closing:** when the event ends (its end time, or an admin closing it), every player still at the target **stays
-  there**. For each of them, every expedition still in progress is lost: `pod_lost = true`, `rewards = null`,
+  there**. Every player who jumped and hasn't come back through the wormhole (still at the target, or flown off
+  elsewhere by normal travel) loses contact with their pods: every expedition still in progress is lost: `pod_lost = true`, `rewards = null`,
   `completes_at = now`, so collecting it reports the pod destroyed, exactly like a normal pod loss. Players who
   returned or never jumped are unaffected.
 - **Push:** when an event opens, iOS players in that galaxy get a push notification ("A wormhole to {target} is open

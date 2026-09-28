@@ -52,7 +52,7 @@ function send(): void {
   if (/wormhole/i.test(text)) {
     const ev = wormholeEvent()
     const reply = ev
-      ? `A wormhole to ${ev.targetName} is open until ${closesAtText()}. Jumping through is free and instant, and so is the way back until it closes. If we stay past closing with pods still out, we lose contact with them.`
+      ? `A wormhole to ${ev.targetName} is open until ${closesAtText()}. Jumping through is free and instant, and so is the way back until it closes. If we're not back through it by closing time with pods still out, we lose contact with them, even if we've flown on somewhere else.`
       : 'No wormhole is open right now, Captain.'
     messages.push({ role: 'user', text }, { role: 'stem', text: reply })
     draft = ''

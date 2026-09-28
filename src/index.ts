@@ -54,7 +54,7 @@ function setupWormholeEvents(): void {
     // One event can replace another between polls: the old one closes, then the new one opens
     if (prev) {
       await playWormholeCutscene('close', () => reloadMap())
-      const lost = prev.canReturn && prev.podsOut > 0 ? ` We lost contact with ${podWord(prev.podsOut)}.` : ''
+      const lost = prev.trip && prev.podsOut > 0 ? ` We lost contact with ${podWord(prev.podsOut)}.` : ''
       showNotification(`The wormhole to ${prev.targetName} has closed.${lost}`, VIOLET, 8)
     }
     // Once per event per player: reloading doesn't replay it
