@@ -7,6 +7,8 @@ const hidden = new Map<Entity, Vector3>()
 const registered = new Set<Entity>()
 
 export function hideInTopView(entity: Entity): void { registered.add(entity) }
+/** True while the top-down view has the registered screens hidden. */
+export function isTopViewHiding(): boolean { return hidden.size > 0 }
 
 export function setTopViewHidden(on: boolean): void {
   if (on) {

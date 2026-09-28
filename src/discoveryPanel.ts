@@ -8,7 +8,8 @@ import { StarSystem } from './types'
 import { setDiscoveryDescription } from './ui'
 import { DECK_Y } from './environment'
 import { Bag, clearBag, text, frame, header, bar, button, icon, dot, line, spinner, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN } from './stations/draw'
-import { hideInTopView } from './topViewHide'
+import { hideInTopView, isTopViewHiding } from './topViewHide'
+import { getPlayer } from '@dcl/sdk/players'
 import { registerDimmableScreen } from './cabinDim'
 import { redrawWhenCountdownChanges, minutesUntil } from './countdown'
 import { isCurrentlyTraveling, getTravelDestination, getTravelFraction } from './navigation'
@@ -185,7 +186,9 @@ export function refreshDiscoveryPanel(): void { redraw() }
 
 function redraw(): void {
   if (!deskRoot || !topRoot) return
-  hideArrows()
+  // Redrawing replaces the direction buttons; a button deleted under the pointer never gets its hover-leave,
+  // so clear its description here along with the arrows.
+  hideArrows(); setDiscoveryDescription(null)
   clearBag(bag)
   for (const e of miniMapEntities) engine.removeEntity(e); miniMapEntities.length = 0
   if (panelRoot) { engine.removeEntity(panelRoot); panelRoot = null }
@@ -376,7 +379,7 @@ async function handleCompleteDiscovery(discoveryId: string): Promise<void> {
 }
 
 export function clearDiscoveryPanel(): void {
-  hideArrows()
+  hideArrows(); setDiscoveryDescription(null)
   clearBag(bag)
   for (const e of miniMapEntities) engine.removeEntity(e); miniMapEntities.length = 0
   if (panelRoot) { engine.removeEntity(panelRoot); panelRoot = null }
@@ -384,6 +387,20 @@ export function clearDiscoveryPanel(): void {
   if (topRoot) { engine.removeEntity(topRoot); topRoot = null }
   discoveryOptions = []; activeDiscovery = null; pending = null
 }
+
+// Safety net for hover-leaves the engine drops (walking or turning away without moving the cursor off a button):
+// clear the direction description and arrows once the player is well away from the desk, or the desk is hidden.
+const HOVER_RANGE_M = 7
+let hoverCheckAcc = 0
+engine.addSystem((dt: number) => {
+  hoverCheckAcc += dt
+  if (hoverCheckAcc < 0.5) return
+  hoverCheckAcc = 0
+  if (arrowEntities.length === 0) return   // nothing hovered is showing
+  const p = getPlayer()?.position
+  const far = !!p && Vector3.distance(p, DISPLAY_CENTER) > HOVER_RANGE_M
+  if (far || isTopViewHiding()) { hideArrows(); setDiscoveryDescription(null) }
+})
 
 // The active discovery's minutes-remaining ticks down and turns to SIGNAL LOCKED on time.
 redrawWhenCountdownChanges(
