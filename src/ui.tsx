@@ -25,6 +25,7 @@ import { emitTourEvent } from './tour/events'
 import { TourDialog } from './tour/dialog'
 import { WormholeBanner } from './wormhole/banner'
 import { WormholeOverlay } from './wormhole/flash'
+import { HawkingOverlay } from './hawkingDrift'
 import { wormholeEvent, isWormholeBusy, jumpThroughWormhole, returnThroughWormhole } from './wormhole/state'
 import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
@@ -736,6 +737,7 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <LegalPanel />
     <TourDialog />
     <WormholeOverlay />
+    <HawkingOverlay />
     <SleepCurtain />
   </UiEntity>
 )

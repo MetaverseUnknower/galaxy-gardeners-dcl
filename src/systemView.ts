@@ -3,6 +3,7 @@ import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
+import { setStareTime, playHawkingDrift } from './hawkingDrift'
 
 const SYSTEM_CENTER = Vector3.create(128, 41, 128)
 
@@ -194,13 +195,13 @@ const RING_SEGMENTS = 64
 
 // Staring into the black hole: STEM objects as soon as the pointer lands on the horizon, and a player who keeps
 // staring for STARE_SECONDS "loses" a few seconds and metres: they come to somewhere else on the deck, at about the
-// same distance from the ship's centre, facing the hologram, and STEM explains.
+// same distance from the ship's centre, facing the hologram, and STEM explains (the veil and blackout: hawkingDrift.tsx).
 let lastStareWarning = -1e9   // ms
 let stareLine = 0
 let staring = false
 let stareTime = 0
 const STARE_WARNING_MS = 20_000
-const STARE_SECONDS = 5
+const STARE_SECONDS = 8
 const SHIP_CENTER = { x: 128, z: 128 }
 const DECK_RADIUS = { min: 4, max: 10.5 }   // clear of the projector base and the desks at ~12.5m
 const STARE_LINES = [
@@ -225,21 +226,29 @@ function startStare(): void {
   blackHoleNotify?.(STARE_LINES[stareLine++ % STARE_LINES.length])
 }
 
+let drifting = false
 function stareSystem(dt: number): void {
-  if (!staring) return
+  if (!staring || drifting) { setStareTime(null); return }
   stareTime += dt
+  setStareTime(stareTime)
   if (stareTime < STARE_SECONDS) return
   staring = false
-  const p = getPlayer()?.position
-  if (!p) return
-  const r = Math.max(DECK_RADIUS.min, Math.min(DECK_RADIUS.max, Math.hypot(p.x - SHIP_CENTER.x, p.z - SHIP_CENTER.z)))
-  const a = Math.random() * Math.PI * 2
-  void movePlayerTo({
-    newRelativePosition: Vector3.create(SHIP_CENTER.x + Math.cos(a) * r, p.y, SHIP_CENTER.z + Math.sin(a) * r),
-    cameraTarget: SYSTEM_CENTER,
+  drifting = true
+  setStareTime(null)
+  playHawkingDrift(() => {
+    const p = getPlayer()?.position
+    if (!p) return
+    const r = Math.max(DECK_RADIUS.min, Math.min(DECK_RADIUS.max, Math.hypot(p.x - SHIP_CENTER.x, p.z - SHIP_CENTER.z)))
+    const a = Math.random() * Math.PI * 2
+    void movePlayerTo({
+      newRelativePosition: Vector3.create(SHIP_CENTER.x + Math.cos(a) * r, p.y, SHIP_CENTER.z + Math.sin(a) * r),
+      cameraTarget: SYSTEM_CENTER,
+    })
+  }, () => {
+    drifting = false
+    lastStareWarning = Date.now()   // the explanation stands in for the next warning
+    blackHoleNotify?.(HAWKING_DRIFT)
   })
-  lastStareWarning = Date.now()   // the explanation stands in for the next warning
-  blackHoleNotify?.(HAWKING_DRIFT)
 }
 
 function segmentMaterial(seg: Entity, intensity: number, alpha: number): void {
@@ -258,8 +267,10 @@ function createAccretionRing(root: Entity, horizon: Entity, horizonRadius: numbe
   Billboard.create(pivot, { billboardMode: BillboardMode.BM_ALL })
   staticEntities.push(pivot)
   MeshCollider.setSphere(horizon, ColliderLayer.CL_POINTER)
-  pointerEventsSystem.onPointerHoverEnter({ entity: horizon }, () => startStare())
-  pointerEventsSystem.onPointerHoverLeave({ entity: horizon }, () => { staring = false })
+  // No hover outline or feedback: nothing should invite a closer look
+  const quiet = { showFeedback: false, showHighlight: false }
+  pointerEventsSystem.onPointerHoverEnter({ entity: horizon, opts: quiet }, () => startStare())
+  pointerEventsSystem.onPointerHoverLeave({ entity: horizon, opts: quiet }, () => { staring = false })
 
   // Photon ring: face-on circles around the horizon (the pivot's XY plane faces the viewer)
   for (const band of HALO_BANDS) {
