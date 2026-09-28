@@ -418,8 +418,8 @@ const STEM_DIM = Color4.create(0.3, 0.95, 1, 0.55)
 const StemBanner = () => {
   if (!stemMessage) return null
   const typed = Math.min(stemMessage.text.length, Math.floor(stemMessage.age * STEM_TYPE_RATE))
-  // Blinking pipe, held to the text by a no-break space and blinking to another one (same width in monospace), so
-  // the blink never changes where the lines wrap
+  // Blinking pipe right after the text, blinking to a no-break space (same width in monospace, and no break point),
+  // so the blink never changes where the lines wrap
   const cursor = Math.floor(stemMessage.age * 2.5) % 2 === 0 ? '|' : '\u00A0'
   const lines = Math.max(1, Math.ceil((stemMessage.text.length + 2) / STEM_CHARS_PER_LINE))
   // Below the ordinary banner when both are up
@@ -432,7 +432,7 @@ const StemBanner = () => {
           <UiEntity uiTransform={{ width: '100%', height: px(18), margin: { bottom: px(6) } }}
             uiText={{ value: 'STEM  //  SHIP TELEMETRY AND EXPLORATION MODULE', fontSize: px(12), color: STEM_DIM, textAlign: 'middle-left', font: 'monospace' }} />
           <UiEntity uiTransform={{ width: '100%', height: px(STEM_LINE_HEIGHT * lines) }}
-            uiText={{ value: `> ${stemMessage.text.slice(0, typed)}\u00A0${cursor}`, fontSize: px(18), color: STEM_CYAN, textAlign: 'top-left', textWrap: 'wrap', font: 'monospace' }} />
+            uiText={{ value: `> ${stemMessage.text.slice(0, typed)}${cursor}`, fontSize: px(18), color: STEM_CYAN, textAlign: 'top-left', textWrap: 'wrap', font: 'monospace' }} />
         </UiEntity>
       </UiEntity>
     </UiEntity>
