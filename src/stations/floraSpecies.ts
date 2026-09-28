@@ -43,8 +43,11 @@ function announce(entry: any, detail: any, loading: boolean): void {
   if (onFloraSelect) onFloraSelect({ type: 'flora', name: entry.name, id: entry.id, imageUrl: entry.image_url, details: d, canDeploy: false })
 }
 
-function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon: string | undefined, emptyText: string, getEntries: (ctx: StationContext) => Promise<any[]>, counter: (entries: any[], ctx: StationContext) => { label: string; pct: number }, showCount: boolean): ViewDefinition {
+function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon: string | undefined, emptyText: string, getEntries: (ctx: StationContext) => Promise<any[]>, counter: (entries: any[], ctx: StationContext) => { label: string; pct: number }, showCount: boolean, canDiscard: boolean = false): ViewDefinition {
   const bag: Bag = []
+  // Vault only: discarding asks for a second click on the same species before anything is removed
+  let confirmDiscardId: string | null = null
+  let discarding = false
   const paneBag: Bag = []
   let page = 0
   let selectedId: string | null = null
@@ -86,18 +89,45 @@ function makeSpeciesView(id: CollectionId, title: string, subtitle: string, icon
       rows.push(['System', sel.system_name || 'Unknown', WHITE])
       if (det === undefined) rows.push(['Traits', 'Loading...', DIM])
       else if (det) for (const k of TRAIT_KEYS) if (det[k]) rows.push([titleCase(k), titleCase(det[k]), CYAN])
-      rows.slice(0, 7).forEach(([k, v, c], i) => {
+      rows.slice(0, canDiscard ? 6 : 7).forEach(([k, v, c], i) => {
         const y = 0.18 - i * 0.16
         text(paneBag, low, 1.1, y, k, 0.24, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
         text(paneBag, low, 2.6, y, v, 0.24, c, TextAlignMode.TAM_MIDDLE_RIGHT)
       })
+      if (canDiscard) {
+        const ids: string[] = sel.discardableIds ?? []
+        if (ids.length === 0) text(paneBag, low, 1.85, -0.8, 'LOCKED IN A TRADE', 0.2, MUTED)
+        else if (discarding) button(paneBag, low, 1.85, -0.8, 1.4, 0.22, 'DISCARDING…', 'Discarding', () => {}, { variant: 'disabled', size: 0.2 })
+        else if (confirmDiscardId === sel.id) button(paneBag, low, 1.85, -0.8, 1.4, 0.22, 'CONFIRM: DISCARD 1?', 'Discard one sample for good', () => { void discard(sel, ids[0]) }, { variant: 'magenta', size: 0.2 })
+        else button(paneBag, low, 1.85, -0.8, 1.4, 0.22, 'DISCARD 1 SAMPLE', 'Free a vault slot', () => { confirmDiscardId = sel.id; drawList() }, { size: 0.2 })
+      }
     } else {
       text(paneBag, low, 1.85, -0.125, entries.length ? 'Select a species' : '', 0.28, MUTED)
     }
   }
 
+  async function discard(entry: any, sampleId: string): Promise<void> {
+    const ctx = ctxRef
+    if (!ctx || discarding) return
+    discarding = true
+    drawList()
+    try {
+      await ctx.busy(api.discardSpecimen(sampleId))
+      ctx.notify(`Discarded a ${entry.name} sample. It stays in your Flora Catalog.`, Color4.create(0.3, 1, 0.5, 1))
+    } catch (err: any) {
+      const m = /^API error \d+: (.*)$/s.exec(String(err?.message ?? ''))
+      let msg = 'Discard failed'
+      if (m) { try { msg = JSON.parse(m[1]).error ?? msg } catch { /* keep default */ } }
+      ctx.notify(msg, Color4.create(1, 0.4, 0.4, 1))
+    }
+    discarding = false
+    confirmDiscardId = null
+    await ctx.refresh()   // the vault list and jar count reload
+  }
+
   async function select(entry: any): Promise<void> {
     selectedId = entry.id
+    confirmDiscardId = null   // a pending confirmation belongs to the species it was asked on
     drawList()
     announce(entry, details[entry.id], details[entry.id] === undefined)
     if (details[entry.id] === undefined) {
@@ -140,11 +170,13 @@ export const vaultView = makeSpeciesView('vault', 'SPECIMEN VAULT', 'collected f
     for (const s of samples) counts[s.species_id] = (counts[s.species_id] || 0) + 1
     return Object.entries(counts).map(([speciesId, count]) => {
       const c = catalogData.find(e => e.id === speciesId)
-      return { id: speciesId, name: c?.name || 'Unknown Species', rarity: c?.rarity || 'common', image_url: c?.image_url || null, count, body_name: c?.body_name, system_name: c?.system_name }
+      // Samples locked in a trade can't be discarded
+      const discardableIds = samples.filter(s => s.species_id === speciesId && !s.locked_in_trade).map(s => s.id)
+      return { id: speciesId, name: c?.name || 'Unknown Species', rarity: c?.rarity || 'common', image_url: c?.image_url || null, count, body_name: c?.body_name, system_name: c?.system_name, discardableIds }
     })
   },
   (_entries, ctx) => {
     const jars = (ctx.dashboard?.specimenSamples || []).length
     const cap = ctx.dashboard?.ship?.specimen_vault ?? 0
     return { label: `${jars} / ${cap} jars`, pct: cap ? jars / cap : 0 }
-  }, true)
+  }, true, true)

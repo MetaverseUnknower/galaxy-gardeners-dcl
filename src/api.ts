@@ -341,3 +341,8 @@ export async function getSystemScan(systemId: string): Promise<SystemScan> {
 export function guideSocketUrl(token: string): string {
   return `${API_BASE.replace(/^http/, 'ws')}/ws?token=${encodeURIComponent(token)}`
 }
+
+/** Discards one specimen sample to free vault space; the species stays in the Flora Catalog. */
+export async function discardSpecimen(sampleId: string): Promise<void> {
+  await apiPost('/api/ship/discard-jar', { sample_id: sampleId })
+}
