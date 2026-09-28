@@ -10,8 +10,10 @@ import { getDiscoveryScan } from './discoveryPanel'
 
 // Window glass spans roughly x 119..137, y 37..52, z 111..114 in world space (south wall of the interior model;
 // looking out, +x is to the viewer's left).
-const STAR_POSITION = Vector3.create(128, 46, 58)   // 70m south of the ship centre; the skybox radius is ~88m
-const SIZE_PER_UNIT = 90                             // sprite size (fraction of the sleep view) → metres at this distance
+// 50m south of the ship centre: nearer than the skybox starfield (a sphere ~71m around (128, 80, 128), which reaches
+// the line of sight ~60m out), so drifting stars pass behind the star or black hole, never in front of it
+const STAR_POSITION = Vector3.create(128, 46, 78)
+const SIZE_PER_UNIT = 64                             // sprite size (fraction of the sleep view) → metres at this distance
 const STAR_GLOW = 7                                  // emissive strength of the star sprite
 
 const MIN_TRAVEL_FRACTION = 0.06   // a distant speck at departure, still findable in the window

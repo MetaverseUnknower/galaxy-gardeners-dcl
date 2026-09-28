@@ -1,5 +1,5 @@
 // Wormhole cutscenes, seen out of the front window: a vortex of glowing ring segments and inward-spiralling streaks
-// placed between the window (glass at z≈112) and the window star (z 58).
+// placed between the window (glass at z≈112) and the window star (z 78).
 //   open  (7 s): the vortex spins up with a pulse of light, holds, then fades.
 //   jump  (6 s): it rushes at the ship, streaks stretch, white-out; `midpoint` (the map / window swap) runs while
 //                fully white; the white clears as the vortex collapses behind.
