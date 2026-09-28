@@ -7,7 +7,7 @@ import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starE
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
-import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification } from './ui'
+import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification, showStemMessage } from './ui'
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem, setSurveyReturn, setBlackHoleNotify } from './systemView'
 import { createEnvironment, respawnSystem, twinkleSystem, DECK_Y } from './environment'
@@ -115,7 +115,7 @@ export async function main() {
   setupTour()
   void setupSoloShip()
   setGuideNotifyCallback(text => showNotification(text, Color4.create(1, 0.25, 0.85, 1)))
-  setBlackHoleNotify(text => showNotification(text, Color4.create(0, 0.9, 1, 1), 8))   // STEM
+  setBlackHoleNotify(text => showStemMessage(text))
 
   try {
     setStatusMessage('Authenticating...')
