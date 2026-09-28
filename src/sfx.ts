@@ -1,7 +1,7 @@
 // Bundled fanfares (assets/audio, under 1 MB total) played as global, non-positional clips.
 // Same triggers as the iOS app: game start, mining success (extreme variant for high/extreme belts),
 // specimen found, pod destroyed. Muting the soundtrack mutes these too.
-import { engine, AudioSource, Entity } from '@dcl/sdk/ecs'
+import { engine, AudioSource, Entity, Transform } from '@dcl/sdk/ecs'
 import * as api from './api'
 import { isMuted, holdSoundtrack } from './soundtrack'
 
@@ -24,7 +24,12 @@ export function setSfxSystemId(id: string | null): void { systemId = id }
 
 export function playSfx(name: Sfx): void {
   if (isMuted()) return
-  if (!speaker) speaker = engine.addEntity()
+  if (!speaker) {
+    // Riding on the camera, so the clip plays at the player even where `global` isn't honored
+    // (an entity without a Transform sits at the scene's corner, far out of earshot of the ship)
+    speaker = engine.addEntity()
+    Transform.create(speaker, { parent: engine.CameraEntity })
+  }
   // Replacing the component starts a fresh instance even when the same clip is already playing.
   AudioSource.createOrReplace(speaker, { audioClipUrl: CLIPS[name], playing: true, loop: false, volume: VOLUME, global: true })
   if (name === 'game_start') holdSoundtrack(GAME_START_SECONDS)
