@@ -336,3 +336,8 @@ export type SystemScan = { systemId: string; visited: boolean; tier: number; pla
 export async function getSystemScan(systemId: string): Promise<SystemScan> {
   return apiGet<SystemScan>(`/api/galaxy/systems/${systemId}/scan`)
 }
+
+/** The guide reveal WebSocket for the signed-in player (same host as the API). */
+export function guideSocketUrl(token: string): string {
+  return `${API_BASE.replace(/^http/, 'ws')}/ws?token=${encodeURIComponent(token)}`
+}

@@ -1,23 +1,22 @@
 // Guides: the game's own wallets can see the players in their ships and reveal themselves to chosen players
-// to show them the ropes. The guide's scene broadcasts who it is revealed to on the scene message bus (repeated,
-// so late arrivals and reloads catch up); each player's scene trusts the message only when the sender is a guide
-// wallet, and hides the guide again once the messages stop.
+// to show them the ropes. Every Decentraland player's scene keeps one WebSocket open to the game server
+// (server routes/guideSocket.ts). A guide's scene sends who it's revealed to; the server checks the guide by the
+// wallet they signed in with and pushes the list of guides revealed to each player straight away, and hides a
+// guide again when they disconnect. (This replaced the deprecated scene MessageBus; a player reported reveals
+// sent that way never reaching them.)
 import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { engine, PlayerIdentityData, AvatarBase } from '@dcl/sdk/ecs'
-import { MessageBus } from '@dcl/sdk/message-bus'
 import { px } from './uiScale'
 import { setAlsoVisible, setSolo } from './soloShip'
+import { getToken } from './auth'
+import { guideSocketUrl } from './api'
 
 const GUIDE_WALLETS = [
   '0xc2877b05cfe462e585fe3de8046f7528998af6f1',   // unknower
   '0x7e567deabffceceea48da456ebb9ef84d159374c'    // MetaPetal
 ]
-const MESSAGE = 'gg-guide-reveal'
-const REBROADCAST_S = 4
-const REVEAL_TIMEOUT_MS = 15000
 
-const bus = new MessageBus()
 let notify: ((text: string) => void) | null = null
 export function setGuideNotifyCallback(cb: (text: string) => void): void { notify = cb }
 
@@ -29,28 +28,71 @@ function selfName(): string {
 }
 export function isGuide(): boolean { return GUIDE_WALLETS.includes(selfAddress()) }
 
-// --- Player side: guides revealed to me, until their messages stop ---
+// --- Connection: opened once signed in, reopened with backoff if it drops ---
 
-const revealedUntil = new Map<string, number>()   // guide address → expiry (ms)
+let socket: WebSocket | null = null
+let retryInS = 0
+let backoffS = 2
 
-function publishRevealed(): void { setAlsoVisible(Array.from(revealedUntil.keys())) }
-
-bus.on(MESSAGE, (value: any, sender: string) => {
-  const guide = (sender ?? '').toLowerCase()
-  if (!GUIDE_WALLETS.includes(guide) || guide === selfAddress()) return
-  const to: string[] = Array.isArray(value?.to) ? value.to.map((a: any) => String(a).toLowerCase()) : []
-  if (to.includes(selfAddress())) {
-    if (!revealedUntil.has(guide)) {
-      revealedUntil.set(guide, Date.now() + REVEAL_TIMEOUT_MS)
-      publishRevealed()
-      notify?.(`Guide ${String(value?.name ?? 'Captain')} has boarded your ship`)
-    } else {
-      revealedUntil.set(guide, Date.now() + REVEAL_TIMEOUT_MS)
-    }
-  } else if (revealedUntil.delete(guide)) {
-    publishRevealed()
+function connect(): void {
+  const token = getToken()
+  if (!token || socket) return
+  const ws = new WebSocket(guideSocketUrl(token))
+  socket = ws
+  ws.onopen = () => {
+    backoffS = 2
+    if (revealTo.size > 0) sendReveal()   // a reconnecting guide restores their reveals
   }
+  ws.onmessage = (ev) => {
+    let msg: any
+    try { msg = JSON.parse(String(ev.data)) } catch { return }
+    if (msg?.type === 'guides' && Array.isArray(msg.guides)) onGuides(msg.guides)
+  }
+  ws.onclose = () => {
+    if (socket === ws) socket = null
+    retryInS = backoffS
+    backoffS = Math.min(60, backoffS * 2)
+  }
+  ws.onerror = () => { /* a close follows */ }
+}
+
+let acc = 0
+engine.addSystem((dt: number) => {
+  acc += dt
+  if (acc < 1) return
+  acc = 0
+  if (revealed.length > 0) publishRevealed()   // a revealed guide may have entered the scene since
+  if (socket) return
+  if (retryInS > 0) { retryInS--; return }
+  connect()
 })
+
+// --- Player side: the guides the server says are revealed to me ---
+
+let revealed: { wallet: string; name: string }[] = []
+
+function onGuides(list: { wallet: string; name: string }[]): void {
+  const me = selfAddress()
+  const before = new Set(revealed.map(g => g.wallet))
+  revealed = list.filter(g => typeof g?.wallet === 'string' && g.wallet.toLowerCase() !== me)
+  for (const g of revealed) if (!before.has(g.wallet)) notify?.(`Guide ${g.name || 'Captain'} has boarded your ship`)
+  publishRevealed()
+}
+
+// The avatar-hiding area matches addresses exactly, so use each guide's address as the scene has it
+function sceneAddressOf(wallet: string): string {
+  const w = wallet.toLowerCase()
+  for (const [, identity] of engine.getEntitiesWith(PlayerIdentityData)) if (identity.address.toLowerCase() === w) return identity.address
+  return wallet
+}
+let lastPublished = ''
+function publishRevealed(): void {
+  const ids = revealed.map(g => sceneAddressOf(g.wallet))
+  const key = ids.join(',')
+  if (key === lastPublished) return
+  lastPublished = key
+  setAlsoVisible(ids)
+}
 
 // --- Guide side: who I'm revealed to, and my own view ---
 
@@ -58,40 +100,25 @@ const revealTo = new Set<string>()
 let seeCrew = false
 let open = false
 
-function broadcast(): void {
-  bus.emit(MESSAGE, { name: selfName(), to: Array.from(revealTo) })
+function sendReveal(): void {
+  if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'reveal', name: selfName(), to: Array.from(revealTo) }))
 }
 
 function toggleReveal(address: string): void {
   if (revealTo.has(address)) revealTo.delete(address)
   else revealTo.add(address)
-  broadcast()   // an empty list tells players to hide the guide straight away
+  sendReveal()   // an empty list hides the guide from everyone straight away
 }
 
 function hideFromAll(): void {
   revealTo.clear()
-  broadcast()
+  sendReveal()
 }
 
 function toggleSeeCrew(): void {
   seeCrew = !seeCrew
   setSolo(!seeCrew)
 }
-
-let acc = 0
-let sinceBroadcast = 0
-engine.addSystem((dt: number) => {
-  acc += dt
-  if (acc < 1) return
-  acc = 0
-  // Expire guides whose messages stopped (they left, or their scene closed)
-  const now = Date.now()
-  let changed = false
-  for (const [guide, until] of revealedUntil) if (until < now) { revealedUntil.delete(guide); changed = true }
-  if (changed) publishRevealed()
-  // Keep repeating my reveals so late arrivals and reloads catch up
-  if (revealTo.size > 0 && ++sinceBroadcast >= REBROADCAST_S) { sinceBroadcast = 0; broadcast() }
-})
 
 // --- Guide panel ---
 
