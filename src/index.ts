@@ -16,11 +16,12 @@ import { shipSystemsView } from './stations/shipSystems'
 import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
 import { createNavConsole, setNavConsoleSystem, refreshNavConsole } from './navConsole'
 import { setupConsoleCamera } from './consoleCamera'
-import { loadPrefs } from './prefs'
+import { loadPrefs, getPref, setPref } from './prefs'
 import { setupSoloShip } from './soloShip'
 import { setGuideNotifyCallback } from './guide'
 import { setupTour, startTourIfNeeded } from './tour/runner'
 import { refreshSystemProgress } from './systemProgress'
+import { onWormholeChanged, setWormholeNotify, setWormholeArrivedCallback, playWormholeCutscene, refreshWormhole, closesAtText, podWord } from './wormhole/state'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
@@ -38,6 +39,27 @@ import { selectBody } from './systemView'
 
 let playerInfo: PlayerInfo | null = null
 let viewSystemId: string | null = null   // a visited system being surveyed in the hologram (null: the ship's own)
+
+// Wormhole events: STEM notices, the map reload after a jump, and the opened / closed cutscenes
+function setupWormholeEvents(): void {
+  const VIOLET = Color4.create(0.75, 0.45, 1, 1)
+  setWormholeNotify((text, warning) => showNotification(text, warning ? Color4.create(1, 0.72, 0.2, 1) : VIOLET, warning ? 8 : 6))
+  setWormholeArrivedCallback(() => reloadMap())
+  onWormholeChanged(async (prev, next) => {
+    if (next && !prev) {
+      // Once per event per player: reloading doesn't replay it
+      if (getPref<string>('wormholeSeen', '') === next.id) return
+      setPref('wormholeSeen', next.id)
+      await playWormholeCutscene('open')
+      showNotification(`Captain, a wormhole just opened to ${next.targetName}! It's open until ${closesAtText()}.`, VIOLET, 8)
+    } else if (prev && !next) {
+      await playWormholeCutscene('close', () => reloadMap())
+      const lost = prev.canReturn && prev.podsOut > 0 ? ` We lost contact with ${podWord(prev.podsOut)}.` : ''
+      showNotification(`The wormhole to ${prev.targetName} has closed.${lost}`, VIOLET, 8)
+    }
+  })
+  void refreshWormhole()
+}
 
 async function showSystemView(): Promise<void> {
   if (!playerInfo?.current_system_id) return
@@ -261,7 +283,8 @@ export async function main() {
 
     setStatusMessage(null)
     playSfx('game_start')
-    void startTourIfNeeded()   // after the desks, docking and travel state exist: the tour reads all three
+    void startTourIfNeeded()
+    setupWormholeEvents()   // after the desks, docking and travel state exist: the tour reads all three
   } catch (err: any) {
     setStatusMessage(`Error: ${err.message}`)
     console.error('Galaxy Gardeners init error:', err)

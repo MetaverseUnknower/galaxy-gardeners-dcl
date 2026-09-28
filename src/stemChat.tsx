@@ -5,6 +5,7 @@ import { Color4 } from '@dcl/sdk/math'
 import { px } from './uiScale'
 import * as api from './api'
 import { replayTour } from './tour/runner'
+import { wormholeEvent, closesAtText } from './wormhole/state'
 
 type Message = { role: 'user' | 'stem' | 'warning' | 'error'; text: string }
 
@@ -48,6 +49,16 @@ function replyMessages(reply: api.StemReply): Message[] {
 function send(): void {
   const text = draft.trim()
   if (!text || waiting) return
+  if (/wormhole/i.test(text)) {
+    const ev = wormholeEvent()
+    const reply = ev
+      ? `A wormhole to ${ev.targetName} is open until ${closesAtText()}. Jumping through is free and instant, and so is the way back until it closes. If we stay past closing with pods still out, we lose contact with them.`
+      : 'No wormhole is open right now, Captain.'
+    messages.push({ role: 'user', text }, { role: 'stem', text: reply })
+    draft = ''
+    inputGeneration++
+    return
+  }
   if (/\b(tour|walkthrough)\b/i.test(text)) {
     messages.push({ role: 'user', text }, { role: 'stem', text: 'Starting the tour, Captain.' })
     draft = ''

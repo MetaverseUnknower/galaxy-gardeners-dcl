@@ -23,6 +23,7 @@ import { GuideButton, GuidePanel } from './guide'
 import { InfoMenu, CreditsPanel, LegalPanel } from './credits'
 import { emitTourEvent } from './tour/events'
 import { TourDialog } from './tour/dialog'
+import { WormholeBanner } from './wormhole/banner'
 import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
@@ -698,6 +699,7 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <BodyDetailPanel />
     <TravelStatusPanel />
     <SurveyBar />
+    <WormholeBanner />
     <NotificationBanner />
     <DiscoveryDescriptionBar />
     <StatusBar />

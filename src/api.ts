@@ -346,3 +346,13 @@ export function guideSocketUrl(token: string): string {
 export async function discardSpecimen(sampleId: string): Promise<void> {
   await apiPost('/api/ship/discard-jar', { sample_id: sampleId })
 }
+
+// Wormhole events: admin-opened temporary wormholes to one system (server services/events/wormhole.ts)
+export type WormholeStatus = {
+  id: string; targetSystemId: string; targetName: string; startsAt: string; endsAt: string
+  trip: { originSystemId: string; originName: string } | null
+  podsOut: number; canJump: boolean; jumpBlockedReason: string | null; canReturn: boolean
+}
+export async function getWormholeEvent(): Promise<WormholeStatus | null> { return apiGet<WormholeStatus | null>('/api/events/wormhole') }
+export async function wormholeJump(): Promise<{ systemId: string; systemName: string }> { return apiPost('/api/events/wormhole/jump') }
+export async function wormholeReturn(): Promise<{ systemId: string; systemName: string }> { return apiPost('/api/events/wormhole/return') }
