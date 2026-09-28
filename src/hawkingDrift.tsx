@@ -1,40 +1,33 @@
 // Hawking drift: what staring into the black hole hologram does to the captain (systemView.ts runs the stare).
 // While staring, a dark violet veil throbs over the view, faster the longer it goes on; then the drift itself: a
 // blackout, the move (midpoint), and an uneven flicker back to sight, like lost time.
-// Sound: the music drains away with the veil (the stream only has volume) while a bundled low drone slides down in
-// pitch, like time stretching; both cut out at the blackout, and the music swells back afterwards.
+// Sound: a low drone swells in and slides down in pitch, like time stretching, and the music stops at the blackout
+// and picks up again afterwards. The drone's swell and slide are baked into the clip (played once, like the
+// fanfares): in testing, changing a playing clip's volume and pitch did nothing audible, and ramping the music
+// stream's volume made it crackle, so nothing here changes audio while it plays.
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { engine, AudioSource, Entity, Transform } from '@dcl/sdk/ecs'
-import { isMuted, setSoundtrackDuck } from './soundtrack'
+import { isMuted, holdSoundtrack } from './soundtrack'
 
-const DRONE_CLIP = 'assets/audio/hawking_drone.wav'   // 4 s seamless loop, generated (55 Hz beating pair + overtones)
-const DRONE_VOLUME = 0.9
-const MUSIC_FLOOR = 0.12    // the music's volume, as a fraction, just before the blackout
-const MUSIC_RETURN_SECONDS = 4   // the music swells back over this long afterwards, eased, ending at full volume
+const DRONE_CLIP = 'assets/audio/hawking_drone.mp3'   // 5.3 s, generated: 80 Hz → 40 Hz beating pair + overtones
 let drone: Entity | null = null
 let droneOn = false
-let music = 1               // current music duck
-let returning = 1           // 0..1 progress of the swell back (1 = done)
 
-function setDrone(on: boolean, volume = 0, pitch = 1): void {
-  if (on && isMuted()) on = false
-  if (!on) {
-    if (drone && droneOn) { AudioSource.getMutable(drone).playing = false; droneOn = false }
-    return
-  }
+function startDrone(): void {
+  if (droneOn || isMuted()) return
   if (!drone) {
     drone = engine.addEntity()
     Transform.create(drone, { parent: engine.CameraEntity })   // at the listener, like the fanfares
   }
-  if (!droneOn) {
-    AudioSource.createOrReplace(drone, { audioClipUrl: DRONE_CLIP, playing: true, loop: true, volume, pitch, global: true })
-    droneOn = true
-    return
-  }
-  const a = AudioSource.getMutable(drone)
-  a.volume = volume
-  a.pitch = pitch
+  AudioSource.createOrReplace(drone, { audioClipUrl: DRONE_CLIP, playing: true, loop: false, volume: 1, global: true })
+  droneOn = true
+}
+
+function stopDrone(): void {
+  if (!drone || !droneOn) return
+  AudioSource.deleteFrom(drone)
+  droneOn = false
 }
 
 const VEIL_START = 3        // seconds of staring before the veil appears
@@ -78,35 +71,22 @@ engine.addSystem((dt: number) => {
   if (driftT >= 0) {
     const before = driftT
     driftT += dt
+    if (before === 0) holdSoundtrack(DURATION + 0.5)   // the music stops for the blackout and resumes after
+    if (before < DRIFT[1][0] && driftT >= DRIFT[1][0]) stopDrone()   // silence at full dark
     if (before < MIDPOINT && driftT >= MIDPOINT && midpoint) { const fn = midpoint; midpoint = null; fn() }
     if (driftT >= DURATION) { driftT = -1; veil = 0; const fn = done; done = null; fn?.() }
     else veil = keyframe(driftT)
-    // Silence from the blackout until sight returns
-    setDrone(driftT < DRIFT[1][0], DRONE_VOLUME, 0.45)
-    music = 0
-    returning = 0
-    setSoundtrackDuck(music)
     return
   }
   if (stare !== null && stare > VEIL_START) {
     const k = Math.min(1, (stare - VEIL_START) / 5)
     pulse += dt * (2 + 10 * k)   // the throb quickens
     veil = VEIL_MAX * k * (0.7 + 0.3 * Math.sin(pulse))
-    setDrone(true, DRONE_VOLUME * k, 1 - 0.55 * k)   // groans downward as the stare goes on
-    music = 1 - (1 - MUSIC_FLOOR) * k
-    returning = 1
+    startDrone()   // once per stare; the clip's own 5.3 s swell lines up with the veil
   } else {
     if (veil > 0) veil = Math.max(0, veil - dt * 1.5)   // looked away: the veil lifts
-    setDrone(false)
-    if (returning < 1) {
-      // After the drift: smoothstep from silence to full, so it neither lingers quiet nor jumps at the end
-      returning = Math.min(1, returning + dt / MUSIC_RETURN_SECONDS)
-      music = returning * returning * (3 - 2 * returning)
-    } else {
-      music = Math.min(1, music + dt / MUSIC_RETURN_SECONDS)   // looked away early: from wherever it got to
-    }
+    stopDrone()
   }
-  setSoundtrackDuck(music)
 })
 
 export const HawkingOverlay = () => {
