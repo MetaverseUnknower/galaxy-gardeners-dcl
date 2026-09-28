@@ -173,19 +173,41 @@ function createStarGlow(root: Entity, starSize: number, emissive: Color3): void 
   })
 }
 
-// Accretion ring: bands of short white segments on a billboarded pivot, bright at the inner edge, fading outward
-const RING_SEGMENTS = 48
-const RING_BANDS: { r: number; width: number; intensity: number; alpha: number }[] = [
-  { r: 1.5, width: 0.22, intensity: 8, alpha: 1 },
-  { r: 1.8, width: 0.3, intensity: 3.5, alpha: 0.7 },
-  { r: 2.15, width: 0.34, intensity: 1.5, alpha: 0.35 },
+// Black hole, drawn like the window sprite: on a pivot that always faces the viewer, a flat white accretion disk seen
+// nearly edge-on (a thin band straight across, its near side passing in front of the horizon), plus the thin photon
+// ring around the horizon. Both are bands of short segments, brightest nearest the hole.
+const DISK_TILT_DEG = 10   // from edge-on: how much of the disk's top face shows
+const DISK_BANDS: { r: number; width: number; intensity: number; alpha: number }[] = [
+  { r: 1.45, width: 0.35, intensity: 8, alpha: 1 },
+  { r: 1.9, width: 0.55, intensity: 4, alpha: 0.85 },
+  { r: 2.5, width: 0.7, intensity: 2, alpha: 0.55 },
+  { r: 3.2, width: 0.75, intensity: 1, alpha: 0.3 },
+  { r: 3.9, width: 0.65, intensity: 0.5, alpha: 0.15 },
 ]
+const HALO_BANDS: { r: number; width: number; intensity: number; alpha: number }[] = [
+  { r: 1.12, width: 0.1, intensity: 8, alpha: 1 },
+  { r: 1.3, width: 0.18, intensity: 2, alpha: 0.35 },
+]
+const RING_SEGMENTS = 64
+
+function segmentMaterial(seg: Entity, intensity: number, alpha: number): void {
+  Material.setPbrMaterial(seg, {
+    albedoColor: Color4.create(1, 1, 1, alpha),
+    emissiveColor: Color3.create(1, 1, 1),
+    emissiveIntensity: intensity,
+    transparencyMode: alpha < 1 ? MaterialTransparencyMode.MTM_ALPHA_BLEND : MaterialTransparencyMode.MTM_OPAQUE,
+    castShadows: false,
+  })
+}
+
 function createAccretionRing(root: Entity, horizonRadius: number): void {
   const pivot = engine.addEntity()
   Transform.create(pivot, { position: Vector3.create(0, 0, 0), parent: root })
   Billboard.create(pivot, { billboardMode: BillboardMode.BM_ALL })
   staticEntities.push(pivot)
-  for (const band of RING_BANDS) {
+
+  // Photon ring: face-on circles around the horizon (the pivot's XY plane faces the viewer)
+  for (const band of HALO_BANDS) {
     const r = band.r * horizonRadius
     const arc = (2 * Math.PI * r / RING_SEGMENTS) * 1.08   // slight overlap: no gaps between segments
     for (let i = 0; i < RING_SEGMENTS; i++) {
@@ -198,13 +220,29 @@ function createAccretionRing(root: Entity, horizonRadius: number): void {
         parent: pivot,
       })
       MeshRenderer.setBox(seg)
-      Material.setPbrMaterial(seg, {
-        albedoColor: Color4.create(1, 1, 1, band.alpha),
-        emissiveColor: Color3.create(1, 1, 1),
-        emissiveIntensity: band.intensity,
-        transparencyMode: band.alpha < 1 ? MaterialTransparencyMode.MTM_ALPHA_BLEND : MaterialTransparencyMode.MTM_OPAQUE,
-        castShadows: false,
+      segmentMaterial(seg, band.intensity, band.alpha)
+      staticEntities.push(seg)
+    }
+  }
+
+  // Accretion disk: flat annuli in a plane tipped DISK_TILT_DEG toward the viewer from edge-on
+  const disk = engine.addEntity()
+  Transform.create(disk, { position: Vector3.create(0, 0, 0), rotation: Quaternion.fromEulerDegrees(-DISK_TILT_DEG, 0, 0), parent: pivot })
+  staticEntities.push(disk)
+  for (const band of DISK_BANDS) {
+    const r = band.r * horizonRadius
+    const arc = (2 * Math.PI * r / RING_SEGMENTS) * 1.08
+    for (let i = 0; i < RING_SEGMENTS; i++) {
+      const a = (i / RING_SEGMENTS) * Math.PI * 2
+      const seg = engine.addEntity()
+      Transform.create(seg, {
+        position: Vector3.create(Math.cos(a) * r, 0, Math.sin(a) * r),
+        rotation: Quaternion.fromEulerDegrees(0, -(a * 180 / Math.PI + 90), 0),   // long side along the circle
+        scale: Vector3.create(arc, 0.004, band.width * horizonRadius),
+        parent: disk,
       })
+      MeshRenderer.setBox(seg)
+      segmentMaterial(seg, band.intensity, band.alpha)
       staticEntities.push(seg)
     }
   }
