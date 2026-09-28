@@ -24,6 +24,9 @@ you left pods working back home.
   before the event closes. They may jump again later in the window (the origin is recorded afresh each time they
   leave home). A player who left the target by normal travel can no longer "return" (the return belongs to the
   target).
+- **Mission length:** a player who jumped through and hasn't come back can't launch a mining or exploration pod
+  whose mission would end after the wormhole closes ("The wormhole closes in {n} minutes, Captain, and this mission
+  would outlast it."). Discovery scans aren't limited.
 - **Pods out:** a player at the target with pods still deployed (expeditions in progress started before or after the
   jump, anywhere) is warned by STEM: on arrival, 15 minutes before closing and 2 minutes before closing:
   "Captain, we have to get back to the wormhole or we'll lose contact with {n} pods!"
