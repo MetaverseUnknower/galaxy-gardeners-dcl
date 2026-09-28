@@ -31,7 +31,7 @@ function stopDrone(): void {
   droneOn = false
 }
 
-const VEIL_START = 3        // seconds of staring before the veil appears
+const VEIL_START = 10       // seconds of staring before the veil and drone start (the drift comes at 15: systemView.ts)
 const VEIL_MAX = 0.6        // veil opacity just before the drift
 // Drift timeline: [seconds, opacity] keyframes, linear between them; the move happens at MIDPOINT (fully dark)
 const DRIFT: [number, number][] = [
