@@ -28,6 +28,7 @@ let player: Entity | null = null
 let elapsed = 0
 let muted = false
 let started = false
+let duck = 1                    // 0..1 multiplier on the volume (the Hawking drift drains the music)
 let listener: (() => void) | null = null
 let holdSeconds = 0             // soundtrack paused while a fanfare plays
 
@@ -81,7 +82,7 @@ function shuffle<T>(xs: T[]): T[] {
 
 function play(): void {
   if (!player || queue.length === 0) return
-  AudioStream.createOrReplace(player, { url: queue[position].url, playing: !muted, volume: VOLUME })
+  AudioStream.createOrReplace(player, { url: queue[position].url, playing: !muted, volume: VOLUME * duck })
   elapsed = 0
   wasPlaying = false
   listener?.()
@@ -103,6 +104,14 @@ export function setMuted(on: boolean): void {
 }
 
 export function toggleMuted(): void { setMuted(!muted) }
+
+/** Scale the music's volume, 0..1 (1 = normal). The stream has no speed or pitch control, only volume. */
+export function setSoundtrackDuck(f: number): void {
+  const next = Math.max(0, Math.min(1, f))
+  if (Math.abs(next - duck) < 0.005) return
+  duck = next
+  if (player && AudioStream.has(player)) AudioStream.getMutable(player).volume = VOLUME * duck
+}
 
 /** Pause the music for a fanfare and resume afterwards (the track picks up where it stopped). */
 export function holdSoundtrack(seconds: number): void {
