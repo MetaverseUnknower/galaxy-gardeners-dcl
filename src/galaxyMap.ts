@@ -1,7 +1,7 @@
 import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, ColliderLayer, TextureWrapMode, VisibilityComponent } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion, Vector2 } from '@dcl/sdk/math'
 import { StarSystem } from './types'
-import { getSystemRoot, getSystemAutoScale } from './systemView'
+import { getSystemRoot, getSystemAutoScale, isViewingRemoteSystem } from './systemView'
 import { DECK_Y } from './environment'
 import { PROJECTOR_TOP_Y } from './environment'
 import { getPref, setPref } from './prefs'
@@ -46,6 +46,7 @@ let markerRotation = 0
 let beamEntity: Entity | null = null
 let beamOuterEntity: Entity | null = null   // second, slightly wider hologram layer
 let beamTime = 0
+let surveyBlend = 0   // 0 cyan (the ship's own system or the galaxy) → 1 green (a survey of a visited system)
 const NEBULA_EXTENT = MAP_RADIUS * 1.5
 // Hologram beam texture (a 1024 copy of assets/images/hologram.png; the original is kept as supplied).
 const HOLO_TEXTURE = 'assets/images/hologram-1024.png'
@@ -582,6 +583,10 @@ export function galaxyAnimationSystem(dt: number): void {
     const pulse = 0.5 + 0.5 * Math.sin(beamTime * 1.5)
     const k = Math.max(0, Math.min(1, (beamTime - HOLO_WARMUP_SECONDS) / HOLO_FADE_IN_SECONDS))
     const fadeIn = k * k * (3 - 2 * k)
+    // Surveys tint the beam green (matching the survey bar and tab), easing over about a second
+    const surveyTarget = isViewingRemoteSystem() ? 1 : 0
+    surveyBlend += (surveyTarget - surveyBlend) * Math.min(1, dt * 3)
+    const mix = (cyan: number, green: number) => cyan + (green - cyan) * surveyBlend
     const layers: [Entity, typeof HOLO_LAYERS[number]][] = [[beamEntity, HOLO_LAYERS[0]], [beamOuterEntity, HOLO_LAYERS[1]]]
     for (const [entity, L] of layers) {
       Transform.getMutable(entity).rotation = Quaternion.fromEulerDegrees(0, (beamTime * L.spin) % 360, 0)
@@ -589,8 +594,8 @@ export function galaxyAnimationSystem(dt: number): void {
       Material.setPbrMaterial(entity, {
         texture: Material.Texture.Common(tex),
         emissiveTexture: Material.Texture.Common(tex),
-        albedoColor: Color4.create(0.6, 0.85, 1, L.alpha * (0.8 + pulse * 0.4) * fadeIn),
-        emissiveColor: Color3.create(0.35 * fadeIn, 0.75 * fadeIn, fadeIn),
+        albedoColor: Color4.create(mix(0.6, 0.45), mix(0.85, 1), mix(1, 0.6), L.alpha * (0.8 + pulse * 0.4) * fadeIn),
+        emissiveColor: Color3.create(mix(0.35, 0.25) * fadeIn, mix(0.75, 1) * fadeIn, mix(1, 0.45) * fadeIn),
         emissiveIntensity: L.glow * (0.8 + pulse * 0.5),
         transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND,
         castShadows: false,
