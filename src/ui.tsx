@@ -413,24 +413,26 @@ const BANNER_LINE_HEIGHT = 30
 // STEM's banner: monospace (~0.6em per character), so its lines are estimated separately from the notification's
 const STEM_CHARS_PER_LINE = 58
 const STEM_LINE_HEIGHT = 26
-const STEM_GREEN = Color4.create(0.35, 1, 0.7, 1)
-const STEM_DIM = Color4.create(0.35, 1, 0.7, 0.55)
+const STEM_CYAN = Color4.create(0.3, 0.95, 1, 1)
+const STEM_DIM = Color4.create(0.3, 0.95, 1, 0.55)
 const StemBanner = () => {
   if (!stemMessage) return null
   const typed = Math.min(stemMessage.text.length, Math.floor(stemMessage.age * STEM_TYPE_RATE))
-  const cursor = Math.floor(stemMessage.age * 2.5) % 2 === 0 ? '_' : ' '   // blinks
+  // Blinking pipe, held to the text by a no-break space and blinking to another one (same width in monospace), so
+  // the blink never changes where the lines wrap
+  const cursor = Math.floor(stemMessage.age * 2.5) % 2 === 0 ? '|' : '\u00A0'
   const lines = Math.max(1, Math.ceil((stemMessage.text.length + 2) / STEM_CHARS_PER_LINE))
   // Below the ordinary banner when both are up
   const top = notification ? 60 + 32 + BANNER_LINE_HEIGHT * Math.max(1, Math.ceil(notification.text.length / BANNER_CHARS_PER_LINE)) + 10 : 60
   return (
     <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { top: px(top) }, justifyContent: 'center' }}>
       <UiEntity uiTransform={{ width: px(720), flexDirection: 'row' }} uiBackground={{ color: Color4.create(0.01, 0.03, 0.025, 0.96) }}>
-        <UiEntity uiTransform={{ width: px(4), height: '100%' }} uiBackground={{ color: STEM_GREEN }} />
+        <UiEntity uiTransform={{ width: px(4), height: '100%' }} uiBackground={{ color: STEM_CYAN }} />
         <UiEntity uiTransform={{ flexGrow: 1, flexDirection: 'column', padding: { top: px(10), bottom: px(14), left: px(18), right: px(18) } }}>
           <UiEntity uiTransform={{ width: '100%', height: px(18), margin: { bottom: px(6) } }}
             uiText={{ value: 'STEM  //  SHIP TELEMETRY AND EXPLORATION MODULE', fontSize: px(12), color: STEM_DIM, textAlign: 'middle-left', font: 'monospace' }} />
           <UiEntity uiTransform={{ width: '100%', height: px(STEM_LINE_HEIGHT * lines) }}
-            uiText={{ value: `> ${stemMessage.text.slice(0, typed)}${cursor}`, fontSize: px(18), color: STEM_GREEN, textAlign: 'top-left', textWrap: 'wrap', font: 'monospace' }} />
+            uiText={{ value: `> ${stemMessage.text.slice(0, typed)}\u00A0${cursor}`, fontSize: px(18), color: STEM_CYAN, textAlign: 'top-left', textWrap: 'wrap', font: 'monospace' }} />
         </UiEntity>
       </UiEntity>
     </UiEntity>
