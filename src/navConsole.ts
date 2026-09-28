@@ -172,7 +172,7 @@ export function refreshNavConsole(): void {
   disc(bag, root, C2, L2, 0.035, Color3.create(0, 0.8, 0.8))
   txt(bag, root, C2 + 0.09, L2, 'STATION', LS, DIM, LEFT)
   // Third column: the map's visited (dashed) and fully explored (solid) rings
-  ring(bag, root, C3, L1, 0.04, Color3.create(0.75, 0.9, 1), { dashed: true, segments: 12, thickness: 0.008, alpha: 0.8 })
+  ring(bag, root, C3, L1, 0.04, Color3.create(0.3, 0.8, 0.45), { dashed: true, segments: 12, thickness: 0.008, alpha: 0.8 })
   txt(bag, root, C3 + 0.07, L1, 'VISITED', LS, DIM, LEFT)
   ring(bag, root, C3, L2, 0.04, Color3.create(0.35, 1, 0.55), { segments: 16, thickness: 0.012 })
   txt(bag, root, C3 + 0.07, L2, 'EXPLORED', LS, DIM, LEFT)

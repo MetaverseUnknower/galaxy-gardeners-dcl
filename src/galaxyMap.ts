@@ -397,8 +397,8 @@ function addHomePin(root: Entity, pos: Vector3, starSize: number): void {
 
 /** A faint flat halo disc around a station system: one soft circle, quiet even when most systems have one. */
 // Visited / fully explored rings: segments laid in a circle just outside the station halo. Visited is a faint
-// dashed ring, explored a bright solid one, so the two differ by shape as well as colour.
-const VISITED_COLOR = Color3.create(0.75, 0.9, 1)
+// dashed ring, explored a bright solid one: both green, told apart by shape and brightness.
+const VISITED_COLOR = Color3.create(0.3, 0.8, 0.45)
 const EXPLORED_COLOR = Color3.create(0.35, 1, 0.55)
 const progressRingEntities: Entity[] = []
 
