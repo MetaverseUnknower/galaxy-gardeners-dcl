@@ -37,6 +37,7 @@ const VEIL_MAX = 0.6        // veil opacity just before the drift
 const DRIFT: [number, number][] = [
   [0, 0.6], [0.3, 1], [1.1, 1], [1.2, 0.15], [1.3, 0.9], [1.45, 0.05], [1.55, 0.8], [1.9, 0.75], [2.0, 0.1], [2.1, 0.5], [2.8, 0],
 ]
+const COMMIT = DRIFT[1][0]   // full black: from here the drift happens (before it, looking away still cancels)
 const MIDPOINT = 0.6
 const DURATION = DRIFT[DRIFT.length - 1][0]
 
@@ -48,6 +49,13 @@ let done: (() => void) | null = null
 
 /** Seconds the player has been staring, or null once they look away. */
 export function setStareTime(t: number | null): void { stare = t }
+
+/** Called off before the screen is fully black (the captain looked away in time): true if it was cancelled. */
+export function cancelHawkingDrift(): boolean {
+  if (driftT < 0 || driftT >= COMMIT) return false
+  driftT = -1; midpoint = null; done = null   // the veil lifts and the drone stops on the next tick
+  return true
+}
 
 /** Plays the drift: `onMidpoint` runs while the screen is dark, `onDone` once the view is back. */
 export function playHawkingDrift(onMidpoint: () => void, onDone: () => void): void {
@@ -72,8 +80,10 @@ engine.addSystem((dt: number) => {
   if (driftT >= 0) {
     const before = driftT
     driftT += dt
-    if (before === 0) holdSoundtrack(DURATION + 0.5, MUSIC_FADE_IN)   // the music stops for the blackout, then rises back
-    if (before < DRIFT[1][0] && driftT >= DRIFT[1][0]) stopDrone()   // silence at full dark
+    if (before < COMMIT && driftT >= COMMIT) {   // full black: committed
+      stopDrone()
+      holdSoundtrack(DURATION - COMMIT + 0.5, MUSIC_FADE_IN)   // the music stops for the blackout, then rises back
+    }
     if (before < MIDPOINT && driftT >= MIDPOINT && midpoint) { const fn = midpoint; midpoint = null; fn() }
     if (driftT >= DURATION) { driftT = -1; veil = 0; const fn = done; done = null; fn?.() }
     else veil = keyframe(driftT)

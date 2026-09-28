@@ -3,7 +3,7 @@ import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
-import { setStareTime, playHawkingDrift } from './hawkingDrift'
+import { setStareTime, playHawkingDrift, cancelHawkingDrift } from './hawkingDrift'
 
 const SYSTEM_CENTER = Vector3.create(128, 41, 128)
 
@@ -254,6 +254,8 @@ function stillLookingAtHorizon(): boolean {
 
 let drifting = false
 function stareSystem(dt: number): void {
+  // Until the screen is fully black, looking away still calls the drift off
+  if (drifting && (!hovering || !stillLookingAtHorizon()) && cancelHawkingDrift()) drifting = false
   if (!drifting && hovering) {
     const looking = stillLookingAtHorizon()
     if (staring && !looking) staring = false                       // looked away: the stare is off
@@ -266,7 +268,6 @@ function stareSystem(dt: number): void {
   if (before < STARE_WARNING_AT && stareTime >= STARE_WARNING_AT) warnAboutStaring()
   if (stareTime < STARE_SECONDS) return
   staring = false
-  hovering = false   // only a fresh hover-enter starts another stare
   drifting = true
   setStareTime(null)
   let recorded: Promise<api.HawkingDrift | null> = Promise.resolve(null)
@@ -282,6 +283,7 @@ function stareSystem(dt: number): void {
     })
   }, async () => {
     drifting = false
+    hovering = false   // moved and facing away: only a fresh hover-enter starts another stare
     lastStareWarning = Date.now()   // the explanation stands in for the next warning
     const d = await recorded
     const tally = d && d.recent >= 2 ? ` That's ${d.recent} drifts in the last three days. They add up, Captain.` : ''
