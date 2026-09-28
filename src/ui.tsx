@@ -2,7 +2,8 @@ import ReactEcs, { ReactEcsRenderer, UiEntity, Label } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { StarSystem, FuelCostResponse } from './types'
 import { getTravelProgress, getTravelRemainingMs } from './navigation'
-import { getSelectedBody, BodyInfo } from './systemView'
+import { getSelectedBody, BodyInfo, isViewingRemoteSystem, viewedSystemName, ownSystemTitle, returnFromSurvey } from './systemView'
+import { switchViewMode } from './galaxyMap'
 
 let selectedFlora: any = null
 let onCloseDetailPanel: (() => void) | null = null
@@ -347,6 +348,27 @@ const TravelStatusPanel = () => {
   )
 }
 
+// While surveying a visited system: which one is on the hologram, and a one-click way back.
+const SurveyBar = () => {
+  if (!isViewingRemoteSystem()) return null
+  const own = ownSystemTitle()
+  return (
+    <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { top: px(20) }, justifyContent: 'center' }}>
+      <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', padding: px(8) }} uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.92) }}>
+        <Label value={`SURVEYING  ${viewedSystemName().toUpperCase()}`} fontSize={px(16)} color={Color4.create(0.35, 1, 0.55, 1)} uiTransform={{ margin: { left: px(10), right: px(16) } }} />
+        <UiEntity uiTransform={{ height: px(32), padding: { left: px(14), right: px(14) }, justifyContent: 'center', alignItems: 'center' }}
+          uiBackground={{ color: Color4.create(0, 0.9, 1, 1) }} onMouseDown={() => { returnFromSurvey() }}>
+          <Label value={own ? `BACK TO ${own.toUpperCase()}` : 'BACK TO YOUR SYSTEM'} fontSize={px(13)} color={Color4.create(0.02, 0.05, 0.1, 1)} />
+        </UiEntity>
+        <UiEntity uiTransform={{ height: px(32), padding: { left: px(14), right: px(14) }, margin: { left: px(8) }, justifyContent: 'center', alignItems: 'center' }}
+          uiBackground={{ color: Color4.create(0.05, 0.12, 0.2, 1) }} onMouseDown={() => { switchViewMode('galaxy') }}>
+          <Label value="BACK TO GALAXY" fontSize={px(13)} color={Color4.create(0, 0.9, 1, 1)} />
+        </UiEntity>
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
 const NotificationBanner = () => {
   if (!notification) return null
   return (
@@ -665,6 +687,7 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <SystemInfoPanel />
     <BodyDetailPanel />
     <TravelStatusPanel />
+    <SurveyBar />
     <NotificationBanner />
     <DiscoveryDescriptionBar />
     <StatusBar />

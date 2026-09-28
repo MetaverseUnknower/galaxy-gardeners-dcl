@@ -9,7 +9,7 @@ import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
 import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification } from './ui'
 import { StarSystem, PlayerInfo } from './types'
-import { renderSystemView, clearSystemView, systemViewAnimationSystem } from './systemView'
+import { renderSystemView, clearSystemView, systemViewAnimationSystem, setSurveyReturn } from './systemView'
 import { createEnvironment, respawnSystem, twinkleSystem, DECK_Y } from './environment'
 import { shipOverviewView, setSolarRechargeRate } from './stations/shipOverview'
 import { shipSystemsView } from './stations/shipSystems'
@@ -43,7 +43,9 @@ async function showSystemView(): Promise<void> {
   if (!playerInfo?.current_system_id) return
   const target = viewSystemId ?? playerInfo.current_system_id
   const remote = target !== playerInfo.current_system_id
-  await renderSystemView(target, { readOnly: remote })
+  const nameOf = (id: string) => systems.find(s => s.id === id)?.name ?? 'Unknown system'
+  setSurveyReturn(() => { viewSystemId = null; void showSystemView() }, nameOf(playerInfo.current_system_id))
+  await renderSystemView(target, { readOnly: remote, title: nameOf(target) })
   refreshNavConsole()
   if (remote) showNotification(`Survey of ${systems.find(s => s.id === target)?.name ?? 'a visited system'}: from your visit, read only`, Color4.create(0.35, 1, 0.55, 1))
 }
