@@ -3,7 +3,7 @@ import { Vector3, Color4 } from '@dcl/sdk/math'
 import { createStation } from './stations'
 import { authenticate } from './auth'
 import * as api from './api'
-import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker, getViewMode } from './galaxyMap'
+import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker, getViewMode, setWormholeTarget } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
@@ -46,6 +46,7 @@ function setupWormholeEvents(): void {
   setWormholeNotify((text, warning) => showNotification(text, warning ? Color4.create(1, 0.72, 0.2, 1) : VIOLET, warning ? 8 : 6))
   setWormholeArrivedCallback(() => reloadMap())
   onWormholeChanged(async (prev, next) => {
+    setWormholeTarget(next?.targetSystemId ?? null)
     if (next && !prev) {
       // Once per event per player: reloading doesn't replay it
       if (getPref<string>('wormholeSeen', '') === next.id) return

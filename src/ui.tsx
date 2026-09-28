@@ -24,6 +24,7 @@ import { InfoMenu, CreditsPanel, LegalPanel } from './credits'
 import { emitTourEvent } from './tour/events'
 import { TourDialog } from './tour/dialog'
 import { WormholeBanner } from './wormhole/banner'
+import { wormholeEvent, isWormholeBusy, jumpThroughWormhole, returnThroughWormhole } from './wormhole/state'
 import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
@@ -225,6 +226,21 @@ function scanLines(systemId: string): [string, string] | null {
 }
 export function setCurrentSystemId(id: string | null): void { currentSystemId = id }
 
+// Star panel: JUMP THROUGH WORMHOLE on the wormhole's target, RETURN THROUGH WORMHOLE on it once there
+function wormholeButton(systemId: string) {
+  const ev = wormholeEvent()
+  if (!ev || systemId !== ev.targetSystemId) return null
+  const returning = ev.canReturn && systemId === currentSystemId
+  if (!returning && !ev.canJump) return null
+  const busy = isWormholeBusy()
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }}
+      uiBackground={{ color: busy ? Color4.create(0.15, 0.15, 0.2, 1) : Color4.create(0.45, 0.2, 0.7, 1) }}
+      uiText={{ value: busy ? 'JUMPING…' : returning ? 'RETURN THROUGH WORMHOLE' : 'JUMP THROUGH WORMHOLE', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
+      onMouseDown={() => { if (!busy) void (returning ? returnThroughWormhole() : jumpThroughWormhole()) }} />
+  )
+}
+
 const SystemInfoPanel = () => {
   if (!selectedSystem) return null
   const canAfford = fuelInfo ? fuelInfo.current_fuel >= fuelInfo.fuel_cost : false
@@ -270,6 +286,7 @@ const SystemInfoPanel = () => {
             uiText={{ value: fuelLoading ? `Plotting course${'.'.repeat(1 + Math.floor(Date.now() / 400) % 3)}` : 'Route data unavailable', fontSize: px(20), color: Color4.create(0.45, 0.65, 0.75, 1), textAlign: 'middle-center' }} />
         ) : null}
         {selectedSystem.id === currentSystemId || systemProgress(selectedSystem.id)?.visited ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.1, 0.3, 0.5, 1) }} uiText={{ value: selectedSystem.id === currentSystemId ? 'VIEW SYSTEM' : 'VIEW SURVEY', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onViewSystem && selectedSystem) onViewSystem(selectedSystem.id) }} /> : null}
+        {wormholeButton(selectedSystem.id)}
         {selectedSystem.id !== currentSystemId && fuelInfo && !showTravelConfirm ? (() => {
           const traveling = isCurrentlyTraveling()
           const canTravel = canAfford && !traveling

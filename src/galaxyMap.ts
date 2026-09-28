@@ -470,6 +470,53 @@ export function applyMapFilters(): void {
   }
   if (currentLocationMarker) setShown(currentLocationMarker, isMapFilterOn('here'))
   drawProgressRings()
+  drawWormholeMarker()   // hidden with its star
+}
+
+// --- Wormhole event marker: a violet ring of segments turning around the wormhole's target star ---
+const WORMHOLE_COLOR = Color3.create(0.75, 0.45, 1)
+let wormholeTargetId: string | null = null
+let wormholePivot: Entity | null = null
+const wormholeSegments: Entity[] = []
+let wormholeSpin = 0
+
+/** Marks (or, with null, unmarks) the wormhole event's target star on the map. */
+export function setWormholeTarget(systemId: string | null): void {
+  wormholeTargetId = systemId
+  drawWormholeMarker()
+}
+
+function clearWormholeMarker(): void {
+  for (const e of wormholeSegments) engine.removeEntity(e)
+  wormholeSegments.length = 0
+  if (wormholePivot) { engine.removeEntity(wormholePivot); wormholePivot = null }
+}
+
+function drawWormholeMarker(): void {
+  clearWormholeMarker()
+  if (!wormholeTargetId || !galaxyRoot) return
+  for (const [entity, system] of starEntities) {
+    if (system.id !== wormholeTargetId || !starShown(system)) continue
+    const t = Transform.get(entity)
+    wormholePivot = engine.addEntity()
+    Transform.create(wormholePivot, { position: t.position, parent: galaxyRoot })
+    const r = t.scale.x / 2 + 0.2
+    const n = 12
+    for (let i = 0; i < n; i++) {
+      if (i % 2 === 1) continue   // dashes, so the turning is visible
+      const a = (i / n) * Math.PI * 2
+      const seg = engine.addEntity()
+      Transform.create(seg, {
+        position: Vector3.create(Math.cos(a) * r, 0, Math.sin(a) * r),
+        scale: Vector3.create((2 * Math.PI * r / n) * 0.9, 0.008, 0.02),
+        rotation: Quaternion.fromEulerDegrees(0, 90 - (a * 180) / Math.PI, 0),
+        parent: wormholePivot,
+      })
+      MeshRenderer.setBox(seg)
+      Material.setPbrMaterial(seg, { albedoColor: Color4.create(WORMHOLE_COLOR.r, WORMHOLE_COLOR.g, WORMHOLE_COLOR.b, 1), emissiveColor: WORMHOLE_COLOR, emissiveIntensity: 2, castShadows: false })
+      wormholeSegments.push(seg)
+    }
+  }
 }
 
 /** Draws a ring around every visited or fully explored star (redrawn when the progress data changes). */
@@ -524,6 +571,10 @@ function lerp(current: number, target: number, t: number): number {
 }
 
 export function galaxyAnimationSystem(dt: number): void {
+  if (wormholePivot) {
+    wormholeSpin = (wormholeSpin + dt * 40) % 360
+    Transform.getMutable(wormholePivot).rotation = Quaternion.fromEulerDegrees(0, wormholeSpin, 0)
+  }
   // Transition animation
   if (transitionPhase === 'shrinking') {
     transitionScale = lerp(transitionScale, 0, 1 - Math.exp(-TRANSITION_SPEED * dt))
@@ -655,6 +706,7 @@ export function clearMap(): void {
   nebulaEntities.length = 0
   for (const entity of progressRingEntities) engine.removeEntity(entity)
   progressRingEntities.length = 0
+  clearWormholeMarker()
   if (currentLocationMarker) { engine.removeEntity(currentLocationMarker); currentLocationMarker = null }
   if (galaxyRoot) {
     engine.removeEntity(galaxyRoot)
