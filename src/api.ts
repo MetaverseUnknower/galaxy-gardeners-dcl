@@ -328,3 +328,11 @@ export type SystemProgress = { systemId: string; visited: boolean; lifeBodies: n
 export async function getSystemsProgress(): Promise<SystemProgress[]> {
   return apiGet<SystemProgress[]>('/api/galaxy/player/me/systems-progress')
 }
+
+// Long-range scan of a system: exact counts when visited or with a T3 Discovery Array, ranges at T2, words at T1.
+export type ScanReading = { exact: number } | { min: number; max: number } | { word: 'no' | 'a few' | 'several' | 'many' } | null
+export type SystemScan = { systemId: string; visited: boolean; tier: number; planets: ScanReading; moons: ScanReading; belts: ScanReading }
+
+export async function getSystemScan(systemId: string): Promise<SystemScan> {
+  return apiGet<SystemScan>(`/api/galaxy/systems/${systemId}/scan`)
+}

@@ -6,7 +6,7 @@ import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { DECK_Y } from './environment'
 import * as api from './api'
 import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView, isMapFilterOn, toggleMapFilter, MapFilter } from './galaxyMap'
-import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
+import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener, isViewingRemoteSystem } from './systemView'
 import { showNotification } from './ui'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, setCameraModeChangedListener } from './consoleCamera'
 import { enterSleepMode } from './sleepMode'
@@ -126,7 +126,8 @@ export function refreshNavConsole(): void {
   const canSwitch = canSwitchToSystemView()
   const paused = areOrbitsPaused()
   // Detail (with the station's name) exists once the system view has loaded; otherwise fall back to the list's flag.
-  const station = getStationInfo() ?? fetchedStation?.info ?? (systemHasStation ? { name: 'Space Station', origin: '', founded_by: null } : null)
+  // While surveying another system the hologram's station isn't the one the ship can dock at
+  const station = (isViewingRemoteSystem() ? null : getStationInfo()) ?? fetchedStation?.info ?? (systemHasStation ? { name: 'Space Station', origin: '', founded_by: null } : null)
   const inSystemView = mode === 'system'
   lastCanSwitch = canSwitch; lastPaused = paused
 

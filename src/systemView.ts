@@ -169,8 +169,14 @@ export function orbitalRadius(slot: number, starType: string | null): number {
   return baseRadius + (slot - 1) * 1.8
 }
 
-export async function renderSystemView(systemId: string): Promise<void> {
+// A survey of a visited system other than the ship's: the same hologram, but nothing can be deployed from afar.
+let readOnlyView = false
+/** True while the hologram shows a system the ship isn't in (read-only survey). */
+export function isViewingRemoteSystem(): boolean { return readOnlyView && starEntity !== null }
+
+export async function renderSystemView(systemId: string, opts: { readOnly?: boolean } = {}): Promise<void> {
   clearSystemView()
+  readOnlyView = !!opts.readOnly
   systemTime = 0
 
   let detail: any
@@ -271,7 +277,7 @@ export async function renderSystemView(systemId: string): Promise<void> {
       } else { planetDetails['Status'] = 'Unexplorable' }
       planetDetails['Moons'] = `${(planet.moons || []).length}`
 
-      const planetInfo: BodyInfo = { type: 'planet', name: planet.name, id: planet.id, imageUrl: planet.image_url || undefined, details: planetDetails, canDeploy: planet.supports_life && !isBarren }
+      const planetInfo: BodyInfo = { type: 'planet', name: planet.name, id: planet.id, imageUrl: planet.image_url || undefined, details: planetDetails, canDeploy: planet.supports_life && !isBarren && !readOnlyView }
       pointerEventsSystem.onPointerDown(
         { entity: planetEntity, opts: { button: InputAction.IA_POINTER, hoverText: planet.name, maxDistance: 20 } },
         () => selectBody(planetInfo, planetEntity)
@@ -307,7 +313,7 @@ export async function renderSystemView(systemId: string): Promise<void> {
           const hrs = Math.floor(moon.base_expedition_minutes / 60); const mins = moon.base_expedition_minutes % 60
           moonDetails['Expedition'] = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
         }
-        const moonInfo: BodyInfo = { type: 'moon', name: moon.name, id: moon.id, imageUrl: moon.image_url || undefined, details: moonDetails, canDeploy: true }
+        const moonInfo: BodyInfo = { type: 'moon', name: moon.name, id: moon.id, imageUrl: moon.image_url || undefined, details: moonDetails, canDeploy: !readOnlyView }
         pointerEventsSystem.onPointerDown(
           { entity: moonEntity, opts: { button: InputAction.IA_POINTER, hoverText: moon.name, maxDistance: 20 } },
           () => selectBody(moonInfo, moonEntity)
@@ -346,7 +352,7 @@ export async function renderSystemView(systemId: string): Promise<void> {
     const beltExpMins = belt.base_expedition_minutes || 0
     const beltHrs = Math.floor(beltExpMins / 60); const beltMins = beltExpMins % 60
     const beltInfo: BodyInfo = {
-      type: 'belt', name: belt.name, id: belt.id, beltRadius: beltOrbitR, canDeploy: true,
+      type: 'belt', name: belt.name, id: belt.id, beltRadius: beltOrbitR, canDeploy: !readOnlyView,
       details: { 'Risk': riskLevel.replace(/_/g, ' '), 'Expedition': beltExpMins > 0 ? (beltHrs > 0 ? `${beltHrs}h ${beltMins}m` : `${beltMins}m`) : 'N/A' }
     }
 

@@ -30,7 +30,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   expedition_speed: 'Pods complete missions faster.',
   blast_shielding: 'Lowers mining pod loss chance.',
   environmental_shielding: 'Lowers exploration pod loss chance.',
-  discovery_array: 'Improves discovery range and odds.',
+  discovery_array: 'Faster discovery scans, and long-range scans of unvisited stars.',
 }
 function labelFor(c: string): string { return CATEGORY_LABELS[c] || titleCase(c) }
 

@@ -3,7 +3,7 @@ import { Vector3, Color4 } from '@dcl/sdk/math'
 import { createStation } from './stations'
 import { authenticate } from './auth'
 import * as api from './api'
-import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker } from './galaxyMap'
+import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker, getViewMode } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
@@ -37,6 +37,16 @@ import { setSelectedFlora, clearSelectedFlora, setCloseDetailCallback } from './
 import { selectBody } from './systemView'
 
 let playerInfo: PlayerInfo | null = null
+let viewSystemId: string | null = null   // a visited system being surveyed in the hologram (null: the ship's own)
+
+async function showSystemView(): Promise<void> {
+  if (!playerInfo?.current_system_id) return
+  const target = viewSystemId ?? playerInfo.current_system_id
+  const remote = target !== playerInfo.current_system_id
+  await renderSystemView(target, { readOnly: remote })
+  refreshNavConsole()
+  if (remote) showNotification(`Survey of ${systems.find(s => s.id === target)?.name ?? 'a visited system'}: from your visit, read only`, Color4.create(0.35, 1, 0.55, 1))
+}
 let systems: StarSystem[] = []
 let arrivalCheckTimer = 0
 let statusClearTimer = -1
@@ -214,8 +224,12 @@ export async function main() {
     setNavConsoleSystem(systems.find(s => s.id === consoleSystemId) ?? null)
     setCurrentSystemForTravel(playerInfo.current_system_id)
     setCanSwitchCheck(() => !isCurrentlyTraveling())
-    setViewSystemCallback(() => {
-      if (playerInfo?.current_system_id && !isCurrentlyTraveling()) switchViewMode('system')
+    // VIEW SYSTEM: the ship's own system, or a read-only survey of a system visited before
+    setViewSystemCallback((systemId) => {
+      if (!playerInfo?.current_system_id || isCurrentlyTraveling()) return
+      viewSystemId = systemId
+      if (getViewMode() === 'system') void showSystemView()
+      else switchViewMode('system')
     })
 
     setViewModeCallback(async (mode) => {
@@ -223,8 +237,9 @@ export async function main() {
         if (!playerInfo?.current_system_id) return
         setSelectedSystemUI(null, null)
         clearMap()
-        await renderSystemView(playerInfo.current_system_id)
+        await showSystemView()
       } else {
+        viewSystemId = null   // back to the galaxy: the next system view is the ship's own again
         clearSystemView()
         renderStarSystems(systems, playerInfo!.home_system_id, playerInfo!.current_system_id)
         setupInteraction()

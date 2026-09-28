@@ -37,7 +37,7 @@ let statusMessage: string | null = null
 let onTravelConfirm: (() => void | Promise<void>) | null = null
 // True from CONFIRM until the server answers: a second press used to start travel again mid-request.
 let travelStarting = false
-let onViewSystem: (() => void) | null = null
+let onViewSystem: ((systemId: string) => void) | null = null
 let showTravelConfirm = false
 let currentSystemId: string | null = null
 let deployStatus: string | null = null   // only 'Deploying...' while a request is in flight; results go to notifications
@@ -178,6 +178,7 @@ function deployErrorMessage(err: any): string {
 /** Opens the star panel right away; `loading` shows the route indicator until setSelectedSystemFuel arrives. */
 export function setSelectedSystemUI(system: StarSystem | null, fuel: FuelCostResponse | null, loading: boolean = false): void {
   selectedSystem = system; fuelInfo = fuel; fuelLoading = loading; fuelFailed = false; showTravelConfirm = false; deployStatus = null
+  if (system) loadScan(system.id)
 }
 /** Fills in route data for the star that is still selected; late answers for a star the player moved on from are dropped. */
 export function setSelectedSystemFuel(systemId: string, fuel: FuelCostResponse | null): void {
@@ -194,7 +195,32 @@ function confirmTravel(): void {
   travelStarting = true
   Promise.resolve(onTravelConfirm()).catch(() => { /* the callback reports its own errors */ }).finally(() => { travelStarting = false })
 }
-export function setViewSystemCallback(callback: () => void): void { onViewSystem = callback }
+export function setViewSystemCallback(callback: (systemId: string) => void): void { onViewSystem = callback }
+
+// Long-range scans for the star panel, fetched when a star is selected and kept for a minute
+const scans = new Map<string, { at: number; value: api.SystemScan | null }>()
+function loadScan(systemId: string): void {
+  const hit = scans.get(systemId)
+  if (hit && Date.now() - hit.at < 60_000) return
+  scans.set(systemId, { at: Date.now(), value: hit?.value ?? null })
+  api.getSystemScan(systemId).then(v => { scans.set(systemId, { at: Date.now(), value: v }) }).catch(() => { /* the line just stays empty */ })
+}
+const NOUNS: Record<'planets' | 'moons' | 'belts', [string, string]> = { planets: ['PLANET', 'PLANETS'], moons: ['MOON', 'MOONS'], belts: ['BELT', 'BELTS'] }
+function reading(r: api.ScanReading, kind: 'planets' | 'moons' | 'belts'): string {
+  if (!r) return ''
+  const [one, many] = NOUNS[kind]
+  if ('exact' in r) return `${r.exact} ${r.exact === 1 ? one : many}`
+  if ('min' in r) return `${r.min}–${r.max} ${many}`
+  return `${r.word.toUpperCase()} ${many}`
+}
+/** [heading, body] for the star panel, or null while the scan hasn't arrived. */
+function scanLines(systemId: string): [string, string] | null {
+  const s = scans.get(systemId)?.value
+  if (!s) return null
+  if (!s.visited && s.tier === 0) return ['LONG-RANGE SCAN', 'INSTALL A DISCOVERY ARRAY TO SCAN UNVISITED STARS']
+  const heading = s.visited ? 'SURVEYED' : s.tier >= 3 ? 'LONG-RANGE SCAN · T3 · 100% CONFIDENCE' : `LONG-RANGE SCAN · T${s.tier}`
+  return [heading, [reading(s.planets, 'planets'), reading(s.moons, 'moons'), reading(s.belts, 'belts')].join('  ·  ')]
+}
 export function setCurrentSystemId(id: string | null): void { currentSystemId = id }
 
 const SystemInfoPanel = () => {
@@ -218,6 +244,12 @@ const SystemInfoPanel = () => {
           {selectedSystem.has_wormhole ? <UiEntity uiTransform={{ height: px(24) }} uiText={{ value: 'WORMHOLE', fontSize: px(18), color: Color4.create(0.6, 0.2, 1, 1) }} /> : null}
         </UiEntity>
         {progressLabel(selectedSystem.id) ? <UiEntity uiTransform={{ width: '100%', height: px(24), margin: { bottom: px(8) } }} uiText={{ value: progressLabel(selectedSystem.id)!, fontSize: px(18), color: systemProgress(selectedSystem.id)?.explored ? Color4.create(0.35, 1, 0.55, 1) : Color4.create(0.3, 0.8, 0.45, 1), textAlign: 'middle-center' }} /> : null}
+        {scanLines(selectedSystem.id) ? (
+          <UiEntity uiTransform={{ width: '100%', flexDirection: 'column', margin: { bottom: px(8) } }}>
+            <UiEntity uiTransform={{ width: '100%', height: px(20) }} uiText={{ value: scanLines(selectedSystem.id)![0], fontSize: px(14), color: Color4.create(0.45, 0.65, 0.75, 1), textAlign: 'middle-center' }} />
+            <UiEntity uiTransform={{ width: '100%', height: px(24) }} uiText={{ value: scanLines(selectedSystem.id)![1], fontSize: px(17), color: Color4.White(), textAlign: 'middle-center' }} />
+          </UiEntity>
+        ) : null}
         {selectedSystem.discovered_by_name ? <UiEntity uiTransform={{ width: '100%', height: px(24), margin: { bottom: px(8) } }} uiText={{ value: `Discovered by ${selectedSystem.discovered_by_name}`, fontSize: px(18), color: Color4.create(0.5, 0.5, 0.5, 1), textAlign: 'middle-center' }} /> : null}
         {fuelInfo ? (
           <UiEntity uiTransform={{ width: '100%', flexDirection: 'column', margin: { top: px(8) } }}>
@@ -235,7 +267,7 @@ const SystemInfoPanel = () => {
           <UiEntity uiTransform={{ width: '100%', height: px(28), margin: { top: px(8) } }}
             uiText={{ value: fuelLoading ? `Plotting course${'.'.repeat(1 + Math.floor(Date.now() / 400) % 3)}` : 'Route data unavailable', fontSize: px(20), color: Color4.create(0.45, 0.65, 0.75, 1), textAlign: 'middle-center' }} />
         ) : null}
-        {selectedSystem.id === currentSystemId ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.1, 0.3, 0.5, 1) }} uiText={{ value: 'VIEW SYSTEM', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onViewSystem) onViewSystem() }} /> : null}
+        {selectedSystem.id === currentSystemId || systemProgress(selectedSystem.id)?.visited ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.1, 0.3, 0.5, 1) }} uiText={{ value: selectedSystem.id === currentSystemId ? 'VIEW SYSTEM' : 'VIEW SURVEY', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onViewSystem && selectedSystem) onViewSystem(selectedSystem.id) }} /> : null}
         {selectedSystem.id !== currentSystemId && fuelInfo && !showTravelConfirm ? (() => {
           const traveling = isCurrentlyTraveling()
           const canTravel = canAfford && !traveling
