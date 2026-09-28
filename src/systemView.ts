@@ -1,4 +1,4 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, Billboard, BillboardMode } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, Billboard, BillboardMode, MainCamera } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 import { getPlayer } from '@dcl/sdk/players'
@@ -218,7 +218,9 @@ let blackHoleNotify: ((text: string) => void) | null = null
 /** Where STEM's warnings about staring into the black hole go. */
 export function setBlackHoleNotify(fn: (text: string) => void): void { blackHoleNotify = fn }
 
+let hovering = false   // the engine's hover state (its leave can be missing, see stillLookingAtHorizon)
 function startStare(): void {
+  hovering = true
   staring = true
   stareTime = 0
 }
@@ -230,8 +232,33 @@ function warnAboutStaring(): void {
   blackHoleNotify?.(STARE_LINES[stareLine++ % STARE_LINES.length])
 }
 
+// The engine drops hover-leaves when the view turns away without the pointer moving (the free camera: the pointer is
+// the centre of the view), so there the stare also ends when the view no longer points at the horizon. In the
+// console and top views the camera is fixed and the mouse moves, which does send hover-leaves.
+let horizonRadius = 0.25   // in the system root's units
+const LOOK_MARGIN = 1.5    // the horizon's apparent radius counts this much bigger, plus LOOK_SLACK_DEG
+const LOOK_SLACK_DEG = 1.5
+function stillLookingAtHorizon(): boolean {
+  if (!systemRoot || MainCamera.getOrNull(engine.CameraEntity)?.virtualCameraEntity) return true   // fixed views: hover-leave decides
+  const cam = Transform.getOrNull(engine.CameraEntity)
+  const root = Transform.getOrNull(systemRoot)
+  if (!cam || !root) return true
+  const to = Vector3.subtract(root.position, cam.position)
+  const dist = Vector3.length(to)
+  if (dist < 0.01) return true
+  const forward = Vector3.rotate(Vector3.Forward(), cam.rotation)
+  const off = Math.acos(Math.max(-1, Math.min(1, Vector3.dot(forward, to) / dist))) * 180 / Math.PI
+  const allowed = Math.atan((horizonRadius * root.scale.x * LOOK_MARGIN) / dist) * 180 / Math.PI + LOOK_SLACK_DEG
+  return off <= allowed
+}
+
 let drifting = false
 function stareSystem(dt: number): void {
+  if (!drifting && hovering) {
+    const looking = stillLookingAtHorizon()
+    if (staring && !looking) staring = false                       // looked away: the stare is off
+    else if (!staring && looking) { staring = true; stareTime = 0 } // looked back (no fresh hover-enter comes): from zero
+  }
   if (!staring || drifting) { setStareTime(null); return }
   const before = stareTime
   stareTime += dt
@@ -239,6 +266,7 @@ function stareSystem(dt: number): void {
   if (before < STARE_WARNING_AT && stareTime >= STARE_WARNING_AT) warnAboutStaring()
   if (stareTime < STARE_SECONDS) return
   staring = false
+  hovering = false   // only a fresh hover-enter starts another stare
   drifting = true
   setStareTime(null)
   let recorded: Promise<api.HawkingDrift | null> = Promise.resolve(null)
@@ -250,7 +278,7 @@ function stareSystem(dt: number): void {
     const a = Math.random() * Math.PI * 2
     void movePlayerTo({
       newRelativePosition: Vector3.create(SHIP_CENTER.x + Math.cos(a) * r, p.y, SHIP_CENTER.z + Math.sin(a) * r),
-      cameraTarget: SYSTEM_CENTER,
+      cameraTarget: Vector3.create(SYSTEM_CENTER.x, SYSTEM_CENTER.y + 1.5, SYSTEM_CENTER.z),   // the hologram, not the hole
     })
   }, async () => {
     drifting = false
@@ -271,7 +299,8 @@ function segmentMaterial(seg: Entity, intensity: number, alpha: number): void {
   })
 }
 
-function createAccretionRing(root: Entity, horizon: Entity, horizonRadius: number): void {
+function createAccretionRing(root: Entity, horizon: Entity, radius: number): void {
+  horizonRadius = radius
   const pivot = engine.addEntity()
   Transform.create(pivot, { position: Vector3.create(0, 0, 0), parent: root })
   Billboard.create(pivot, { billboardMode: BillboardMode.BM_ALL })
@@ -280,7 +309,7 @@ function createAccretionRing(root: Entity, horizon: Entity, horizonRadius: numbe
   // No hover outline or feedback: nothing should invite a closer look
   const quiet = { showFeedback: false, showHighlight: false }
   pointerEventsSystem.onPointerHoverEnter({ entity: horizon, opts: quiet }, () => startStare())
-  pointerEventsSystem.onPointerHoverLeave({ entity: horizon, opts: quiet }, () => { staring = false })
+  pointerEventsSystem.onPointerHoverLeave({ entity: horizon, opts: quiet }, () => { hovering = false; staring = false })
 
   // Photon ring: face-on circles around the horizon (the pivot's XY plane faces the viewer)
   for (const band of HALO_BANDS) {
@@ -628,6 +657,7 @@ export function clearSystemView(): void {
     engine.removeEntity(starEntity); starEntity = null
   }
   staring = false
+  hovering = false
   if (starGlowEntity) { engine.removeEntity(starGlowEntity); starGlowEntity = null }
   currentStationInfo = null
   if (onStationChanged) onStationChanged()
