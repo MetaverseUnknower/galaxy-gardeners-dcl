@@ -5,7 +5,7 @@ import { engine, Entity, Transform, GltfContainer, TextAlignMode, ColliderLayer 
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { DECK_Y } from './environment'
 import * as api from './api'
-import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView } from './galaxyMap'
+import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView, isMapFilterOn, toggleMapFilter, MapFilter } from './galaxyMap'
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener } from './systemView'
 import { showNotification } from './ui'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, setCameraModeChangedListener } from './consoleCamera'
@@ -161,21 +161,41 @@ export function refreshNavConsole(): void {
   // Three columns spaced for their labels (~0.025 per capital at size 0.13): HERE/STAR, HOME/STATION, VISITED/EXPLORED.
   // Each column ends ~0.16 before the next one's mark; the last ends ~0.12 before the view tab at x -1.35.
   const L1 = 0.67, L2 = 0.5, C1 = -2.64, C2 = -2.2, C3 = -1.74, LS = 0.13
-  frame(bag, root, C1, L1, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
-  txt(bag, root, C1 + 0.09, L1, 'HERE', LS, DIM, LEFT)
-  disc(bag, root, C2, L1 - 0.02, 0.045, Color3.create(1, 0.3, 1))
-  pin(bag, root, C2, L1 + 0.045, 0.045, 0.05, Color3.create(1, 0.3, 1))   // the map's home pin, hovering over the star
-  txt(bag, root, C2 + 0.09, L1, 'HOME', LS, DIM, LEFT)
-  disc(bag, root, C1, L2, 0.035, Color3.create(1, 1, 1))
-  txt(bag, root, C1 + 0.09, L2, 'STAR', LS, DIM, LEFT)
-  disc(bag, root, C2, L2, 0.08, Color3.create(0, 0.8, 0.8), { alpha: 0.28, z: -0.03 })   // the halo disc
-  disc(bag, root, C2, L2, 0.035, Color3.create(0, 0.8, 0.8))
-  txt(bag, root, C2 + 0.09, L2, 'STATION', LS, DIM, LEFT)
+  // Each item is also a filter: click to show or hide that kind of star on the map. Off items turn grey.
+  const GREY = Color3.create(0.3, 0.38, 0.45)
+  const on = isMapFilterOn
+  const tint = (f: MapFilter, c: Color3): Color3 => (on(f) ? c : GREY)
+  const labelColor = (f: MapFilter): Color4 => (on(f) ? DIM : MUTED)
+  // An invisible click area over a mark and its label (labels are ~0.025 wide per capital at size 0.13)
+  const hit = (f: MapFilter, x: number, y: number, label: string, what: string): void => {
+    const w = 0.15 + label.length * 0.025
+    const e = engine.addEntity()
+    Transform.create(e, { position: Vector3.create(x - 0.06 + w / 2, y, -0.05), scale: Vector3.create(w, 0.15, 0.02), parent: root })
+    clickable(e, `${on(f) ? 'Hide' : 'Show'} ${what}`, () => { toggleMapFilter(f); refreshNavConsole() })
+    bag.push(e)
+  }
+  const here = tint('here', Color3.create(0, 1, 0.5))
+  frame(bag, root, C1, L1, 0.07, 0.07, { border: here, fill: Color4.create(here.r, here.g, here.b, 1), borderWidth: 0.01 })
+  txt(bag, root, C1 + 0.09, L1, 'HERE', LS, labelColor('here'), LEFT)
+  hit('here', C1, L1, 'HERE', 'your location')
+  disc(bag, root, C2, L1 - 0.02, 0.045, tint('home', Color3.create(1, 0.3, 1)))
+  pin(bag, root, C2, L1 + 0.045, 0.045, 0.05, tint('home', Color3.create(1, 0.3, 1)))   // the map's home pin, hovering over the star
+  txt(bag, root, C2 + 0.09, L1, 'HOME', LS, labelColor('home'), LEFT)
+  hit('home', C2, L1, 'HOME', 'your home system')
+  disc(bag, root, C1, L2, 0.035, tint('star', Color3.create(1, 1, 1)))
+  txt(bag, root, C1 + 0.09, L2, 'STAR', LS, labelColor('star'), LEFT)
+  hit('star', C1, L2, 'STAR', 'other stars')
+  disc(bag, root, C2, L2, 0.08, tint('station', Color3.create(0, 0.8, 0.8)), { alpha: 0.28, z: -0.03 })   // the halo disc
+  disc(bag, root, C2, L2, 0.035, tint('station', Color3.create(0, 0.8, 0.8)))
+  txt(bag, root, C2 + 0.09, L2, 'STATION', LS, labelColor('station'), LEFT)
+  hit('station', C2, L2, 'STATION', 'station systems')
   // Third column: the map's visited (dashed) and fully explored (solid) rings
-  ring(bag, root, C3, L1, 0.04, Color3.create(0.3, 0.8, 0.45), { dashed: true, segments: 12, thickness: 0.008, alpha: 0.8 })
-  txt(bag, root, C3 + 0.07, L1, 'VISITED', LS, DIM, LEFT)
-  ring(bag, root, C3, L2, 0.04, Color3.create(0.35, 1, 0.55), { segments: 16, thickness: 0.012 })
-  txt(bag, root, C3 + 0.07, L2, 'EXPLORED', LS, DIM, LEFT)
+  ring(bag, root, C3, L1, 0.04, tint('visited', Color3.create(0.3, 0.8, 0.45)), { dashed: true, segments: 12, thickness: 0.008, alpha: 0.8 })
+  txt(bag, root, C3 + 0.07, L1, 'VISITED', LS, labelColor('visited'), LEFT)
+  hit('visited', C3, L1, 'VISITED', 'visited systems')
+  ring(bag, root, C3, L2, 0.04, tint('explored', Color3.create(0.35, 1, 0.55)), { segments: 16, thickness: 0.012 })
+  txt(bag, root, C3 + 0.07, L2, 'EXPLORED', LS, labelColor('explored'), LEFT)
+  hit('explored', C3, L2, 'EXPLORED', 'fully explored systems')
   // Both view tabs share one active style (magenta outline and text) so the selection reads the same either way.
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
   btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'magenta', icon: ICONS.system, size: 0.22 })

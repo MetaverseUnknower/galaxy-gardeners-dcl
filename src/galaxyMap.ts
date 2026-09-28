@@ -1,4 +1,4 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, ColliderLayer, TextureWrapMode } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, ColliderLayer, TextureWrapMode, VisibilityComponent } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion, Vector2 } from '@dcl/sdk/math'
 import { StarSystem } from './types'
 import { getSystemRoot, getSystemAutoScale } from './systemView'
@@ -387,12 +387,13 @@ const HOME_COLOR = Color3.create(1, 0.3, 1)
 const STATION_COLOR = Color3.create(0, 0.8, 0.8)
 
 /** Downward-pointing cone hovering over the home system, like a map pin. */
-function addHomePin(root: Entity, pos: Vector3, starSize: number): void {
+function addHomePin(root: Entity, pos: Vector3, starSize: number): Entity {
   const pin = engine.addEntity()
   Transform.create(pin, { position: Vector3.create(pos.x, pos.y + starSize / 2 + 0.1, pos.z), scale: Vector3.create(0.07, 0.11, 0.07), parent: root })
   MeshRenderer.setCylinder(pin, 0, 1)   // point at the bottom, toward the star
   Material.setPbrMaterial(pin, { albedoColor: Color4.create(HOME_COLOR.r, HOME_COLOR.g, HOME_COLOR.b, 1), emissiveColor: HOME_COLOR, emissiveIntensity: 4 })
   nebulaEntities.push(pin)   // cleared with the map
+  return pin
 }
 
 /** A faint flat halo disc around a station system: one soft circle, quiet even when most systems have one. */
@@ -423,6 +424,53 @@ function addProgressRing(root: Entity, pos: Vector3, starSize: number, explored:
   }
 }
 
+// --- Legend filters: each legend item switches its kind of star on or off; a star shows if any of its kinds is on.
+export type MapFilter = 'here' | 'home' | 'star' | 'station' | 'visited' | 'explored'
+const FILTER_PREF = 'mapFiltersOff'
+let renderedHomeId: string | null = null
+let renderedCurrentId: string | null = null
+const starDecor = new Map<Entity, { pin?: Entity; halo?: Entity }>()
+
+// Stored as comma-separated text (preferences hold plain values), e.g. 'star,station'
+function filtersOff(): MapFilter[] { const v = getPref<string>(FILTER_PREF, ''); return typeof v === 'string' && v ? v.split(',') as MapFilter[] : [] }
+export function isMapFilterOn(f: MapFilter): boolean { return !filtersOff().includes(f) }
+export function toggleMapFilter(f: MapFilter): void {
+  const off = filtersOff()
+  setPref(FILTER_PREF, (isMapFilterOn(f) ? [...off, f] : off.filter(x => x !== f)).join(',') || null)
+  applyMapFilters()
+}
+
+function starKinds(system: StarSystem): MapFilter[] {
+  const kinds: MapFilter[] = []
+  if (system.id === renderedCurrentId) kinds.push('here')
+  if (system.id === renderedHomeId) kinds.push('home')
+  if (system.has_station) kinds.push('station')
+  const p = systemProgress(system.id)
+  if (p?.visited) kinds.push('visited')
+  if (p?.explored) kinds.push('explored')
+  if (kinds.length === 0) kinds.push('star')   // a plain star: nothing else to say about it
+  return kinds
+}
+function starShown(system: StarSystem): boolean { return starKinds(system).some(isMapFilterOn) }
+
+function setShown(e: Entity, shown: boolean): void { VisibilityComponent.createOrReplace(e, { visible: shown }) }
+
+/** Shows or hides stars and their markers for the current legend filters. */
+export function applyMapFilters(): void {
+  for (const [entity, system] of starEntities) {
+    const shown = starShown(system)
+    setShown(entity, shown)
+    // A hidden star can't be clicked either
+    if (shown) MeshCollider.setSphere(entity, ColliderLayer.CL_POINTER)
+    else MeshCollider.deleteFrom(entity)
+    const decor = starDecor.get(entity)
+    if (decor?.pin) setShown(decor.pin, shown && isMapFilterOn('home'))
+    if (decor?.halo) setShown(decor.halo, shown && isMapFilterOn('station'))
+  }
+  if (currentLocationMarker) setShown(currentLocationMarker, isMapFilterOn('here'))
+  drawProgressRings()
+}
+
 /** Draws a ring around every visited or fully explored star (redrawn when the progress data changes). */
 export function drawProgressRings(): void {
   for (const e of progressRingEntities) engine.removeEntity(e)
@@ -430,20 +478,23 @@ export function drawProgressRings(): void {
   if (!galaxyRoot) return
   for (const [entity, system] of starEntities) {
     const p = systemProgress(system.id)
-    if (!p || !(p.visited || p.explored)) continue
+    if (!p || !starShown(system)) continue
+    const explored = p.explored && isMapFilterOn('explored')
+    if (!explored && !(p.visited && isMapFilterOn('visited'))) continue
     const t = Transform.get(entity)
-    addProgressRing(galaxyRoot, t.position, t.scale.x, p.explored)
+    addProgressRing(galaxyRoot, t.position, t.scale.x, explored)
   }
 }
-onSystemProgressChanged(() => drawProgressRings())
+onSystemProgressChanged(() => applyMapFilters())   // visited / explored change which stars match which filters
 
-function addStationRing(root: Entity, pos: Vector3, starSize: number): void {
+function addStationRing(root: Entity, pos: Vector3, starSize: number): Entity {
   const d = (starSize / 2 + 0.06) * 2
   const halo = engine.addEntity()
   Transform.create(halo, { position: pos, scale: Vector3.create(d, 0.004, d), parent: root })
   MeshRenderer.setCylinder(halo)
   Material.setPbrMaterial(halo, { albedoColor: Color4.create(STATION_COLOR.r, STATION_COLOR.g, STATION_COLOR.b, 0.22), emissiveColor: STATION_COLOR, emissiveIntensity: 0.8, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND, castShadows: false })
   nebulaEntities.push(halo)   // cleared with the map
+  return halo
 }
 
 export function hideCurrentLocationMarker(): void {
@@ -565,6 +616,9 @@ export function renderStarSystems(systems: StarSystem[], homeSystemId: string | 
   createZoneRings(maxRadius)
   createNebula()
 
+  renderedHomeId = homeSystemId
+  renderedCurrentId = currentSystemId
+  starDecor.clear()
   for (const system of systems) {
     const { color, emissive, size, intensity } = getStarColor(system, homeSystemId, currentSystemId)
     const entity = engine.addEntity()
@@ -576,10 +630,12 @@ export function renderStarSystems(systems: StarSystem[], homeSystemId: string | 
     starEntities.set(entity, system)
     if (system.id === currentSystemId) createCurrentLocationMarker(position)
     // Shape cues so no marker relies on colour alone: a pin over home, a flat halo disc around stations.
-    if (system.id === homeSystemId) addHomePin(root, position, size)
-    if (system.has_station) addStationRing(root, position, size)
+    starDecor.set(entity, {
+      pin: system.id === homeSystemId ? addHomePin(root, position, size) : undefined,
+      halo: system.has_station ? addStationRing(root, position, size) : undefined,
+    })
   }
-  drawProgressRings()
+  applyMapFilters()   // hides filtered-out stars and draws the visited / explored rings
   for (const h of mapHooks) h.rendered?.()
 }
 
@@ -587,6 +643,7 @@ export function clearMap(): void {
   for (const h of mapHooks) h.cleared?.()
   for (const [entity] of starEntities) engine.removeEntity(entity)
   starEntities.clear()
+  starDecor.clear()
   for (const entity of zoneRingEntities) engine.removeEntity(entity)
   zoneRingEntities.length = 0
   for (const entity of nebulaEntities) engine.removeEntity(entity)
