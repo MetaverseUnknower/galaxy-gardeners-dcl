@@ -158,7 +158,9 @@ export function refreshNavConsole(): void {
   const galaxyActive = mode === 'galaxy'
   // Map legend: the free strip left of the view tabs. Each mark has the same shape as on the map, so none of
   // them depends on colour: cube, pinned star, plain star, haloed star.
-  const L1 = 0.67, L2 = 0.5, C1 = -2.64, C2 = -1.99, LS = 0.13   // one-word labels so they can be large; the tab starts at x -1.35
+  // Three columns spaced for their labels (~0.025 per capital at size 0.13): HERE/STAR, HOME/STATION, VISITED/EXPLORED.
+  // Each column ends ~0.08 before the next one's mark; the last ends ~0.28 before the view tab at x -1.35.
+  const L1 = 0.67, L2 = 0.5, C1 = -2.64, C2 = -2.28, C3 = -1.9, LS = 0.13
   frame(bag, root, C1, L1, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
   txt(bag, root, C1 + 0.09, L1, 'HERE', LS, DIM, LEFT)
   disc(bag, root, C2, L1 - 0.02, 0.045, Color3.create(1, 0.3, 1))
@@ -170,7 +172,6 @@ export function refreshNavConsole(): void {
   disc(bag, root, C2, L2, 0.035, Color3.create(0, 0.8, 0.8))
   txt(bag, root, C2 + 0.09, L2, 'STATION', LS, DIM, LEFT)
   // Third column: the map's visited (dashed) and fully explored (solid) rings
-  const C3 = -1.66
   ring(bag, root, C3, L1, 0.04, Color3.create(0.75, 0.9, 1), { dashed: true, segments: 12, thickness: 0.008, alpha: 0.8 })
   txt(bag, root, C3 + 0.07, L1, 'VISITED', LS, DIM, LEFT)
   ring(bag, root, C3, L2, 0.04, Color3.create(0.35, 1, 0.55), { segments: 16, thickness: 0.012 })
