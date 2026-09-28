@@ -56,6 +56,8 @@ function setupWormholeEvents(): void {
       await playWormholeCutscene('close', () => reloadMap())
       const lost = prev.trip && prev.podsOut > 0 ? ` We lost contact with ${podWord(prev.podsOut)}.` : ''
       showNotification(`The wormhole to ${prev.targetName} has closed.${lost}`, VIOLET, 8)
+      if (lost) playSfx('pod_destroyed')   // the server destroyed them at closing
+      void refreshStation('ship')          // lost pods leave the missions list and the pod count
     }
     // Once per event per player: reloading doesn't replay it
     if (next && getPref<string>('wormholeSeen', '') !== next.id) {
