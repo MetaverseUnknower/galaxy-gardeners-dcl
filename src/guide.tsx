@@ -27,7 +27,7 @@ function selfAddress(): string {
 function selfName(): string {
   return AvatarBase.getOrNull(engine.PlayerEntity)?.name ?? 'Guide'
 }
-function isGuide(): boolean { return GUIDE_WALLETS.includes(selfAddress()) }
+export function isGuide(): boolean { return GUIDE_WALLETS.includes(selfAddress()) }
 
 // --- Player side: guides revealed to me, until their messages stop ---
 
