@@ -126,7 +126,7 @@ export const StemPanel = () => {
     <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(144), left: px(60) }, width: px(PANEL_W), flexDirection: 'column', padding: px(PAD) }}
       uiBackground={{ color: PANEL_BG }}>
       <UiEntity uiTransform={{ width: '100%', height: px(24), flexDirection: 'row', alignItems: 'center', margin: { bottom: px(8) } }}>
-        <Label value="STEM  //  SHIP ASSISTANT" fontSize={px(13)} color={DIM} uiTransform={{ flexGrow: 1 }} textAlign="middle-left" />
+        <Label value="STEM  //  SHIP TELEMETRY AND EXPLORATION MODULE" fontSize={px(11)} color={DIM} uiTransform={{ flexGrow: 1 }} textAlign="middle-left" />
         <UiEntity uiTransform={{ width: px(56), height: px(24), margin: { right: px(6) }, justifyContent: 'center', alignItems: 'center' }}
           uiBackground={{ color: Color4.create(0.05, 0.12, 0.2, 1) }}
           onMouseDown={() => { open = false; replayTour() }}>
