@@ -21,7 +21,8 @@ import { setupSoloShip } from './soloShip'
 import { setGuideNotifyCallback } from './guide'
 import { setupTour, startTourIfNeeded } from './tour/runner'
 import { refreshSystemProgress } from './systemProgress'
-import { onWormholeChanged, setWormholeNotify, setWormholeArrivedCallback, playWormholeCutscene, refreshWormhole, closesAtText, podWord } from './wormhole/state'
+import { onWormholeChanged, setWormholeNotify, setWormholeArrivedCallback, setWormholeCutscenePlayer, playWormholeCutscene, refreshWormhole, closesAtText, podWord } from './wormhole/state'
+import { playCutscene } from './wormhole/cutscene'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { setSleepSystem } from './sleepMode'
@@ -45,6 +46,7 @@ function setupWormholeEvents(): void {
   const VIOLET = Color4.create(0.75, 0.45, 1, 1)
   setWormholeNotify((text, warning) => showNotification(text, warning ? Color4.create(1, 0.72, 0.2, 1) : VIOLET, warning ? 8 : 6))
   setWormholeArrivedCallback(() => reloadMap())
+  setWormholeCutscenePlayer(playCutscene)
   onWormholeChanged(async (prev, next) => {
     setWormholeTarget(next?.targetSystemId ?? null)
     if (next && !prev) {
