@@ -338,7 +338,7 @@ const TravelStatusPanel = () => {
     <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { top: px(20) }, justifyContent: 'center' }}>
       <UiEntity uiTransform={{ width: px(500), flexDirection: 'column', padding: { top: px(20), bottom: px(20), left: px(20), right: px(20) } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.92) }}>
         <UiEntity uiTransform={{ width: '100%', height: px(32), margin: { bottom: px(8) } }} uiText={{ value: `Traveling to ${travelingTo}`, fontSize: px(24), color: Color4.create(0, 1, 0.5, 1), textAlign: 'middle-center' }} />
-        <UiEntity uiTransform={{ width: '100%', height: px(30), margin: { bottom: px(4) } }} uiText={{ value: eta, fontSize: px(22), color: Color4.create(0, 0.9, 1, 1), textAlign: 'middle-center', font: 'monospace' }} />   {/* monospace: steady width as it ticks, and some explorers drew 6-9 from an emoji fallback in the default font */}
+        <UiEntity uiTransform={{ width: '100%', height: px(30), margin: { bottom: px(4) } }} uiText={{ value: eta, fontSize: px(22), color: Color4.create(0, 0.9, 1, 1), textAlign: 'middle-center' }} />
         <UiEntity uiTransform={{ width: '100%', height: px(24), margin: { bottom: px(8) } }} uiText={{ value: `${pct}% — ${remainingDistance.toFixed(1)} units remaining`, fontSize: px(18), color: Color4.create(0.7, 0.7, 0.7, 1), textAlign: 'middle-center' }} />
         <UiEntity uiTransform={{ width: '100%', height: px(8) }} uiBackground={{ color: Color4.create(0.15, 0.15, 0.15, 1) }}>
           <UiEntity uiTransform={{ width: `${pct}%`, height: '100%' }} uiBackground={{ color: Color4.create(0, 1, 0.5, 0.8) }} />
@@ -368,6 +368,15 @@ const SurveyBar = () => {
     </UiEntity>
   )
 }
+
+// The explorer sometimes draws digits from its emoji font (boxed "keycap" numbers), seemingly once its glyph
+// texture has filled during a long session. Drawing every digit invisibly from the start gets them into the
+// texture early; the countdowns, fuel and timers then have them.
+const DigitWarmup = () => (
+  <UiEntity uiTransform={{ positionType: 'absolute', position: { bottom: 0, left: 0 }, width: px(300), height: px(20) }}>
+    <Label value="0123456789:%.–/" fontSize={px(14)} color={Color4.create(0, 0, 0, 0)} />
+  </UiEntity>
+)
 
 const NotificationBanner = () => {
   if (!notification) return null
@@ -684,6 +693,7 @@ const SleepCurtain = () => {
 // While the world fades to or from black, the normal HUD stays up under the curtain; once dark, the room takes over.
 const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
   <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
+    <DigitWarmup />
     <SystemInfoPanel />
     <BodyDetailPanel />
     <TravelStatusPanel />
