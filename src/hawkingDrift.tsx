@@ -2,7 +2,7 @@
 // While staring, a dark violet veil throbs over the view, faster the longer it goes on; then the drift itself: a
 // blackout, the move (midpoint), and an uneven flicker back to sight, like lost time.
 // Sound: a low drone swells in and slides down in pitch, like time stretching, and the music stops at the blackout
-// and picks up again afterwards. The drone's swell and slide are baked into the clip (played once, like the
+// and rises back from silence afterwards. The drone's swell and slide are baked into the clip (played once, like the
 // fanfares): in testing, changing a playing clip's volume and pitch did nothing audible, and ramping the music
 // stream's volume made it crackle, so nothing here changes audio while it plays.
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
@@ -10,6 +10,7 @@ import { Color4 } from '@dcl/sdk/math'
 import { engine, AudioSource, Entity, Transform } from '@dcl/sdk/ecs'
 import { isMuted, holdSoundtrack } from './soundtrack'
 
+const MUSIC_FADE_IN = 4   // seconds for the music to rise back from silence after the drift
 const DRONE_CLIP = 'assets/audio/hawking_drone.mp3'   // 5.3 s, generated: 80 Hz → 40 Hz beating pair + overtones
 let drone: Entity | null = null
 let droneOn = false
@@ -71,7 +72,7 @@ engine.addSystem((dt: number) => {
   if (driftT >= 0) {
     const before = driftT
     driftT += dt
-    if (before === 0) holdSoundtrack(DURATION + 0.5)   // the music stops for the blackout and resumes after
+    if (before === 0) holdSoundtrack(DURATION + 0.5, MUSIC_FADE_IN)   // the music stops for the blackout, then rises back
     if (before < DRIFT[1][0] && driftT >= DRIFT[1][0]) stopDrone()   // silence at full dark
     if (before < MIDPOINT && driftT >= MIDPOINT && midpoint) { const fn = midpoint; midpoint = null; fn() }
     if (driftT >= DURATION) { driftT = -1; veil = 0; const fn = done; done = null; fn?.() }

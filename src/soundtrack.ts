@@ -30,6 +30,8 @@ let muted = false
 let started = false
 let listener: (() => void) | null = null
 let holdSeconds = 0             // soundtrack paused while a fanfare plays
+let fadeInSeconds = 0           // after the hold: rise from silence over this long (0 = straight back at full volume)
+let fadeInT = -1                // progress of that rise, seconds (-1 = not fading)
 
 export function isMuted(): boolean { return muted }
 export function currentTrack(): Track | null { return started && queue.length ? queue[position] : null }
@@ -81,6 +83,7 @@ function shuffle<T>(xs: T[]): T[] {
 
 function play(): void {
   if (!player || queue.length === 0) return
+  fadeInT = -1; fadeInSeconds = 0   // a new track starts at full volume
   AudioStream.createOrReplace(player, { url: queue[position].url, playing: !muted, volume: VOLUME })
   elapsed = 0
   wasPlaying = false
@@ -105,8 +108,9 @@ export function setMuted(on: boolean): void {
 export function toggleMuted(): void { setMuted(!muted) }
 
 /** Pause the music for a fanfare and resume afterwards (the track picks up where it stopped). */
-export function holdSoundtrack(seconds: number): void {
+export function holdSoundtrack(seconds: number, fadeIn = 0): void {
   holdSeconds = Math.max(holdSeconds, seconds)
+  fadeInSeconds = Math.max(fadeInSeconds, fadeIn)
   wasPlaying = false   // a deliberate pause, not the track finishing
   if (player && AudioStream.has(player)) AudioStream.getMutable(player).playing = false
 }
@@ -115,8 +119,19 @@ function soundtrackSystem(dt: number): void {
   if (!started || muted || queue.length === 0) return
   if (holdSeconds > 0) {
     holdSeconds -= dt
-    if (holdSeconds <= 0 && player && AudioStream.has(player)) AudioStream.getMutable(player).playing = true
+    if (holdSeconds <= 0 && player && AudioStream.has(player)) {
+      const stream = AudioStream.getMutable(player)
+      if (fadeInSeconds > 0) { stream.volume = 0; fadeInT = 0 }   // resume silent, then rise: no jump back to full
+      stream.playing = true
+    }
     return
+  }
+  if (fadeInT >= 0 && player && AudioStream.has(player)) {
+    // Small changes every frame (whole steps crackled in testing), eased so it neither lingers quiet nor jumps
+    fadeInT += dt
+    const p = Math.min(1, fadeInT / fadeInSeconds)
+    AudioStream.getMutable(player).volume = VOLUME * p * p * (3 - 2 * p)
+    if (p >= 1) { fadeInT = -1; fadeInSeconds = 0 }
   }
   const state = player ? AudioStream.getAudioState(player)?.state : undefined
   const playing = state === undefined ? true : state === MediaState.MS_PLAYING   // no reports: fall back to wall time
