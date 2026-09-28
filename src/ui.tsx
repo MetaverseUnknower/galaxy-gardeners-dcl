@@ -14,7 +14,7 @@ import { refreshStation } from './stations'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, isCameraSuspended } from './consoleCamera'
 import { teleportTo } from '~system/RestrictedActions'
 import { currentTrack, isMuted, toggleMuted, nextTrack } from './soundtrack'
-import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
+import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepIntroVisible, dismissSleepIntro, sleepView, sleepViewIndex, setSleepView, SLEEP_VIEWS, MILKY_WAY, STAR_Y, galacticPlaneOffset, BACKDROPS, BACKDROP_SCALE, ATLAS, atlasUvs, sleepCelestials, NEBULAE, NEBULA_WRAP, starSprite, starOffset, layerOffset, sleepSpecks, driftSpeeds, panFraction } from './sleepMode'
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { px } from './uiScale'
 import { StemButton, StemPanel } from './stemChat'
@@ -594,7 +594,28 @@ const SleepOverlay = () => {
         </UiEntity>
       </UiEntity>
       <MusicBar />
+      <SleepIntro />
       <SleepCurtain />
+    </UiEntity>
+  )
+}
+
+/** First-time explanation of the quarters: a place to rest and listen, which changes nothing about the trip. */
+const SleepIntro = () => {
+  if (!sleepIntroVisible()) return null
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', justifyContent: 'center', alignItems: 'center' }}>
+      <UiEntity uiTransform={{ width: px(560), flexDirection: 'column', padding: px(24) }} uiBackground={{ color: Color4.create(0.02, 0.05, 0.12, 0.92) }}>
+        <Label value="YOUR QUARTERS" fontSize={px(16)} color={Color4.create(0, 0.9, 1, 1)} uiTransform={{ height: px(26), margin: { bottom: px(10) } }} textAlign="middle-left" />
+        <UiEntity uiTransform={{ width: '100%', height: px(190) }}
+          uiText={{ value: "This is a place to relax, look out at the stars and listen to the music.\n\nSleeping doesn't change your travel time or anything else aboard: your trip, pods and scans carry on exactly as they would. Pick a view with the numbers below, and press WAKE whenever you're ready.", fontSize: px(16), color: Color4.White(), textAlign: 'top-left', textWrap: 'wrap' }} />
+        <UiEntity uiTransform={{ width: '100%', height: px(34), flexDirection: 'row', justifyContent: 'flex-end', margin: { top: px(10) } }}>
+          <UiEntity uiTransform={{ width: px(110), height: '100%', justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0, 0.9, 1, 1) }} onMouseDown={() => { dismissSleepIntro() }}>
+            <Label value="GOT IT" fontSize={px(13)} color={Color4.create(0.02, 0.05, 0.1, 1)} />
+          </UiEntity>
+        </UiEntity>
+      </UiEntity>
     </UiEntity>
   )
 }

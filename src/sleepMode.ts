@@ -122,8 +122,20 @@ export function starSprite(): { src: string; size: number; tint: [number, number
   return { ...sprite, size: sprite.size * Math.max(MIN_TRAVEL_FRACTION, getTravelFraction()) }
 }
 
+// The first time a player sleeps, a card explains what the quarters are (and aren't) for. Seen once, then remembered.
+const INTRO_PREF = 'sleepIntroSeen'
+let introOpen = false
+/** True while the first-time explanation should show (only once the room has faded in). */
+export function sleepIntroVisible(): boolean { return introOpen && phase === 'asleep' }
+export function dismissSleepIntro(): void {
+  if (!introOpen) return
+  introOpen = false
+  setPref(INTRO_PREF, true)
+}
+
 export function enterSleepMode(): void {
   if (phase !== 'off') return
+  introOpen = !getPref<boolean>(INTRO_PREF, false)
   viewIndex = Math.min(Math.max(0, getPref<number>(VIEW_PREF, 0)), SLEEP_VIEWS.length - 1)
   time = 0
   specks = makeSpecks(STAR_COUNT)
@@ -134,6 +146,7 @@ export function enterSleepMode(): void {
 
 export function wake(): void {
   if (phase === 'off' || phase === 'closing' || phase === 'waking') return
+  dismissSleepIntro()   // waking counts as having seen it
   // Waking mid fade-in starts the close from the current darkness so there's no jump.
   if (phase === 'dimming') { phase = 'waking'; phaseT = FADE_SECONDS.waking * (1 - sleepCurtain()); return }
   const c = sleepCurtain()
