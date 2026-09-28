@@ -159,8 +159,8 @@ export function refreshNavConsole(): void {
   // Map legend: the free strip left of the view tabs. Each mark has the same shape as on the map, so none of
   // them depends on colour: cube, pinned star, plain star, haloed star.
   // Three columns spaced for their labels (~0.025 per capital at size 0.13): HERE/STAR, HOME/STATION, VISITED/EXPLORED.
-  // Each column ends ~0.08 before the next one's mark; the last ends ~0.28 before the view tab at x -1.35.
-  const L1 = 0.67, L2 = 0.5, C1 = -2.64, C2 = -2.28, C3 = -1.9, LS = 0.13
+  // Each column ends ~0.16 before the next one's mark; the last ends ~0.12 before the view tab at x -1.35.
+  const L1 = 0.67, L2 = 0.5, C1 = -2.64, C2 = -2.2, C3 = -1.74, LS = 0.13
   frame(bag, root, C1, L1, 0.07, 0.07, { border: Color3.create(0, 1, 0.5), fill: Color4.create(0, 1, 0.5, 1), borderWidth: 0.01 })
   txt(bag, root, C1 + 0.09, L1, 'HERE', LS, DIM, LEFT)
   disc(bag, root, C2, L1 - 0.02, 0.045, Color3.create(1, 0.3, 1))
