@@ -292,6 +292,7 @@ async function reloadMap(): Promise<void> {
   api.invalidateFuelCosts()   // arrived somewhere new: every quote changes
   clearMap()
   playerInfo = await api.getPlayerMe()
+  setCurrentSystemId(playerInfo.current_system_id)   // the star panel's VIEW SYSTEM / TRAVEL choice follows the ship
   setPodOpsSystemId(playerInfo.current_system_id)
   const consoleSystemId = playerInfo.current_system_id
   setNavConsoleSystem(systems.find(s => s.id === consoleSystemId) ?? null)
