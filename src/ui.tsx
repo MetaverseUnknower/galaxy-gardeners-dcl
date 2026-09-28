@@ -149,11 +149,27 @@ export function updateNotification(dt: number): void {
 }
 
 // STEM speaking up unprompted (the black hole warnings): a terminal readout, typed out, under STEM's own header
-let stemMessage: { text: string; age: number; until: number } | null = null
+let stemMessage: { text: string; lines: number; age: number; until: number } | null = null
 const STEM_TYPE_RATE = 70   // characters per second
+// STEM wraps its own lines, like a terminal: set once for the whole message, with a column kept free at the end of
+// every line for the cursor, so neither the typing nor the blinking cursor can move a word. Monospace 18px is ~11px a
+// character in the ~680px text area (~62 columns); 52 leaves room for the estimate to be off.
+const STEM_COLUMNS = 52
+function wrapColumns(text: string, columns: number): string[] {
+  const lines: string[] = []
+  let line = ''
+  for (const word of text.split(' ')) {
+    if (line && line.length + 1 + word.length > columns) { lines.push(line); line = word }
+    else line = line ? `${line} ${word}` : word
+  }
+  if (line) lines.push(line)
+  return lines
+}
 /** A message from STEM, typed out in its terminal banner; it stays `seconds` after it finishes typing. */
 export function showStemMessage(text: string, seconds: number = 8): void {
-  stemMessage = { text, age: 0, until: text.length / STEM_TYPE_RATE + seconds }
+  const lines = wrapColumns(`> ${text}`, STEM_COLUMNS - 1)   // - 1: the cursor's column
+  const wrapped = lines.join('\n')
+  stemMessage = { text: wrapped, lines: lines.length, age: 0, until: wrapped.length / STEM_TYPE_RATE + seconds }
 }
 export function showNotification(text: string, color: Color4, duration: number = 5): void {
   notification = { text, color, timer: duration }
@@ -410,18 +426,16 @@ const DigitWarmup = () => (
 // The banner's text wraps; the box grows by whole lines (estimated: ~55 characters of 22px text per 652px line)
 const BANNER_CHARS_PER_LINE = 55
 const BANNER_LINE_HEIGHT = 30
-// STEM's banner: monospace (~0.6em per character), so its lines are estimated separately from the notification's
-const STEM_CHARS_PER_LINE = 58
+// STEM's banner: its lines are wrapped in showStemMessage
 const STEM_LINE_HEIGHT = 26
 const STEM_CYAN = Color4.create(0.3, 0.95, 1, 1)
 const STEM_DIM = Color4.create(0.3, 0.95, 1, 0.55)
 const StemBanner = () => {
   if (!stemMessage) return null
   const typed = Math.min(stemMessage.text.length, Math.floor(stemMessage.age * STEM_TYPE_RATE))
-  // Blinking pipe right after the text, blinking to a no-break space (same width in monospace, and no break point),
-  // so the blink never changes where the lines wrap
+  // Blinking cursor: the lines are already fixed (showStemMessage), so it can't move a word
   const cursor = Math.floor(stemMessage.age * 2.5) % 2 === 0 ? '|' : '\u00A0'
-  const lines = Math.max(1, Math.ceil((stemMessage.text.length + 2) / STEM_CHARS_PER_LINE))
+  const lines = stemMessage.lines
   // Below the ordinary banner when both are up
   const top = notification ? 60 + 32 + BANNER_LINE_HEIGHT * Math.max(1, Math.ceil(notification.text.length / BANNER_CHARS_PER_LINE)) + 10 : 60
   return (
@@ -432,7 +446,7 @@ const StemBanner = () => {
           <UiEntity uiTransform={{ width: '100%', height: px(18), margin: { bottom: px(6) } }}
             uiText={{ value: 'STEM  //  SHIP TELEMETRY AND EXPLORATION MODULE', fontSize: px(12), color: STEM_DIM, textAlign: 'middle-left', font: 'monospace' }} />
           <UiEntity uiTransform={{ width: '100%', height: px(STEM_LINE_HEIGHT * lines) }}
-            uiText={{ value: `> ${stemMessage.text.slice(0, typed)}${cursor}`, fontSize: px(18), color: STEM_CYAN, textAlign: 'top-left', textWrap: 'wrap', font: 'monospace' }} />
+            uiText={{ value: `${stemMessage.text.slice(0, typed)}${cursor}`, fontSize: px(18), color: STEM_CYAN, textAlign: 'top-left', textWrap: 'nowrap', font: 'monospace' }} />
         </UiEntity>
       </UiEntity>
     </UiEntity>
