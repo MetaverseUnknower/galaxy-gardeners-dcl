@@ -20,6 +20,14 @@ async function makeRequest(url: string, init: { method: string; headers: Record<
   return response
 }
 
+// On an error reply the Decentraland client unwraps our JSON itself and hands the scene only its `error` string
+// (unity-explorer SignedFetchWrap.cs, the UnityWebRequestException catch). Wrap it back so every caller reads
+// "API error N: {"error": ...}" as before; a body that is still JSON (other clients) passes through.
+function errorBody(body: string): string {
+  try { const v = JSON.parse(body); if (v && typeof v === 'object') return body } catch { /* the bare message */ }
+  return JSON.stringify({ error: body || 'Request failed' })
+}
+
 async function apiGet<T>(path: string): Promise<T> {
   const token = getToken()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -30,7 +38,7 @@ async function apiGet<T>(path: string): Promise<T> {
   const response = await makeRequest(`${API_BASE}${path}`, { method: 'GET', headers })
 
   if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.body}`)
+    throw new Error(`API error ${response.status}: ${errorBody(response.body)}`)
   }
 
   return JSON.parse(response.body) as T
@@ -50,7 +58,7 @@ async function apiPost<T>(path: string, body?: Record<string, unknown>): Promise
   })
 
   if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.body}`)
+    throw new Error(`API error ${response.status}: ${errorBody(response.body)}`)
   }
 
   if (!response.body) return undefined as T
@@ -71,7 +79,7 @@ async function apiPut<T>(path: string, body?: Record<string, unknown>): Promise<
   })
 
   if (!response.ok) {
-    throw new Error(`API error ${response.status}: ${response.body}`)
+    throw new Error(`API error ${response.status}: ${errorBody(response.body)}`)
   }
 
   if (!response.body) return undefined as T
