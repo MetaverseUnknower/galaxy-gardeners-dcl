@@ -15,6 +15,7 @@ const CREDITS: [string, string][] = [
   ['Game Mechanics Design', 'Unknower'],
   ['AI Developer', 'Claude Opus'],
   ['3D Modeling', 'LowPolyModels, Unknower, ChatGPT'],
+  ['Image Generation', 'Grok (xAI)'],
   ['Music', 'Unknower via Suno'],
   ['Web & API Hosting', 'Livication'],
 ]
@@ -33,9 +34,12 @@ function openLink(url: string): void {
   void openExternalUrl({ url }).catch((err) => console.log('[menu] openExternalUrl failed', err))   // the explorer asks to confirm
 }
 
+const WIKI_URL = 'https://galaxygardeners.app/wiki'
+
 // A null action shows the item disabled with a SOON tag.
 const MENU_ITEMS: [string, (() => void) | null][] = [
   ['CONNECT MOBILE APP', null],   // will link a Decentraland wallet to the iOS app's account
+  ['GAMEPLAY WIKI', () => { menuOpen = false; openLink(WIKI_URL) }],
   ['CREDITS', () => { menuOpen = false; legal = null; open = true }],
   ['TERMS OF SERVICE', () => { menuOpen = false; open = false; legal = TERMS }],
   ['PRIVACY POLICY', () => { menuOpen = false; open = false; legal = PRIVACY }],
