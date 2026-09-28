@@ -19,7 +19,7 @@ import { isSleeping, sleepSceneVisible, sleepCurtain, wake, sleepIntroVisible, d
 import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import { px } from './uiScale'
 import { StemButton, StemPanel } from './stemChat'
-import { GuideButton, GuidePanel, isGuide } from './guide'
+import { GuideButton, GuidePanel } from './guide'
 import { InfoMenu, CreditsPanel, LegalPanel } from './credits'
 import { emitTourEvent } from './tour/events'
 import { TourDialog } from './tour/dialog'
@@ -378,26 +378,6 @@ const DigitWarmup = () => (
   </UiEntity>
 )
 
-// TEMPORARY diagnostic, guide wallets only: which fonts and sizes draw digits as emoji in the live world?
-// Remove after the emoji-digit investigation.
-const DigitProbe = () => {
-  if (!isGuide()) return null
-  const fonts: Array<'sans-serif' | 'serif' | 'monospace'> = ['sans-serif', 'serif', 'monospace']
-  const sizes = [14, 18, 20, 22, 26]
-  return (
-    <UiEntity uiTransform={{ positionType: 'absolute', position: { top: px(150), right: px(30) }, flexDirection: 'column', padding: px(8) }} uiBackground={{ color: Color4.create(0, 0, 0, 0.85) }}>
-      <Label value="DIGIT PROBE (guides only)" fontSize={px(12)} color={Color4.Gray()} uiTransform={{ height: px(18) }} textAlign="middle-left" />
-      {fonts.map(f => sizes.map(sz => (
-        <UiEntity key={`${f}${sz}`} uiTransform={{ height: px(sz + 8), flexDirection: 'row', alignItems: 'center' }}>
-          <Label value={`${f.slice(0, 4)} ${sz}`} fontSize={px(12)} color={Color4.Gray()} uiTransform={{ width: px(80) }} textAlign="middle-left" />
-          <Label value="0123456789 : 29:47" fontSize={px(sz)} font={f} color={Color4.create(0, 0.9, 1, 1)} textAlign="middle-left" />
-        </UiEntity>
-      )))}
-      <UiEntity uiTransform={{ height: px(34), margin: { top: px(6) } }} uiText={{ value: 'ARRIVES IN  29:47', fontSize: px(22), color: Color4.create(0, 0.9, 1, 1), textAlign: 'middle-left' }} />
-    </UiEntity>
-  )
-}
-
 const NotificationBanner = () => {
   if (!notification) return null
   return (
@@ -718,7 +698,6 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <BodyDetailPanel />
     <TravelStatusPanel />
     <SurveyBar />
-    <DigitProbe />
     <NotificationBanner />
     <DiscoveryDescriptionBar />
     <StatusBar />
