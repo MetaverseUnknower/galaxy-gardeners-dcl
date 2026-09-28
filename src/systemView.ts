@@ -1,6 +1,8 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, Billboard, BillboardMode } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, Billboard, BillboardMode, MainCamera } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
+import { getPlayer } from '@dcl/sdk/players'
+import { movePlayerTo } from '~system/RestrictedActions'
 
 const SYSTEM_CENTER = Vector3.create(128, 41, 128)
 
@@ -190,15 +192,12 @@ const HALO_BANDS: { r: number; width: number; intensity: number; alpha: number }
 ]
 const RING_SEGMENTS = 64
 
-// Staring into the black hole: the hologram won't let the pointer rest on the horizon, and STEM objects
-let holeShift: Entity | null = null
-let holeRadius = 0.25
-let holeOffset = { x: 0, y: 0 }
-let holeTarget = { x: 0, y: 0 }
-let holeHold = 0              // seconds the horizon stays pushed aside before drifting back
+// Staring into the black hole: in the free camera the view is nudged off the horizon (the pointer is the centre of the
+// view, and scenes can't move a mouse cursor); in the console and top views the camera is fixed, so STEM just objects
 let lastStareWarning = -1e9   // ms
 let stareLine = 0
 const STARE_WARNING_MS = 20_000
+const GAZE_NUDGE = 0.1        // sideways, per metre of distance to the horizon: about 6°
 const STARE_LINES = [
   "Captain, please don't stare directly into the black hole simulation. Prolonged viewing is linked to Hawking drift: crews start hearing their own thoughts a few seconds late.",
   "Eyes off the singularity, Captain. The hologram renders time dilation faithfully and the human visual cortex doesn't. Three freighter crews tried to count its frames. They're still counting.",
@@ -209,25 +208,25 @@ let blackHoleNotify: ((text: string) => void) | null = null
 /** Where STEM's warnings about staring into the black hole go. */
 export function setBlackHoleNotify(fn: (text: string) => void): void { blackHoleNotify = fn }
 
-function avertGaze(): void {
-  const a = Math.random() * Math.PI * 2
-  const d = holeRadius * 1.7   // just clear of the horizon: the pointer is left looking at empty space
-  holeTarget = { x: Math.cos(a) * d, y: Math.sin(a) * d }
-  holeHold = 1.2
+function avertGaze(hit: Vector3 | undefined): void {
+  const player = getPlayer()
+  const freeCamera = !MainCamera.getOrNull(engine.CameraEntity)?.virtualCameraEntity
+  if (hit && player?.position && freeCamera) {
+    const cam = Transform.get(engine.CameraEntity).position
+    const dx = hit.x - cam.x, dz = hit.z - cam.z
+    const flat = Math.hypot(dx, dz)
+    if (flat > 0.01) {
+      const side = Math.random() < 0.5 ? -1 : 1
+      const dist = Vector3.distance(cam, hit)
+      // Turn the view a little to one side of the horizon: the crosshair lands on empty space
+      const target = Vector3.create(hit.x + (dz / flat) * side * dist * GAZE_NUDGE, hit.y, hit.z - (dx / flat) * side * dist * GAZE_NUDGE)
+      void movePlayerTo({ newRelativePosition: player.position, cameraTarget: target })
+    }
+  }
   const now = Date.now()
   if (now - lastStareWarning < STARE_WARNING_MS) return
   lastStareWarning = now
   blackHoleNotify?.(STARE_LINES[stareLine++ % STARE_LINES.length])
-}
-
-function blackHoleSystem(dt: number): void {
-  if (!holeShift || !Transform.has(holeShift)) return
-  if (holeHold > 0) holeHold -= dt
-  else holeTarget = { x: 0, y: 0 }
-  const rate = holeHold > 0 ? 14 : 1.5   // snaps away, drifts back
-  const k = 1 - Math.exp(-rate * dt)
-  holeOffset = { x: holeOffset.x + (holeTarget.x - holeOffset.x) * k, y: holeOffset.y + (holeTarget.y - holeOffset.y) * k }
-  Transform.getMutable(holeShift).position = Vector3.create(holeOffset.x, holeOffset.y, 0)
 }
 
 function segmentMaterial(seg: Entity, intensity: number, alpha: number): void {
@@ -241,21 +240,12 @@ function segmentMaterial(seg: Entity, intensity: number, alpha: number): void {
 }
 
 function createAccretionRing(root: Entity, horizon: Entity, horizonRadius: number): void {
-  const facing = engine.addEntity()
-  Transform.create(facing, { position: Vector3.create(0, 0, 0), parent: root })
-  Billboard.create(facing, { billboardMode: BillboardMode.BM_ALL })
-  staticEntities.push(facing)
-  // Everything below rides on `pivot`, which slips sideways (in the facing plane, so across the screen) when
-  // the pointer lands on the horizon
   const pivot = engine.addEntity()
-  Transform.create(pivot, { position: Vector3.create(0, 0, 0), parent: facing })
+  Transform.create(pivot, { position: Vector3.create(0, 0, 0), parent: root })
+  Billboard.create(pivot, { billboardMode: BillboardMode.BM_ALL })
   staticEntities.push(pivot)
-  holeShift = pivot
-  holeRadius = horizonRadius
-  holeOffset = { x: 0, y: 0 }; holeTarget = { x: 0, y: 0 }; holeHold = 0
-  Transform.getMutable(horizon).parent = pivot
   MeshCollider.setSphere(horizon, ColliderLayer.CL_POINTER)
-  pointerEventsSystem.onPointerHoverEnter({ entity: horizon }, () => avertGaze())
+  pointerEventsSystem.onPointerHoverEnter({ entity: horizon }, (e) => avertGaze(e.hit?.position))
 
   // Photon ring: face-on circles around the horizon (the pivot's XY plane faces the viewer)
   for (const band of HALO_BANDS) {
@@ -528,7 +518,6 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
 
 export function systemViewAnimationSystem(dt: number): void {
   if (orbitingPlanets.length === 0 && !starEntity) return
-  blackHoleSystem(dt)
   const pauseTarget = orbitsPaused ? 1 : 0
   if (Math.abs(pauseBlend - pauseTarget) > 0.001) pauseBlend += (pauseTarget - pauseBlend) * (1 - Math.exp(-PAUSE_BLEND_SPEED * dt))
   else pauseBlend = pauseTarget
@@ -599,7 +588,6 @@ export function clearSystemView(): void {
   for (const moon of orbitingMoons) engine.removeEntity(moon.entity); orbitingMoons.length = 0; moonParentIndex.length = 0
   for (const rock of orbitingRocks) engine.removeEntity(rock.entity); orbitingRocks.length = 0
   if (starEntity) { pointerEventsSystem.removeOnPointerHoverEnter(starEntity); engine.removeEntity(starEntity); starEntity = null }
-  holeShift = null
   if (starGlowEntity) { engine.removeEntity(starGlowEntity); starGlowEntity = null }
   currentStationInfo = null
   if (onStationChanged) onStationChanged()
