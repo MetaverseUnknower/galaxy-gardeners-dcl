@@ -69,6 +69,20 @@ function setupWormholeEvents(): void {
   void refreshWormhole()
 }
 
+// The opening fanfare plays once per player, ever: the first time they come aboard. Anyone who has already started,
+// finished or skipped the tour has been aboard before (this rule arrived after them), so they don't hear it again.
+const FANFARE_PREF = 'boardingFanfarePlayed'
+async function playFirstBoardingFanfare(): Promise<void> {
+  if (getPref<boolean>(FANFARE_PREF, false)) return
+  let firstTime = false
+  try {
+    const w = await api.getWalkthroughState()
+    firstTime = !w.walkthroughCompleted && !w.walkthroughSkipped && !(w.walkthroughScene > 0)
+  } catch { return }   // unknown: stay quiet and ask again next time
+  setPref(FANFARE_PREF, true)
+  if (firstTime) playSfx('game_start')
+}
+
 function tourFinished(): Promise<void> {
   if (!isTourRunning()) return Promise.resolve()
   return new Promise(resolve => {
@@ -298,7 +312,7 @@ export async function main() {
     }
 
     setStatusMessage(null)
-    playSfx('game_start')
+    await playFirstBoardingFanfare()
     void startTourIfNeeded()
     setupWormholeEvents()   // after the desks, docking and travel state exist: the tour reads all three
   } catch (err: any) {
