@@ -11,10 +11,11 @@ import { isMuted, setSoundtrackDuck } from './soundtrack'
 const DRONE_CLIP = 'assets/audio/hawking_drone.wav'   // 4 s seamless loop, generated (55 Hz beating pair + overtones)
 const DRONE_VOLUME = 0.9
 const MUSIC_FLOOR = 0.12    // the music's volume, as a fraction, just before the blackout
-const MUSIC_RETURN = 0.35   // per second: how fast the music swells back afterwards
+const MUSIC_RETURN_SECONDS = 4   // the music swells back over this long afterwards, eased, ending at full volume
 let drone: Entity | null = null
 let droneOn = false
 let music = 1               // current music duck
+let returning = 1           // 0..1 progress of the swell back (1 = done)
 
 function setDrone(on: boolean, volume = 0, pitch = 1): void {
   if (on && isMuted()) on = false
@@ -83,6 +84,7 @@ engine.addSystem((dt: number) => {
     // Silence from the blackout until sight returns
     setDrone(driftT < DRIFT[1][0], DRONE_VOLUME, 0.45)
     music = 0
+    returning = 0
     setSoundtrackDuck(music)
     return
   }
@@ -92,10 +94,17 @@ engine.addSystem((dt: number) => {
     veil = VEIL_MAX * k * (0.7 + 0.3 * Math.sin(pulse))
     setDrone(true, DRONE_VOLUME * k, 1 - 0.55 * k)   // groans downward as the stare goes on
     music = 1 - (1 - MUSIC_FLOOR) * k
+    returning = 1
   } else {
     if (veil > 0) veil = Math.max(0, veil - dt * 1.5)   // looked away: the veil lifts
     setDrone(false)
-    music = Math.min(1, music + dt * MUSIC_RETURN)
+    if (returning < 1) {
+      // After the drift: smoothstep from silence to full, so it neither lingers quiet nor jumps at the end
+      returning = Math.min(1, returning + dt / MUSIC_RETURN_SECONDS)
+      music = returning * returning * (3 - 2 * returning)
+    } else {
+      music = Math.min(1, music + dt / MUSIC_RETURN_SECONDS)   // looked away early: from wherever it got to
+    }
   }
   setSoundtrackDuck(music)
 })

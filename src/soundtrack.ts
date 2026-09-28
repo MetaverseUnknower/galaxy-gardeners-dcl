@@ -108,7 +108,9 @@ export function toggleMuted(): void { setMuted(!muted) }
 /** Scale the music's volume, 0..1 (1 = normal). The stream has no speed or pitch control, only volume. */
 export function setSoundtrackDuck(f: number): void {
   const next = Math.max(0, Math.min(1, f))
-  if (Math.abs(next - duck) < 0.005) return
+  // Whole 5% steps (plus the exact ends): the client may smooth or drop tiny per-frame volume changes
+  if (next === duck) return
+  if (next !== 0 && next !== 1 && Math.abs(next - duck) < 0.05) return
   duck = next
   if (player && AudioStream.has(player)) AudioStream.getMutable(player).volume = VOLUME * duck
 }
