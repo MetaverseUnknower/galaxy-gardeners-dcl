@@ -15,7 +15,7 @@ const CREDITS: [string, string][] = [
   ['Game Mechanics Design', 'Unknower'],
   ['AI Developer', 'Claude Opus'],
   ['3D Modeling', 'LowPolyModels, Unknower, ChatGPT'],
-  ['Image Generation', 'Grok (xAI)'],
+  ['Image Generation', 'Grok (xAI Aurora)'],
   ['Music', 'Unknower via Suno'],
   ['Web & API Hosting', 'Livication'],
 ]
