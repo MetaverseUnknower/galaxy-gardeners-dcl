@@ -347,6 +347,15 @@ export async function discardSpecimen(sampleId: string): Promise<void> {
   await apiPost('/api/ship/discard-jar', { sample_id: sampleId })
 }
 
+/** Hawking drift (staring into the black hole hologram): the level wears off over 3 days; see the server's hawkingDrift.ts. */
+export type HawkingDrift = { level: number; recent: number; lifetime: number; lastAt: string | null }
+export async function getHawkingDrift(): Promise<HawkingDrift> {
+  return apiGet<HawkingDrift>('/api/ship/hawking-drift')
+}
+export async function recordHawkingDrift(): Promise<HawkingDrift & { recorded: boolean }> {
+  return apiPost<HawkingDrift & { recorded: boolean }>('/api/ship/hawking-drift')
+}
+
 // Wormhole events: admin-opened temporary wormholes to one system (server services/events/wormhole.ts)
 export type WormholeStatus = {
   id: string; targetSystemId: string; targetName: string; startsAt: string; endsAt: string

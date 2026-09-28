@@ -235,7 +235,9 @@ function stareSystem(dt: number): void {
   staring = false
   drifting = true
   setStareTime(null)
+  let recorded: Promise<api.HawkingDrift | null> = Promise.resolve(null)
   playHawkingDrift(() => {
+    recorded = api.recordHawkingDrift().catch(() => null)   // the drift level wears off over days (server)
     const p = getPlayer()?.position
     if (!p) return
     const r = Math.max(DECK_RADIUS.min, Math.min(DECK_RADIUS.max, Math.hypot(p.x - SHIP_CENTER.x, p.z - SHIP_CENTER.z)))
@@ -244,10 +246,12 @@ function stareSystem(dt: number): void {
       newRelativePosition: Vector3.create(SHIP_CENTER.x + Math.cos(a) * r, p.y, SHIP_CENTER.z + Math.sin(a) * r),
       cameraTarget: SYSTEM_CENTER,
     })
-  }, () => {
+  }, async () => {
     drifting = false
     lastStareWarning = Date.now()   // the explanation stands in for the next warning
-    blackHoleNotify?.(HAWKING_DRIFT)
+    const d = await recorded
+    const tally = d && d.recent >= 2 ? ` That's ${d.recent} drifts in the last three days. They add up, Captain.` : ''
+    blackHoleNotify?.(HAWKING_DRIFT + tally)
   })
 }
 
