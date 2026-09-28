@@ -19,7 +19,7 @@ import { setupConsoleCamera } from './consoleCamera'
 import { loadPrefs, getPref, setPref } from './prefs'
 import { setupSoloShip } from './soloShip'
 import { setGuideNotifyCallback } from './guide'
-import { setupTour, startTourIfNeeded } from './tour/runner'
+import { isTourRunning, setupTour, startTourIfNeeded } from './tour/runner'
 import { refreshSystemProgress } from './systemProgress'
 import { onWormholeChanged, setWormholeNotify, setWormholeArrivedCallback, setWormholeCutscenePlayer, playWormholeCutscene, refreshWormhole, closesAtText, podWord } from './wormhole/state'
 import { playCutscene } from './wormhole/cutscene'
@@ -45,23 +45,34 @@ let viewSystemId: string | null = null   // a visited system being surveyed in t
 function setupWormholeEvents(): void {
   const VIOLET = Color4.create(0.75, 0.45, 1, 1)
   setWormholeNotify((text, warning) => showNotification(text, warning ? Color4.create(1, 0.72, 0.2, 1) : VIOLET, warning ? 8 : 6))
-  setWormholeArrivedCallback(() => reloadMap())
+  // A wormhole jump undocks the ship on the server
+  setWormholeArrivedCallback(async () => { await loadDockedStatus(); await reloadMap() })
   setWormholeCutscenePlayer(playCutscene)
   onWormholeChanged(async (prev, next) => {
     setWormholeTarget(next?.targetSystemId ?? null)
-    if (next && !prev) {
-      // Once per event per player: reloading doesn't replay it
-      if (getPref<string>('wormholeSeen', '') === next.id) return
-      setPref('wormholeSeen', next.id)
-      await playWormholeCutscene('open')
-      showNotification(`Captain, a wormhole just opened to ${next.targetName}! It's open until ${closesAtText()}.`, VIOLET, 8)
-    } else if (prev && !next) {
+    await tourFinished()   // the tour owns the camera; the cutscenes wait for it
+    // One event can replace another between polls: the old one closes, then the new one opens
+    if (prev) {
       await playWormholeCutscene('close', () => reloadMap())
       const lost = prev.canReturn && prev.podsOut > 0 ? ` We lost contact with ${podWord(prev.podsOut)}.` : ''
       showNotification(`The wormhole to ${prev.targetName} has closed.${lost}`, VIOLET, 8)
     }
+    // Once per event per player: reloading doesn't replay it
+    if (next && getPref<string>('wormholeSeen', '') !== next.id) {
+      setPref('wormholeSeen', next.id)
+      await playWormholeCutscene('open')
+      showNotification(`Captain, a wormhole just opened to ${next.targetName}! It's open until ${closesAtText()}.`, VIOLET, 8)
+    }
   })
   void refreshWormhole()
+}
+
+function tourFinished(): Promise<void> {
+  if (!isTourRunning()) return Promise.resolve()
+  return new Promise(resolve => {
+    const wait = () => { if (!isTourRunning()) { engine.removeSystem(wait); resolve() } }
+    engine.addSystem(wait)
+  })
 }
 
 async function showSystemView(): Promise<void> {
@@ -320,6 +331,7 @@ async function reloadMap(): Promise<void> {
   playerInfo = await api.getPlayerMe()
   setCurrentSystemId(playerInfo.current_system_id)   // the star panel's VIEW SYSTEM / TRAVEL choice follows the ship
   setPodOpsSystemId(playerInfo.current_system_id)
+  setCurrentSystemForTravel(playerInfo.current_system_id)   // the next trip's route line starts here
   const consoleSystemId = playerInfo.current_system_id
   setNavConsoleSystem(systems.find(s => s.id === consoleSystemId) ?? null)
   systems = await api.getSystems(playerInfo.galaxy_id)
