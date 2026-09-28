@@ -1,4 +1,4 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, Billboard, BillboardMode } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 
@@ -163,6 +163,53 @@ function getStarTypeColor(starType: string | null): { color: Color4; emissive: C
   }
 }
 
+function createStarGlow(root: Entity, starSize: number, emissive: Color3): void {
+  starGlowEntity = engine.addEntity()
+  Transform.create(starGlowEntity, { position: Vector3.create(0, 0, 0), scale: Vector3.create(starSize * 2.5, starSize * 2.5, starSize * 2.5), parent: root })
+  MeshRenderer.setSphere(starGlowEntity)
+  Material.setPbrMaterial(starGlowEntity, {
+    albedoColor: Color4.create(emissive.r, emissive.g, emissive.b, 0.06),
+    emissiveColor: emissive, emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
+  })
+}
+
+// Accretion ring: bands of short white segments on a billboarded pivot, bright at the inner edge, fading outward
+const RING_SEGMENTS = 48
+const RING_BANDS: { r: number; width: number; intensity: number; alpha: number }[] = [
+  { r: 1.5, width: 0.22, intensity: 8, alpha: 1 },
+  { r: 1.8, width: 0.3, intensity: 3.5, alpha: 0.7 },
+  { r: 2.15, width: 0.34, intensity: 1.5, alpha: 0.35 },
+]
+function createAccretionRing(root: Entity, horizonRadius: number): void {
+  const pivot = engine.addEntity()
+  Transform.create(pivot, { position: Vector3.create(0, 0, 0), parent: root })
+  Billboard.create(pivot, { billboardMode: BillboardMode.BM_ALL })
+  staticEntities.push(pivot)
+  for (const band of RING_BANDS) {
+    const r = band.r * horizonRadius
+    const arc = (2 * Math.PI * r / RING_SEGMENTS) * 1.08   // slight overlap: no gaps between segments
+    for (let i = 0; i < RING_SEGMENTS; i++) {
+      const a = (i / RING_SEGMENTS) * Math.PI * 2
+      const seg = engine.addEntity()
+      Transform.create(seg, {
+        position: Vector3.create(Math.cos(a) * r, Math.sin(a) * r, 0),
+        rotation: Quaternion.fromEulerDegrees(0, 0, a * 180 / Math.PI + 90),
+        scale: Vector3.create(arc, band.width * horizonRadius, 0.005),
+        parent: pivot,
+      })
+      MeshRenderer.setBox(seg)
+      Material.setPbrMaterial(seg, {
+        albedoColor: Color4.create(1, 1, 1, band.alpha),
+        emissiveColor: Color3.create(1, 1, 1),
+        emissiveIntensity: band.intensity,
+        transparencyMode: band.alpha < 1 ? MaterialTransparencyMode.MTM_ALPHA_BLEND : MaterialTransparencyMode.MTM_OPAQUE,
+        castShadows: false,
+      })
+      staticEntities.push(seg)
+    }
+  }
+}
+
 function orbitPeriod(slot: number): number { return 60 * Math.pow(slot, 1.3) }
 export function orbitalRadius(slot: number, starType: string | null): number {
   const baseRadius = starType === 'black_hole' ? 3.5 : 1.5
@@ -230,15 +277,14 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
   starEntity = engine.addEntity()
   Transform.create(starEntity, { position: Vector3.create(0, 0, 0), scale: Vector3.create(starSize, starSize, starSize), parent: systemRoot })
   MeshRenderer.setSphere(starEntity)
-  Material.setPbrMaterial(starEntity, { albedoColor: starColor.color, emissiveColor: starColor.emissive, emissiveIntensity: 5 })
-
-  starGlowEntity = engine.addEntity()
-  Transform.create(starGlowEntity, { position: Vector3.create(0, 0, 0), scale: Vector3.create(starSize * 2.5, starSize * 2.5, starSize * 2.5), parent: systemRoot })
-  MeshRenderer.setSphere(starGlowEntity)
-  Material.setPbrMaterial(starGlowEntity, {
-    albedoColor: Color4.create(starColor.emissive.r, starColor.emissive.g, starColor.emissive.b, 0.06),
-    emissiveColor: starColor.emissive, emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-  })
+  if (starType === 'black_hole') {
+    // A black event horizon inside a white accretion ring that always faces the viewer
+    Material.setPbrMaterial(starEntity, { albedoColor: Color4.create(0, 0, 0, 1), emissiveColor: Color3.create(0, 0, 0), emissiveIntensity: 0, metallic: 0, roughness: 1 })
+    createAccretionRing(systemRoot, starSize / 2)
+  } else {
+    Material.setPbrMaterial(starEntity, { albedoColor: starColor.color, emissiveColor: starColor.emissive, emissiveIntensity: 5 })
+    createStarGlow(systemRoot, starSize, starColor.emissive)
+  }
 
   for (let pIdx = 0; pIdx < planets.length; pIdx++) {
     const planet = planets[pIdx]
