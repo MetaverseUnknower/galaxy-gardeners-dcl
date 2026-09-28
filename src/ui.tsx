@@ -398,12 +398,16 @@ const DigitWarmup = () => (
   </UiEntity>
 )
 
+// The banner's text wraps; the box grows by whole lines (estimated: ~55 characters of 22px text per 652px line)
+const BANNER_CHARS_PER_LINE = 55
+const BANNER_LINE_HEIGHT = 30
 const NotificationBanner = () => {
   if (!notification) return null
+  const lines = Math.max(1, Math.ceil(notification.text.length / BANNER_CHARS_PER_LINE))
   return (
     <UiEntity uiTransform={{ width: '100%', positionType: 'absolute', position: { top: px(60) }, justifyContent: 'center' }}>
       <UiEntity uiTransform={{ width: px(700), padding: { top: px(16), bottom: px(16), left: px(24), right: px(24) } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.95) }}>
-        <UiEntity uiTransform={{ width: '100%', height: px(30) }} uiText={{ value: notification.text, fontSize: px(22), color: notification.color, textAlign: 'middle-center' }} />
+        <UiEntity uiTransform={{ width: '100%', height: px(BANNER_LINE_HEIGHT * lines) }} uiText={{ value: notification.text, fontSize: px(22), color: notification.color, textAlign: 'middle-center', textWrap: 'wrap' }} />
       </UiEntity>
     </UiEntity>
   )
