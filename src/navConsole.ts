@@ -199,7 +199,9 @@ export function refreshNavConsole(): void {
   hit('explored', C3, L2, 'EXPLORED', 'fully explored systems')
   // Both view tabs share one active style (magenta outline and text) so the selection reads the same either way.
   btn(bag, root, -0.55, 0.55, 1.6, 0.3, 'GALAXY MAP', 'Galaxy View', () => switchViewMode('galaxy'), { variant: galaxyActive ? 'magenta' : 'outline', icon: ICONS.galaxy, size: 0.22 })
-  btn(bag, root, 1.15, 0.55, 1.6, 0.3, 'STAR SYSTEM', canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'magenta', icon: ICONS.system, size: 0.22 })
+  // While surveying a visited system the tab reads SURVEY and lights green
+  const surveying = isViewingRemoteSystem()
+  btn(bag, root, 1.15, 0.55, 1.6, 0.3, surveying ? 'SURVEY' : 'STAR SYSTEM', surveying ? 'Survey of a visited system' : canSwitch ? 'System View' : 'System View (in transit)', () => switchViewMode('system'), { variant: surveying ? 'green' : !canSwitch ? 'disabled' : galaxyActive ? 'outline' : 'magenta', icon: ICONS.system, size: 0.22 })
 
   // Left: pause orbits + galaxy thumbnail
   if (inSystemView) {

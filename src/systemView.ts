@@ -1,4 +1,4 @@
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer, TextShape, Billboard, BillboardMode } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, InputAction, pointerEventsSystem, ColliderLayer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import * as api from './api'
 
@@ -171,8 +171,7 @@ export function orbitalRadius(slot: number, starType: string | null): number {
 
 // A survey of a visited system other than the ship's: the same hologram, but nothing can be deployed from afar.
 let readOnlyView = false
-// Label floating above the star naming the system on show; for a survey it's also a way back to the ship's system.
-let viewLabel: Entity | null = null
+// Which system is on show (the 2D survey bar names it) and how to get back to the ship's own system.
 let viewTitle = ''
 let returnToOwnSystem: (() => void) | null = null
 let ownSystemName = ''
@@ -181,26 +180,6 @@ export function setSurveyReturn(fn: () => void, name: string): void { returnToOw
 export function viewedSystemName(): string { return viewTitle }
 export function ownSystemTitle(): string { return ownSystemName }
 export function returnFromSurvey(): void { returnToOwnSystem?.() }
-
-function createViewLabel(title: string, remote: boolean, height: number): void {
-  viewLabel = engine.addEntity()
-  Transform.create(viewLabel, { position: Vector3.create(SYSTEM_CENTER.x, SYSTEM_CENTER.y + height, SYSTEM_CENTER.z) })
-  Billboard.create(viewLabel, { billboardMode: BillboardMode.BM_Y })
-  TextShape.create(viewLabel, {
-    text: remote ? `SURVEY · ${title.toUpperCase()}\nNOT YOUR CURRENT SYSTEM · CLICK TO RETURN` : `${title.toUpperCase()}\nYOU ARE HERE`,
-    fontSize: 3,
-    textColor: remote ? Color4.create(0.35, 1, 0.55, 1) : Color4.create(0, 0.9, 1, 1),
-    outlineWidth: 0.1, outlineColor: Color3.create(0, 0, 0),
-  })
-  if (remote) {
-    // A click area behind the text (a child, so it turns with the billboard)
-    const hit = engine.addEntity()
-    Transform.create(hit, { position: Vector3.create(0, 0, 0.02), scale: Vector3.create(4.2, 0.9, 1), parent: viewLabel })
-    MeshCollider.setPlane(hit, ColliderLayer.CL_POINTER)
-    pointerEventsSystem.onPointerDown({ entity: hit, opts: { button: InputAction.IA_POINTER, hoverText: ownSystemName ? `Back to ${ownSystemName}` : 'Back to your system', maxDistance: 30 } }, () => returnFromSurvey())
-    staticEntities.push(hit)
-  }
-}
 /** True while the hologram shows a system the ship isn't in (read-only survey). */
 export function isViewingRemoteSystem(): boolean { return readOnlyView && starEntity !== null }
 
@@ -251,8 +230,6 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
   starEntity = engine.addEntity()
   Transform.create(starEntity, { position: Vector3.create(0, 0, 0), scale: Vector3.create(starSize, starSize, starSize), parent: systemRoot })
   MeshRenderer.setSphere(starEntity)
-  // Above the star's glow (2.5× the star) at the hologram's final scale
-  if (viewTitle) createViewLabel(viewTitle, readOnlyView, starSize * 1.25 * autoScale + 0.45)
   Material.setPbrMaterial(starEntity, { albedoColor: starColor.color, emissiveColor: starColor.emissive, emissiveIntensity: 5 })
 
   starGlowEntity = engine.addEntity()
@@ -487,7 +464,6 @@ export function clearSystemView(): void {
   for (const rock of orbitingRocks) engine.removeEntity(rock.entity); orbitingRocks.length = 0
   if (starEntity) { engine.removeEntity(starEntity); starEntity = null }
   if (starGlowEntity) { engine.removeEntity(starGlowEntity); starGlowEntity = null }
-  if (viewLabel) { engine.removeEntity(viewLabel); viewLabel = null }
   currentStationInfo = null
   if (onStationChanged) onStationChanged()
   if (systemRoot) { engine.removeEntity(systemRoot); systemRoot = null }
