@@ -38,11 +38,16 @@ let travelFuelStart: number | null = null
 let travelFuelEnd: number | null = null
 
 /** The fuel to show right now: the server's value (already charged for the whole trip) plus the part of the
- *  trip's burn still ahead. Anything added mid-trip (refining, purchases) stays on top. */
-export function displayedFuel(serverFuel: number): number {
+ *  trip's burn still ahead. Anything added mid-trip (refining, purchases) stays on top. Never more than the tank
+ *  holds: a desk still holding the pre-departure value would otherwise add the burn twice (299/150). */
+export function displayedFuel(serverFuel: number, capacity: number = Infinity): number {
   if (!isTraveling || travelFuelStart === null || travelFuelEnd === null) return serverFuel
-  return serverFuel + Math.max(0, travelFuelStart - travelFuelEnd) * (1 - getTravelFraction())
+  return Math.min(capacity, serverFuel + Math.max(0, travelFuelStart - travelFuelEnd) * (1 - getTravelFraction()))
 }
+
+// The desks refresh on departure, so they read the fuel the server just charged
+const departureListeners: (() => void)[] = []
+export function onDeparture(fn: () => void): void { departureListeners.push(fn) }
 
 export function isCurrentlyTraveling(): boolean {
   return isTraveling
@@ -165,6 +170,7 @@ export async function startTravel(destinationId: string): Promise<void> {
   }
   await api.travel(destinationId)
   await updateTravelState()
+  for (const fn of departureListeners) fn()
 }
 
 export async function updateTravelState(): Promise<void> {

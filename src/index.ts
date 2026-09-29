@@ -6,7 +6,7 @@ import * as api from './api'
 import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker, getViewMode, setWormholeTarget } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
-import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
+import { startTravel, onDeparture, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
 import { oneAtATime } from './oneAtATime'
 import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification, showStemMessage } from './ui'
 import { StarSystem, PlayerInfo } from './types'
@@ -254,6 +254,7 @@ export async function main() {
       }
     })
 
+    onDeparture(() => { refreshStation('ship') })   // its fuel gauges read the charged fuel right away
     setTravelConfirmCallback(async () => {
       const selected = getSelectedSystem()
       if (!selected) return

@@ -135,7 +135,7 @@ function drawLow(): void {
     const used = cargoUsed(ctx.dashboard)
     const jars = (ctx.dashboard?.specimenSamples || []).length
     const rows: [string, number, string][] = [
-      ['FUEL', ship.fuel_capacity ? displayedFuel(ship.fuel_current) / ship.fuel_capacity : 0, `${Math.round(ship.fuel_capacity ? displayedFuel(ship.fuel_current) / ship.fuel_capacity * 100 : 0)}%`],   // burns down over a trip
+      ['FUEL', ship.fuel_capacity ? displayedFuel(ship.fuel_current, ship.fuel_capacity) / ship.fuel_capacity : 0, `${Math.round(ship.fuel_capacity ? displayedFuel(ship.fuel_current, ship.fuel_capacity) / ship.fuel_capacity * 100 : 0)}%`],   // burns down over a trip
       ['CARGO', ship.resource_storage ? used / ship.resource_storage : 0, `${Math.round(ship.resource_storage ? used / ship.resource_storage * 100 : 0)}%`],
       ['VAULT', ship.specimen_vault ? jars / ship.specimen_vault : 0, `${jars} / ${ship.specimen_vault}`],
       // Shielding is percentage points off pod loss chance: blast 3 per tier, environmental 2 per tier, 3 tiers
@@ -206,7 +206,7 @@ export const shipSystemsView: ViewDefinition = {
 
 // In transit the FUEL row burns down with the trip.
 redrawWhenCountdownChanges(
-  () => screens && ctxRef?.dashboard?.ship?.fuel_capacity && isCurrentlyTraveling() ? String(Math.round(displayedFuel(ctxRef.dashboard.ship.fuel_current) / ctxRef.dashboard.ship.fuel_capacity * 100)) : '',
+  () => screens && ctxRef?.dashboard?.ship?.fuel_capacity && isCurrentlyTraveling() ? String(Math.round(displayedFuel(ctxRef.dashboard.ship.fuel_current, ctxRef.dashboard.ship.fuel_capacity) / ctxRef.dashboard.ship.fuel_capacity * 100)) : '',
   () => drawLow(),
 )
 
