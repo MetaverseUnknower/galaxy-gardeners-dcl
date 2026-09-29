@@ -23,7 +23,7 @@ async function makeRequest(url: string, init: { method: string; headers: Record<
 // On an error reply the Decentraland client unwraps our JSON itself and hands the scene only its `error` string
 // (unity-explorer SignedFetchWrap.cs, the UnityWebRequestException catch). Wrap it back so every caller reads
 // "API error N: {"error": ...}" as before; a body that is still JSON (other clients) passes through.
-function errorBody(body: string): string {
+export function errorBody(body: string): string {
   try { const v = JSON.parse(body); if (v && typeof v === 'object') return body } catch { /* the bare message */ }
   return JSON.stringify({ error: body || 'Request failed' })
 }

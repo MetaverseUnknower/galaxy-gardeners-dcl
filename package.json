@@ -7,12 +7,15 @@
     "deploy": "sdk-commands deploy",
     "build": "sdk-commands build",
     "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
-    "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next"
+    "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next",
+    "test": "vitest run",
+    "predeploy": "vitest run"
   },
   "devDependencies": {
     "@dcl/asset-packs": "^2.15.2",
     "@dcl/js-runtime": "7.23.2",
-    "@dcl/sdk": "^7.23.2"
+    "@dcl/sdk": "^7.23.2",
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=16.0.0",

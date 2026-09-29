@@ -155,7 +155,7 @@ const STEM_TYPE_RATE = 70   // characters per second
 // every line for the cursor, so neither the typing nor the blinking cursor can move a word. Monospace 18px is ~11px a
 // character in the ~680px text area (~62 columns); 52 leaves room for the estimate to be off.
 const STEM_COLUMNS = 52
-function wrapColumns(text: string, columns: number): string[] {
+export function wrapColumns(text: string, columns: number): string[] {
   const lines: string[] = []
   let line = ''
   for (const word of text.split(' ')) {

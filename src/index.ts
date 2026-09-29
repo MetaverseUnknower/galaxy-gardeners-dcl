@@ -7,6 +7,7 @@ import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starE
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
+import { oneAtATime } from './oneAtATime'
 import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification, showStemMessage } from './ui'
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem, setSurveyReturn, setBlackHoleNotify } from './systemView'
@@ -344,15 +345,7 @@ export async function main() {
 
 // One reload at a time: arrival, a wormhole jump and its close can all ask at once, and two overlapping reloads both
 // clear before either draws, so both draw (a doubled map). A request during a reload runs once more after it.
-let reloading: Promise<void> | null = null
-let reloadAgain = false
-function reloadMap(): Promise<void> {
-  if (reloading) { reloadAgain = true; return reloading }
-  reloading = (async () => {
-    do { reloadAgain = false; await reloadMapOnce() } while (reloadAgain)
-  })().finally(() => { reloading = null })
-  return reloading
-}
+const reloadMap = oneAtATime(() => reloadMapOnce())
 
 async function reloadMapOnce(): Promise<void> {
   api.invalidateFuelCosts()   // arrived somewhere new: every quote changes
