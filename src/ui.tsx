@@ -26,7 +26,8 @@ import { TourDialog } from './tour/dialog'
 import { WormholeBanner } from './wormhole/banner'
 import { WormholeOverlay } from './wormhole/flash'
 import { HawkingOverlay } from './hawkingDrift'
-import { wormholeEvent, isWormholeBusy, jumpThroughWormhole, returnThroughWormhole } from './wormhole/state'
+import { wormholeEvent, isWormholeBusy, jumpThroughWormhole, returnThroughWormhole, jumpThroughBlackHole } from './wormhole/state'
+import { blackHoleLink, loadBlackHoleLink, armBlackHoleJump, isBlackHoleJumpArmed, resetBlackHoleArm } from './wormhole/blackHole'
 import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
@@ -209,6 +210,8 @@ function deployErrorMessage(err: any): string {
 export function setSelectedSystemUI(system: StarSystem | null, fuel: FuelCostResponse | null, loading: boolean = false): void {
   selectedSystem = system; fuelInfo = fuel; fuelLoading = loading; fuelFailed = false; showTravelConfirm = false; deployStatus = null
   if (system) loadScan(system.id)
+  resetBlackHoleArm()
+  void loadBlackHoleLink(system)
 }
 /** Fills in route data for the star that is still selected; late answers for a star the player moved on from are dropped. */
 export function setSelectedSystemFuel(systemId: string, fuel: FuelCostResponse | null): void {
@@ -268,6 +271,28 @@ function wormholeButton(systemId: string) {
   )
 }
 
+// The black hole the ship is at, if its wormhole is linked: jump to the other one. Asks once first (STEM), since
+// there's no solar recharge on the far side.
+function blackHoleButton(systemId: string) {
+  if (systemId !== currentSystemId) return null
+  const link = blackHoleLink(systemId)
+  if (!link) return null
+  const busy = isWormholeBusy()
+  const armed = isBlackHoleJumpArmed()
+  const label = busy ? 'JUMPING…' : armed ? `CONFIRM JUMP TO ${link.targetName.toUpperCase()}` : `JUMP THROUGH WORMHOLE → ${link.targetName.toUpperCase()}`
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }}
+      uiBackground={{ color: busy ? Color4.create(0.15, 0.15, 0.2, 1) : armed ? Color4.create(0.75, 0.35, 0.95, 1) : Color4.create(0.45, 0.2, 0.7, 1) }}
+      uiText={{ value: label, fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
+      onMouseDown={() => {
+        if (busy) return
+        if (armBlackHoleJump() === 'go') { void jumpThroughBlackHole(); return }
+        const fuel = fuelInfo ? ` We have ${Math.floor(fuelInfo.current_fuel)} fuel.` : ''
+        showStemMessage(`This wormhole drops us at ${link.targetName}, another black hole: no solar recharge there, Captain.${fuel} Make sure it's enough to fly back out. Press again to jump.`)
+      }} />
+  )
+}
+
 const SystemInfoPanel = () => {
   if (!selectedSystem) return null
   const canAfford = fuelInfo ? fuelInfo.current_fuel >= fuelInfo.fuel_cost : false
@@ -314,6 +339,7 @@ const SystemInfoPanel = () => {
         ) : null}
         {selectedSystem.id === currentSystemId || systemProgress(selectedSystem.id)?.visited ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.1, 0.3, 0.5, 1) }} uiText={{ value: selectedSystem.id === currentSystemId ? 'VIEW SYSTEM' : 'VIEW SURVEY', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onViewSystem && selectedSystem) onViewSystem(selectedSystem.id) }} /> : null}
         {wormholeButton(selectedSystem.id)}
+        {blackHoleButton(selectedSystem.id)}
         {selectedSystem.id !== currentSystemId && fuelInfo && !showTravelConfirm ? (() => {
           const traveling = isCurrentlyTraveling()
           const canTravel = canAfford && !traveling

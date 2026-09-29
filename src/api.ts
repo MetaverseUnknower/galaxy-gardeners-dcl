@@ -373,3 +373,7 @@ export type WormholeStatus = {
 export async function getWormholeEvent(): Promise<WormholeStatus | null> { return apiGet<WormholeStatus | null>('/api/events/wormhole') }
 export async function wormholeJump(): Promise<{ systemId: string; systemName: string }> { return apiPost('/api/events/wormhole/jump') }
 export async function wormholeReturn(): Promise<{ systemId: string; systemName: string }> { return apiPost('/api/events/wormhole/return') }
+/** Through the black hole's own wormhole to the black hole it's linked to (instant and free). */
+export async function travelThroughBlackHole(): Promise<{ traveled: boolean; fromSystem: string; toSystem: string; toSystemId: string }> {
+  return apiPost('/api/ships/wormhole')
+}

@@ -95,6 +95,10 @@ async function travel(call: () => Promise<{ systemId: string; systemName: string
 
 export function jumpThroughWormhole(): Promise<void> { return travel(api.wormholeJump, true) }
 export function returnThroughWormhole(): Promise<void> { return travel(api.wormholeReturn, false) }
+/** Through the black hole's own wormhole (wormhole/blackHole.ts), with the same cutscene and map reload. */
+export function jumpThroughBlackHole(): Promise<void> {
+  return travel(() => api.travelThroughBlackHole().then(r => ({ systemId: r.toSystemId, systemName: r.toSystem })), false)
+}
 
 // Poll once a minute (the first poll soon after sign-in); tick the closing warnings every second
 let acc = 0
