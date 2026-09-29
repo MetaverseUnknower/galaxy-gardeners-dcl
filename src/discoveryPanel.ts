@@ -67,12 +67,17 @@ export function setDiscoveryCompleteCallback(cb: (systemId: string, systemName: 
 // Mini-map center in the legacy frame (used by the hover arrows)
 const mapXStored = 0, mapCenterYStored = 0, mapZStored = 0
 
+// Builds overlap when called again during their fetch (a reload and a discovery at once): only the latest builds
+let panelBuild = 0
 export async function createDiscoveryPanel(systems: StarSystem[], playerCurrentSystemId: string | null): Promise<void> {
+  const build = ++panelBuild
   clearDiscoveryPanel()
   allSystems = systems
   currentSystem = systems.find(s => s.id === playerCurrentSystemId) || null
   try {
     const [options, active] = await Promise.all([api.getDiscoveryOptions(), api.getActiveDiscovery()])
+    if (build !== panelBuild) return   // a newer build started while this one was fetching
+    clearDiscoveryPanel()   // anything a stale build drew before this one started (it also resets the state below)
     discoveryOptions = options; activeDiscovery = active
   } catch { return }
 
@@ -368,9 +373,10 @@ async function handleCompleteDiscovery(discoveryId: string): Promise<void> {
     const result = await api.completeDiscovery(discoveryId)
     if (onDiscoveryNotify) onDiscoveryNotify(`New system discovered: ${result.systemName || 'Unknown'}!`, Color4.create(0, 1, 0.5, 1))
     activeDiscovery = null
-    if (onDiscoveryComplete && result.systemId) onDiscoveryComplete(result.systemId, result.systemName || 'Unknown')
     pending = null
-    await createDiscoveryPanel(allSystems, currentSystem?.id || null)
+    // The completion handler redraws this panel with the new star in the list; without one, redraw it here
+    if (onDiscoveryComplete && result.systemId) onDiscoveryComplete(result.systemId, result.systemName || 'Unknown')
+    else await createDiscoveryPanel(allSystems, currentSystem?.id || null)
   } catch (err: any) {
     if (onDiscoveryNotify) onDiscoveryNotify(err.message || 'Complete failed', Color4.create(1, 0.3, 0.3, 1))
     pending = null

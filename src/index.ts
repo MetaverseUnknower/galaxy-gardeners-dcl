@@ -342,7 +342,19 @@ export async function main() {
   })
 }
 
-async function reloadMap(): Promise<void> {
+// One reload at a time: arrival, a wormhole jump and its close can all ask at once, and two overlapping reloads both
+// clear before either draws, so both draw (a doubled map). A request during a reload runs once more after it.
+let reloading: Promise<void> | null = null
+let reloadAgain = false
+function reloadMap(): Promise<void> {
+  if (reloading) { reloadAgain = true; return reloading }
+  reloading = (async () => {
+    do { reloadAgain = false; await reloadMapOnce() } while (reloadAgain)
+  })().finally(() => { reloading = null })
+  return reloading
+}
+
+async function reloadMapOnce(): Promise<void> {
   api.invalidateFuelCosts()   // arrived somewhere new: every quote changes
   clearMap()
   playerInfo = await api.getPlayerMe()

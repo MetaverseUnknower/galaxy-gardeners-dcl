@@ -67,6 +67,10 @@ const SPECK_DRIFT = 0.12             // the star field creeps
 let active = false
 let viewIndex = 0
 let time = 0
+// The view's layout reads a clock that ticks 10 times a second: the drift is slow enough that the steps don't show,
+// and the UI only sends what changed, so the ~80 drifting layers stop being re-sent every frame.
+let drawTime = 0
+const DRAW_STEP = 0.1
 let system: StarSystem | null = null
 let specks: Speck[] = []
 let celestials: Celestial[] = []
@@ -95,9 +99,9 @@ export function sleepCurtain(): number {
 }
 export function sleepView(): { src: string; aspect: number } { return SLEEP_VIEWS[viewIndex] ?? SLEEP_VIEWS[0] }
 /** 0..1 position along the pan, starting centred and easing back and forth. */
-export function panFraction(): number { return 0.5 + 0.5 * Math.sin((time / PAN_PERIOD_SECONDS) * Math.PI * 2) }
+export function panFraction(): number { return 0.5 + 0.5 * Math.sin((drawTime / PAN_PERIOD_SECONDS) * Math.PI * 2) }
 export function sleepViewIndex(): number { return viewIndex }
-export function sleepTime(): number { return time }
+export function sleepTime(): number { return drawTime }
 export function sleepSpecks(): Speck[] { return specks }
 export function sleepCelestials(): Celestial[] { return celestials }
 export function setSleepSystem(s: StarSystem | null): void { system = s }
@@ -138,6 +142,7 @@ export function enterSleepMode(): void {
   introOpen = !getPref<boolean>(INTRO_PREF, false)
   viewIndex = Math.min(Math.max(0, getPref<number>(VIEW_PREF, 0)), SLEEP_VIEWS.length - 1)
   time = 0
+  drawTime = 0
   specks = makeSpecks(STAR_COUNT)
   celestials = makeCelestials(CELESTIAL_COUNT)
   active = true
@@ -159,9 +164,9 @@ export function setSleepView(i: number): void {
 }
 
 /** Horizontal travel in % for a drifting layer, wrapping every `wrap` percent. */
-export function layerOffset(speed: number, wrap: number): number { return (time * speed) % wrap }
+export function layerOffset(speed: number, wrap: number): number { return (drawTime * speed) % wrap }
 /** The local star holds its place in the window; only a faint breathing in scale. */
-export function starOffset(): { scale: number } { return { scale: 1 + Math.sin(time * 0.2) * 0.012 } }
+export function starOffset(): { scale: number } { return { scale: 1 + Math.sin(drawTime * 0.2) * 0.012 } }
 export const driftSpeeds = { nebula: DRIFT, speck: SPECK_DRIFT }
 
 function makeSpecks(n: number): Speck[] {
@@ -184,7 +189,7 @@ function makeCelestials(n: number): Celestial[] {
 
 engine.addSystem((dt: number) => {
   if (phase === 'off') return
-  if (sleepSceneVisible()) time += dt
+  if (sleepSceneVisible()) { time += dt; if (time - drawTime >= DRAW_STEP) drawTime = time }
   phaseT += dt
   if (FADE_SECONDS[phase] > 0 && phaseT >= FADE_SECONDS[phase]) {
     phaseT = 0

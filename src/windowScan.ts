@@ -40,8 +40,10 @@ function teardown(): void {
   for (const e of beams) engine.removeEntity(e)
   beams = []
   if (ping) { engine.removeEntity(ping); ping = null }
+  pingFade = -1
 }
 
+let pingFade = -1
 engine.addSystem((dt: number) => {
   const scanning = getDiscoveryScan() !== null
   if (!scanning) { if (beams.length) teardown(); return }
@@ -65,8 +67,12 @@ engine.addSystem((dt: number) => {
       const k = (t % PING_SECONDS) / PING_SECONDS
       const r = 1 + k * PING_MAX_RADIUS
       tr.scale = Vector3.create(r * 2, 0.02, r * 2)
-      const a = 0.28 * (1 - k)
-      Material.setPbrMaterial(ping, { albedoColor: Color4.create(0, 0.9, 1, a), emissiveColor: Color3.create(0, 0.9 * (1 - k), 1 - k), emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND, castShadows: false })
+      // Fades in 10 steps, written only when the step changes: 10 looks, reused every ping
+      const fade = Math.round((1 - k) * 10) / 10
+      if (fade !== pingFade) {
+        pingFade = fade
+        Material.setPbrMaterial(ping, { albedoColor: Color4.create(0, 0.9, 1, 0.28 * fade), emissiveColor: Color3.create(0, 0.9 * fade, fade), emissiveIntensity: 2, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND, castShadows: false })
+      }
     }
   }
 })

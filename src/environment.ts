@@ -164,17 +164,11 @@ export function twinkleSystem(dt: number): void {
     if (idx >= skyboxStars.length) continue
     const star = skyboxStars[idx]
 
+    // Twinkle by size only: each star keeps the material it was created with. Re-setting 30 materials a frame with
+    // ever-changing glow values churned the explorer's materials all session.
     const twinkle = 0.5 + 0.5 * Math.sin(twinkleTime * star.twinkleSpeed + star.twinklePhase)
-    const scale = star.baseSize * (0.6 + twinkle * 0.4)
-    const intensity = star.baseIntensity * (0.3 + twinkle * 0.7)
-
-    const transform = Transform.getMutable(star.entity)
-    transform.scale = Vector3.create(scale, scale, scale)
-    Material.setPbrMaterial(star.entity, {
-      albedoColor: Color4.create(star.color.r, star.color.g, star.color.b, 1),
-      emissiveColor: star.color,
-      emissiveIntensity: intensity
-    })
+    const scale = star.baseSize * (0.5 + twinkle * 0.6)
+    Transform.getMutable(star.entity).scale = Vector3.create(scale, scale, scale)
   }
   twinkleIndex = (twinkleIndex + batchSize) % Math.max(1, skyboxStars.length)
 }

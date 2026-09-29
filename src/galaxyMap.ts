@@ -193,17 +193,28 @@ function updateBeamShape(): void {
   if (!beamEntity) return
   const topRadius = NEBULA_EXTENT * currentScale * transitionScale
   const beamHeight = Math.max(0.01, (currentHeight - PROJECTOR_TOP_Y) * transitionScale)
+  // The cone's shape (bottom vs top radius) only changes with zoom, so the mesh is rebuilt only when the top radius
+  // moves visibly; the transition's shrink and grow is a scale (ts on the mesh radii x ts on the transform = ts²,
+  // as before), so it no longer rebuilds two meshes every frame.
+  const ts = transitionScale
+  const unscaledTop = ts > 0.001 ? topRadius / ts : beamTopRadius
   const transform = Transform.getMutable(beamEntity)
   transform.position = Vector3.create(MAP_CENTER.x, PROJECTOR_TOP_Y + beamHeight / 2, MAP_CENTER.z)
-  transform.scale = Vector3.create(transitionScale, beamHeight, transitionScale)
-  MeshRenderer.setCylinder(beamEntity, PROJECTOR_RADIUS * transitionScale, topRadius)
+  transform.scale = Vector3.create(ts * ts, beamHeight, ts * ts)
+  const remesh = Math.abs(unscaledTop - beamTopRadius) > 0.02
+  if (remesh) {
+    beamTopRadius = unscaledTop
+    MeshRenderer.setCylinder(beamEntity, PROJECTOR_RADIUS, beamTopRadius)
+  }
   if (beamOuterEntity) {
     const outer = Transform.getMutable(beamOuterEntity)
     outer.position = transform.position
     outer.scale = transform.scale
-    MeshRenderer.setCylinder(beamOuterEntity, PROJECTOR_RADIUS * transitionScale * HOLO_OUTER_SCALE, topRadius * HOLO_OUTER_SCALE)
+    if (remesh) MeshRenderer.setCylinder(beamOuterEntity, PROJECTOR_RADIUS * HOLO_OUTER_SCALE, beamTopRadius * HOLO_OUTER_SCALE)
   }
 }
+let beamTopRadius = -1   // the top radius the beam meshes were last built with (before the transition scale)
+let beamMaterialKey = ''  // the stepped look the beam materials were last written with
 
 export function createProjectorBase(): void {
   // The projector itself is the interior model's dais plus galaxy_projector_base.glb; only the beam is drawn here.
@@ -631,16 +642,24 @@ export function galaxyAnimationSystem(dt: number): void {
   // turn in opposite directions at different speeds; a gentle shared pulse on top.
   if (beamEntity && beamOuterEntity) {
     beamTime += dt
-    const pulse = 0.5 + 0.5 * Math.sin(beamTime * 1.5)
+    // The pulse, fade-in and survey tint move in visible steps, and the materials are written only when a step
+    // changes: a few writes a second from a small set of looks, instead of two brand-new materials every frame.
+    const step = (v: number, n: number) => Math.round(v * n) / n
+    const pulse = step(0.5 + 0.5 * Math.sin(beamTime * 1.5), 10)
     const k = Math.max(0, Math.min(1, (beamTime - HOLO_WARMUP_SECONDS) / HOLO_FADE_IN_SECONDS))
-    const fadeIn = k * k * (3 - 2 * k)
+    const fadeIn = step(k * k * (3 - 2 * k), 20)
     // Surveys tint the beam green (matching the survey bar and tab), easing over about a second
     const surveyTarget = isViewingRemoteSystem() ? 1 : 0
     surveyBlend += (surveyTarget - surveyBlend) * Math.min(1, dt * 3)
-    const mix = (cyan: number, green: number) => cyan + (green - cyan) * surveyBlend
+    const blend = step(surveyBlend, 10)
+    const mix = (cyan: number, green: number) => cyan + (green - cyan) * blend
+    const key = `${pulse}|${fadeIn}|${blend}`
+    const repaint = key !== beamMaterialKey
+    beamMaterialKey = key
     const layers: [Entity, typeof HOLO_LAYERS[number]][] = [[beamEntity, HOLO_LAYERS[0]], [beamOuterEntity, HOLO_LAYERS[1]]]
     for (const [entity, L] of layers) {
       Transform.getMutable(entity).rotation = Quaternion.fromEulerDegrees(0, (beamTime * L.spin) % 360, 0)
+      if (!repaint) continue
       const tex = { src: HOLO_TEXTURE, wrapMode: TextureWrapMode.TWM_REPEAT, tiling: L.tiling }
       Material.setPbrMaterial(entity, {
         texture: Material.Texture.Common(tex),

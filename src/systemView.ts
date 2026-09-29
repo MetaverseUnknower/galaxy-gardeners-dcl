@@ -375,7 +375,10 @@ export function returnFromSurvey(): void { returnToOwnSystem?.() }
 /** True while the hologram shows a system the ship isn't in (read-only survey). */
 export function isViewingRemoteSystem(): boolean { return readOnlyView && starEntity !== null }
 
+// Renders overlap when a new one starts during the fetch (quick VIEW SYSTEM / survey clicks): only the latest draws
+let renderBuild = 0
 export async function renderSystemView(systemId: string, opts: { readOnly?: boolean; title?: string } = {}): Promise<void> {
+  const build = ++renderBuild
   clearSystemView()
   readOnlyView = !!opts.readOnly
   viewTitle = opts.title ?? ''
@@ -383,6 +386,7 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
 
   let detail: any
   try { detail = await api.getSystemDetail(systemId) } catch { return }
+  if (build !== renderBuild) return   // a newer render started while this one was fetching
 
   const sysData = detail.system || detail
   const starType = sysData.star_type || null
@@ -593,11 +597,9 @@ export function systemViewAnimationSystem(dt: number): void {
   if (starGlowEntity && systemRoot) {
     const pulse = 0.5 + 0.5 * Math.sin(systemTime * 2)
     const s = 1.2 + pulse * 0.3
-    Transform.createOrReplace(starGlowEntity, { position: Vector3.create(0, 0, 0), scale: Vector3.create(s, s, s), parent: systemRoot })
-    Material.setPbrMaterial(starGlowEntity, {
-      albedoColor: Color4.create(starBaseEmissive.r, starBaseEmissive.g, starBaseEmissive.b, 0.04 + pulse * 0.04),
-      emissiveColor: starBaseEmissive, emissiveIntensity: 1.5 + pulse, transparencyMode: MaterialTransparencyMode.MTM_ALPHA_BLEND
-    })
+    // Pulse by size only: the glow's material is set once when it's created (createStarGlow)
+    const glow = Transform.getMutableOrNull(starGlowEntity)
+    if (glow) glow.scale = Vector3.create(s, s, s)
   }
 
   for (const body of orbitingPlanets) {

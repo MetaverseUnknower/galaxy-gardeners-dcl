@@ -241,11 +241,13 @@ function dropTravelVisuals(): void {
 
 addMapRenderHooks({ rendered: restoreTravelVisuals, cleared: dropTravelVisuals })
 
+let arriving = false   // one arrival request at a time: a slow server doesn't stack them up every 5 s
 export async function checkArrival(): Promise<boolean> {
-  if (!isTraveling) return false
+  if (!isTraveling || arriving) return false
 
   const now = Date.now()
   if (now >= travelEndTime) {
+    arriving = true
     try {
       await api.arrive()
       isTraveling = false
@@ -259,6 +261,8 @@ export async function checkArrival(): Promise<boolean> {
       return true
     } catch {
       return false
+    } finally {
+      arriving = false
     }
   }
   return false
