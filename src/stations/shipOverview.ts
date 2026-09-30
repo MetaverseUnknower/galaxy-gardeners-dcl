@@ -21,6 +21,10 @@ const SHIP_BLUEPRINT_WIDE = 'assets/images/ship-blueprint-wide.png'
 
 let solarRechargeRate = 0
 export function setSolarRechargeRate(rate: number): void { solarRechargeRate = rate }
+/** The fuel frame's recharge line, or null where the star gives none (a black hole). */
+export function solarRechargeLine(): string | null {
+  return solarRechargeRate > 0 ? `Solar Recharge: +${solarRechargeRate.toFixed(1)} fuel/hr` : null
+}
 
 // Cosmetic bar scaling for the stats panel (the concept shows bars; the API has no maxima).
 const STAT_SCALE: Record<string, number> = { fuel_efficiency: 3, resource_storage: 500, specimen_vault: 50, expedition_speed: 3, blast_shielding: 9, environmental_shielding: 6 }
@@ -65,7 +69,8 @@ function drawTop(top: Entity, ctx: StationContext): void {
     const pct = ship.fuel_capacity > 0 ? fuel / ship.fuel_capacity : 0
     bar(topBag, top, -1.85, -0.15, 1.5, pct, { h: 0.2 })   // ends at -1.1; the reading sits right of it
     text(topBag, top, -0.15, -0.15, `${fuel.toFixed(0)} / ${ship.fuel_capacity.toFixed(0)}`, 0.42, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
-    if (solarRechargeRate > 0) text(topBag, top, -2.55, -0.45, `Solar Recharge: +${solarRechargeRate.toFixed(1)} fuel/hr`, 0.32, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
+    const recharge = solarRechargeLine()
+    if (recharge) text(topBag, top, -2.55, -0.45, recharge, 0.32, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
   } else {
     text(topBag, top, -1.4, -0.15, 'Fuel data unavailable', 0.4, MUTED)
   }

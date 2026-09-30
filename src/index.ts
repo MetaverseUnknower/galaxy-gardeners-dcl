@@ -12,7 +12,7 @@ import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus
 import { StarSystem, PlayerInfo } from './types'
 import { renderSystemView, clearSystemView, systemViewAnimationSystem, setSurveyReturn, setBlackHoleNotify } from './systemView'
 import { createEnvironment, respawnSystem, twinkleSystem, DECK_Y } from './environment'
-import { shipOverviewView, setSolarRechargeRate } from './stations/shipOverview'
+import { shipOverviewView } from './stations/shipOverview'
 import { shipSystemsView } from './stations/shipSystems'
 import { podOperationsView, setPodOpsSystemId } from './stations/podOperations'
 import { createNavConsole, setNavConsoleSystem, refreshNavConsole } from './navConsole'
@@ -26,8 +26,7 @@ import { onWormholeChanged, setWormholeNotify, setWormholeArrivedCallback, setWo
 import { playCutscene } from './wormhole/cutscene'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
-import { setSleepSystem } from './sleepMode'
-import { setWindowStarSystem } from './windowStar'
+import { showCurrentSystem } from './currentSystem'
 import './windowScan'
 import { setupHeatMap } from './heatMap'
 import { isDocked, loadDockedStatus, onDockingChanged, undock } from './docking'
@@ -199,12 +198,10 @@ export async function main() {
     })
 
     const currentSys = systems.find(s => s.id === playerInfo!.current_system_id)
-    if (currentSys) setSolarRechargeRate(currentSys.solar_recharge_rate)
     // No docking in the scene yet, so the station theme waits for that feature.
     setSoundtrackContext({ docked: isDocked(), system: currentSys ?? null })
     setSfxSystemId(playerInfo.current_system_id)
-    setSleepSystem(currentSys ?? null)
-    setWindowStarSystem(currentSys ?? null)
+    showCurrentSystem(currentSys ?? null)
     onDockingChanged(() => {
       setSoundtrackContext({ docked: isDocked(), system: systems.find(x => x.id === playerInfo?.current_system_id) ?? null })
       refreshStation('ship')   // docked pricing, and the UPGRADE button
@@ -360,8 +357,7 @@ async function reloadMapOnce(): Promise<void> {
   systems = await api.getSystems(playerInfo.galaxy_id)
   setSoundtrackContext({ docked: isDocked(), system: systems.find(s => s.id === playerInfo!.current_system_id) ?? null })
   setSfxSystemId(playerInfo.current_system_id)
-  setSleepSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
-  setWindowStarSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
+  showCurrentSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()
   void refreshSystemProgress()   // the system just arrived at is now visited
