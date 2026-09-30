@@ -4,6 +4,7 @@ import * as api from './api'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { setStareTime, playHawkingDrift, cancelHawkingDrift } from './hawkingDrift'
+import { openSystemPortals, animateSystemPortals, clearSystemPortals, PORTAL_SIZE, PORTAL_CLEARANCE } from './wormhole/systemPortal'
 
 const SYSTEM_CENTER = Vector3.create(128, 41, 128)
 
@@ -409,6 +410,12 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
     else beltR = orbitalRadius(Math.max(1, habitableSlot - (belts.length - i)), starType) + 0.9
     if (beltR > maxExtent) maxExtent = beltR
   }
+  // Wormholes open past the outermost orbit; a black hole's is there from the start, so the fit makes room for it
+  // (an event's can open later, and may reach a little past the fit)
+  const portalRadius = maxExtent + PORTAL_CLEARANCE
+  const link = detail.wormhole?.targetSystemId ? { targetId: detail.wormhole.targetSystemId, targetName: detail.wormhole.targetSystemName } : null
+  if (link) maxExtent = portalRadius + PORTAL_SIZE
+
   // Add padding
   maxExtent += 0.5
 
@@ -434,6 +441,7 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
     Material.setPbrMaterial(starEntity, { albedoColor: starColor.color, emissiveColor: starColor.emissive, emissiveIntensity: 5 })
     createStarGlow(systemRoot, starSize, starColor.emissive)
   }
+  openSystemPortals(systemRoot, { systemId, here: !readOnlyView, radius: portalRadius, link, say: text => blackHoleNotify?.(text) })
 
   for (let pIdx = 0; pIdx < planets.length; pIdx++) {
     const planet = planets[pIdx]
@@ -589,6 +597,7 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
 export function systemViewAnimationSystem(dt: number): void {
   if (orbitingPlanets.length === 0 && !starEntity) return
   stareSystem(dt)
+  animateSystemPortals(dt)
   const pauseTarget = orbitsPaused ? 1 : 0
   if (Math.abs(pauseBlend - pauseTarget) > 0.001) pauseBlend += (pauseTarget - pauseBlend) * (1 - Math.exp(-PAUSE_BLEND_SPEED * dt))
   else pauseBlend = pauseTarget
@@ -651,6 +660,7 @@ export function setStationChangedListener(cb: () => void): void { onStationChang
 
 export function clearSystemView(): void {
   selectBody(null); clearSelectionRing()
+  clearSystemPortals()
   orbitsPaused = false; pauseBlend = 0
   for (const entity of staticEntities) engine.removeEntity(entity); staticEntities.length = 0
   for (const body of orbitingPlanets) engine.removeEntity(body.entity); orbitingPlanets.length = 0

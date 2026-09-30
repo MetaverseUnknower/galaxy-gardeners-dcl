@@ -26,8 +26,9 @@ import { TourDialog } from './tour/dialog'
 import { WormholeBanner } from './wormhole/banner'
 import { WormholeOverlay } from './wormhole/flash'
 import { HawkingOverlay } from './hawkingDrift'
-import { wormholeEvent, isWormholeBusy, jumpThroughWormhole, returnThroughWormhole, jumpThroughBlackHole } from './wormhole/state'
-import { blackHoleLink, loadBlackHoleLink, armBlackHoleJump, isBlackHoleJumpArmed, resetBlackHoleArm } from './wormhole/blackHole'
+import { isWormholeBusy } from './wormhole/state'
+import { blackHoleLink, loadBlackHoleLink, isBlackHoleJumpArmed, resetBlackHoleArm } from './wormhole/blackHole'
+import { eventWormholeOffer, useEventWormhole, pressBlackHoleJump } from './wormhole/actions'
 import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
@@ -258,16 +259,14 @@ export function setCurrentSystemId(id: string | null): void { currentSystemId = 
 
 // Star panel: JUMP THROUGH WORMHOLE on the wormhole's target, RETURN THROUGH WORMHOLE on it once there
 function wormholeButton(systemId: string) {
-  const ev = wormholeEvent()
-  if (!ev || systemId !== ev.targetSystemId) return null
-  const returning = ev.canReturn && systemId === currentSystemId
-  if (!returning && !ev.canJump) return null
+  const offer = eventWormholeOffer(systemId, systemId === currentSystemId)
+  if (!offer) return null
   const busy = isWormholeBusy()
   return (
     <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }}
       uiBackground={{ color: busy ? Color4.create(0.15, 0.15, 0.2, 1) : Color4.create(0.45, 0.2, 0.7, 1) }}
-      uiText={{ value: busy ? 'JUMPING…' : returning ? 'RETURN THROUGH WORMHOLE' : 'JUMP THROUGH WORMHOLE', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
-      onMouseDown={() => { if (!busy) void (returning ? returnThroughWormhole() : jumpThroughWormhole()) }} />
+      uiText={{ value: busy ? 'JUMPING…' : offer === 'return' ? 'RETURN THROUGH WORMHOLE' : 'JUMP THROUGH WORMHOLE', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
+      onMouseDown={() => useEventWormhole(offer)} />
   )
 }
 
@@ -284,12 +283,7 @@ function blackHoleButton(systemId: string) {
     <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }}
       uiBackground={{ color: busy ? Color4.create(0.15, 0.15, 0.2, 1) : armed ? Color4.create(0.75, 0.35, 0.95, 1) : Color4.create(0.45, 0.2, 0.7, 1) }}
       uiText={{ value: label, fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
-      onMouseDown={() => {
-        if (busy) return
-        if (armBlackHoleJump() === 'go') { void jumpThroughBlackHole(); return }
-        const fuel = fuelInfo ? ` We have ${Math.floor(fuelInfo.current_fuel)} fuel.` : ''
-        showStemMessage(`This wormhole drops us at ${link.targetName}, another black hole: no solar recharge there, Captain.${fuel} Make sure it's enough to fly back out. Press again to jump.`)
-      }} />
+      onMouseDown={() => pressBlackHoleJump(link, fuelInfo ? fuelInfo.current_fuel : null, text => showStemMessage(text))} />
   )
 }
 

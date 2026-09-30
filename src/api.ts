@@ -369,6 +369,7 @@ export type WormholeStatus = {
   id: string; targetSystemId: string; targetName: string; startsAt: string; endsAt: string
   trip: { originSystemId: string; originName: string } | null
   podsOut: number; canJump: boolean; jumpBlockedReason: string | null; canReturn: boolean
+  eldBuilt?: boolean   // bought from the Eld on the black market (older servers leave it out)
 }
 export async function getWormholeEvent(): Promise<WormholeStatus | null> { return apiGet<WormholeStatus | null>('/api/events/wormhole') }
 export async function wormholeJump(): Promise<{ systemId: string; systemName: string }> { return apiPost('/api/events/wormhole/jump') }
