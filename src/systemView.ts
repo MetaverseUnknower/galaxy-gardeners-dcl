@@ -4,6 +4,7 @@ import * as api from './api'
 import { getPlayer } from '@dcl/sdk/players'
 import { movePlayerTo } from '~system/RestrictedActions'
 import { setStareTime, playHawkingDrift, cancelHawkingDrift } from './hawkingDrift'
+import { planetExplorable, moonExplorable } from './bodyRules'
 import { openSystemPortals, animateSystemPortals, clearSystemPortals, PORTAL_SIZE, PORTAL_CLEARANCE } from './wormhole/systemPortal'
 
 const SYSTEM_CENTER = Vector3.create(128, 41, 128)
@@ -490,7 +491,7 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
       } else { planetDetails['Status'] = 'Unexplorable' }
       planetDetails['Moons'] = `${(planet.moons || []).length}`
 
-      const planetInfo: BodyInfo = { type: 'planet', name: planet.name, id: planet.id, imageUrl: planet.image_url || undefined, details: planetDetails, canDeploy: planet.supports_life && !isBarren && !readOnlyView }
+      const planetInfo: BodyInfo = { type: 'planet', name: planet.name, id: planet.id, imageUrl: planet.image_url || undefined, details: planetDetails, canDeploy: planetExplorable(planet) && !readOnlyView }
       pointerEventsSystem.onPointerDown(
         { entity: planetEntity, opts: { button: InputAction.IA_POINTER, hoverText: planet.name, maxDistance: 20 } },
         () => selectBody(planetInfo, planetEntity)
@@ -526,7 +527,7 @@ export async function renderSystemView(systemId: string, opts: { readOnly?: bool
           const hrs = Math.floor(moon.base_expedition_minutes / 60); const mins = moon.base_expedition_minutes % 60
           moonDetails['Expedition'] = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
         }
-        const moonInfo: BodyInfo = { type: 'moon', name: moon.name, id: moon.id, imageUrl: moon.image_url || undefined, details: moonDetails, canDeploy: !readOnlyView }
+        const moonInfo: BodyInfo = { type: 'moon', name: moon.name, id: moon.id, imageUrl: moon.image_url || undefined, details: moonDetails, canDeploy: moonExplorable(moon) && !readOnlyView }
         pointerEventsSystem.onPointerDown(
           { entity: moonEntity, opts: { button: InputAction.IA_POINTER, hoverText: moon.name, maxDistance: 20 } },
           () => selectBody(moonInfo, moonEntity)

@@ -6,6 +6,7 @@ import * as api from '../api'
 import { orbitalRadius } from '../systemView'
 import { StationContext } from '../stations'
 import { Bag, text, frame, line, ring, dot, CYAN3, MAGENTA3, CYAN, DIM, MUTED, WHITE, GREEN, RED } from './draw'
+import { planetExplorable, moonExplorable } from '../bodyRules'
 
 interface Body { id: string; name: string; kind: 'planet' | 'moon' | 'belt'; x: number; y: number; deployable: boolean }
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
@@ -57,14 +58,13 @@ export async function renderSectorMap(bag: Bag, root: Entity, cx: number, cy: nu
     ring(bag, root, mx, my, r, ORBIT, { segments: 36, thickness: 0.006, alpha: 0.8 })
     const a = ((p.orbital_slot * 137.508 + 25) * Math.PI) / 180
     const x = mx + Math.cos(a) * r, y = my + Math.sin(a) * r
-    const barren = p.planet_type === 'barren'
-    bodies.push({ id: p.id, name: p.name, kind: 'planet', x, y, deployable: !!p.supports_life && !barren })
+    bodies.push({ id: p.id, name: p.name, kind: 'planet', x, y, deployable: planetExplorable(p) })
     names[p.id] = p.name
     const moons: any[] = p.moons || []
     moons.slice(0, 3).forEach((m: any, j: number) => {
       const ma = a + 1.2 + j * 1.1
       const mxp = x + Math.cos(ma) * 0.13, myp = y + Math.sin(ma) * 0.13
-      bodies.push({ id: m.id, name: m.name, kind: 'moon', x: mxp, y: myp, deployable: true })
+      bodies.push({ id: m.id, name: m.name, kind: 'moon', x: mxp, y: myp, deployable: moonExplorable(m) })
       names[m.id] = m.name
     })
     void i
