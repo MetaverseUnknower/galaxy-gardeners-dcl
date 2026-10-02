@@ -28,6 +28,7 @@ import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { showCurrentSystem } from './currentSystem'
 import './windowScan'
+import { hyperspaceSystem } from './hyperspace'
 import { setupHeatMap } from './heatMap'
 import { isDocked, loadDockedStatus, onDockingChanged, undock } from './docking'
 import { refreshStation } from './stations'
@@ -325,6 +326,7 @@ export async function main() {
   engine.addSystem(systemViewAnimationSystem)
   engine.addSystem(respawnSystem)
   engine.addSystem(twinkleSystem)
+  engine.addSystem(hyperspaceSystem)   // streaks outside the window while travelling
 
   engine.addSystem((dt: number) => {
     updateNotification(dt)
