@@ -378,3 +378,14 @@ export async function wormholeReturn(): Promise<{ systemId: string; systemName: 
 export async function travelThroughBlackHole(): Promise<{ traveled: boolean; fromSystem: string; toSystem: string; toSystemId: string }> {
   return apiPost('/api/ships/wormhole')
 }
+
+// Station construction: build a station in the ship's system (24 hours, paid in resources at the start)
+export type ConstructionRow = { id: string; system_id: string; station_name: string; started_at: string; duration_minutes: number; completes_at: string; status: string }
+export async function getConstructionCosts(): Promise<Record<string, number>> { return apiGet('/api/construction/costs') }
+export async function getActiveConstruction(): Promise<ConstructionRow | null> { return apiGet('/api/construction/active') }
+export async function startConstruction(stationName: string): Promise<{ constructionId: string; completesAt: string }> {
+  return apiPost('/api/construction/start', { stationName })
+}
+export async function completeConstruction(constructionId: string): Promise<{ stationId: string; stationName: string }> {
+  return apiPost(`/api/construction/complete/${constructionId}`)
+}

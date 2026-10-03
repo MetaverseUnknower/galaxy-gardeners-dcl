@@ -1,4 +1,4 @@
-import ReactEcs, { ReactEcsRenderer, UiEntity, Label } from '@dcl/sdk/react-ecs'
+import ReactEcs, { ReactEcsRenderer, UiEntity, Label, Input } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { StarSystem, FuelCostResponse } from './types'
 import { getTravelProgress, getTravelRemainingMs } from './navigation'
@@ -33,6 +33,7 @@ import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
+import { constructionCosts, costRows, canBegin, beginConstruction } from './construction'
 
 
 let selectedSystem: StarSystem | null = null
@@ -105,6 +106,33 @@ export function openRefineryDialog(): void {
   loadRefineryInventory()
 }
 export function closeRefineryDialog(): void { showRefineryDialog = false; refineryStatus = null }
+
+// Build a station (the nav console's BUILD STATION): a name, the costs against the hold, and BEGIN CONSTRUCTION
+let buildDialog: { systemId: string; name: string; inventory: { resource_type: string; quantity: number }[] | null; status: string | null; busy: boolean; generation: number } | null = null
+let buildGeneration = 0
+export function openBuildStationDialog(systemId: string): void {
+  buildDialog = { systemId, name: '', inventory: null, status: null, busy: false, generation: ++buildGeneration }
+  const d = buildDialog
+  api.getShipDashboard()
+    .then(dash => { d.inventory = dash.inventory || [] })
+    .catch(() => { d.inventory = []; d.status = "Couldn't read the hold. Close this and try again." })
+}
+function closeBuildStationDialog(): void { buildDialog = null }
+
+async function submitBuild(): Promise<void> {
+  const d = buildDialog
+  if (!d || d.busy || !d.inventory) return
+  const check = canBegin(costRows(constructionCosts(), d.inventory), d.name)
+  if (!check.ok) { d.status = check.reason; return }
+  d.busy = true; d.status = 'Laying down the first girders…'
+  try {
+    await beginConstruction(d.systemId, d.name)
+    if (buildDialog === d) buildDialog = null
+    showNotification(`Construction has begun, Captain. ${d.name.trim()} will be ready in 24 hours.`, Color4.create(0.35, 1, 0.55, 1), 8)
+  } catch (err: any) {
+    d.busy = false; d.status = err?.message || 'Construction failed'
+  }
+}
 
 async function loadRefineryInventory(): Promise<void> {
   try {
@@ -621,6 +649,53 @@ const RefineryDialog = () => {
 }
 
 
+const BuildStationDialog = () => {
+  const d = buildDialog
+  if (!d) return null
+  const rows = d.inventory ? costRows(constructionCosts(), d.inventory) : []
+  const check = d.inventory ? canBegin(rows, d.name) : { ok: false as const, reason: 'Checking the hold…' }
+  const ready = check.ok && !d.busy
+  const GREEN_UI = Color4.create(0.35, 1, 0.55, 1), RED_UI = Color4.create(1, 0.4, 0.4, 1), GREY = Color4.create(0.5, 0.5, 0.5, 1)
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', justifyContent: 'center', alignItems: 'center' }}>
+      <UiEntity uiTransform={{ width: px(540), flexDirection: 'column', padding: { top: px(24), bottom: px(24), left: px(24), right: px(24) } }} uiBackground={{ color: Color4.create(0.02, 0.02, 0.08, 0.95) }}>
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', margin: { bottom: px(6) } }}>
+          <UiEntity uiTransform={{ height: px(40), flex: 1 }} uiText={{ value: 'BUILD A STATION', fontSize: px(28), color: Color4.create(0, 1, 1, 1), textAlign: 'middle-center' }} />
+          <UiEntity uiTransform={{ width: px(36), height: px(36), justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0.3, 0.1, 0.1, 1) }}
+            uiText={{ value: 'X', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { closeBuildStationDialog() }} />
+        </UiEntity>
+        <UiEntity uiTransform={{ width: '100%', height: px(40), margin: { bottom: px(14) } }}
+          uiText={{ value: 'Construction takes 24 hours. The resources are used up as soon as it begins.', fontSize: px(15), color: GREY, textAlign: 'middle-center' }} />
+        <Input
+          key={`build-name-${d.generation}`}
+          uiTransform={{ width: '100%', height: px(44), margin: { bottom: px(14) } }}
+          uiBackground={{ color: Color4.create(0.05, 0.12, 0.2, 1) }}
+          fontSize={px(18)}
+          color={Color4.White()}
+          placeholder="Name your station"
+          placeholderColor={GREY}
+          value={d.name}
+          onChange={(v) => { d.name = v; if (!d.busy) d.status = null }}
+          onSubmit={(v) => { d.name = v; void submitBuild() }}
+        />
+        {rows.map(r => (
+          <UiEntity key={r.resource} uiTransform={{ width: '100%', flexDirection: 'row', alignItems: 'center', margin: { bottom: px(8) }, padding: { top: px(8), bottom: px(8), left: px(12), right: px(12) } }} uiBackground={{ color: Color4.create(0.05, 0.08, 0.15, 0.8) }}>
+            <UiEntity uiTransform={{ flex: 1, height: px(24) }} uiText={{ value: r.label, fontSize: px(19), color: Color4.White(), textAlign: 'middle-left' }} />
+            <UiEntity uiTransform={{ width: px(180), height: px(24) }} uiText={{ value: `${r.have} / ${r.need}`, fontSize: px(19), color: r.short ? RED_UI : GREEN_UI, textAlign: 'middle-right' }} />
+          </UiEntity>
+        ))}
+        <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(10) }, justifyContent: 'center', alignItems: 'center' }}
+          uiBackground={{ color: ready ? Color4.create(0, 0.45, 0.25, 1) : Color4.create(0.15, 0.15, 0.15, 1) }}
+          uiText={{ value: d.busy ? 'BEGINNING…' : 'BEGIN CONSTRUCTION', fontSize: px(20), color: ready ? Color4.White() : Color4.create(0.45, 0.45, 0.45, 1), textAlign: 'middle-center' }}
+          onMouseDown={() => { void submitBuild() }} />
+        {d.status || !check.ok ? <UiEntity uiTransform={{ width: '100%', height: px(28), margin: { top: px(8) } }} uiText={{ value: d.status ?? (check.ok ? '' : check.reason), fontSize: px(16), color: d.status ? Color4.create(0.8, 0.8, 0.3, 1) : GREY, textAlign: 'middle-center' }} /> : null}
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
 const CameraSwitch = () => {
   if (isCameraSuspended()) return null   // the ship tour holds the camera
   const current = getCameraMode()
@@ -802,6 +877,7 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <PurchaseDialog />
     <RecallDialog />
     <RefineryDialog />
+    <BuildStationDialog />
     <CameraSwitch />
     <MusicBar />
     <ReturnToTerminal />

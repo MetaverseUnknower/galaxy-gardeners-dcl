@@ -27,6 +27,7 @@ import { playCutscene } from './wormhole/cutscene'
 import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { showCurrentSystem } from './currentSystem'
+import { loadConstruction, setStationOpenedCallback } from './construction'
 import './windowScan'
 import { hyperspaceSystem } from './hyperspace'
 import { setupHeatMap } from './heatMap'
@@ -208,6 +209,13 @@ export async function main() {
       refreshStation('ship')   // docked pricing, and the UPGRADE button
     })
     void loadDockedStatus()
+    void loadConstruction()   // a station build in progress shows on the nav console
+    // A station the player built just opened: the map turns its star cyan, the console offers docking
+    setStationOpenedCallback(async () => {
+      await reloadMap()
+      if (getViewMode() === 'system') void showSystemView()
+      void refreshStation('ship')
+    })
 
     const floraStation = createStation({
       id: 'flora',

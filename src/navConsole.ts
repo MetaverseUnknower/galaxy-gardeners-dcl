@@ -7,14 +7,16 @@ import { DECK_Y } from './environment'
 import * as api from './api'
 import { getViewMode, switchViewMode, canSwitchToSystemView, setViewModeChangedListener, rotateMap, tiltMap, zoomMap, resetMapView, isMapFilterOn, toggleMapFilter, MapFilter } from './galaxyMap'
 import { getStationInfo, toggleOrbits, areOrbitsPaused, setStationChangedListener, isViewingRemoteSystem } from './systemView'
-import { showNotification } from './ui'
+import { showNotification, openBuildStationDialog } from './ui'
 import { getCameraMode, setCameraMode, CAMERA_MODES, CAMERA_MODE_LABELS, setCameraModeChangedListener } from './consoleCamera'
 import { enterSleepMode } from './sleepMode'
 import { isHeatMapOn, toggleHeatMap, heatMapTotal, setHeatMapChangedListener } from './heatMap'
 import { isDocked, dockAt, undock, onDockingChanged, boardStation } from './docking'
 import { hideInTopView } from './topViewHide'
-import { Bag, clearBag, text, frame, header, button, icon, image, dot, disc, pin, line, ring, clickable, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
+import { Bag, clearBag, text, frame, header, button, icon, image, dot, disc, pin, line, ring, clickable, bar, CYAN, CYAN3, MAGENTA, MAGENTA3, WHITE, DIM, MUTED, GREEN, GREEN3 } from './stations/draw'
 import { isCurrentlyTraveling, getTravelDestination } from './navigation'
+import { stationCard, activeBuild, onConstructionChanged, openStation } from './construction'
+import { playSfx } from './sfx'
 
 const LEFT = TextAlignMode.TAM_MIDDLE_LEFT, RIGHT = TextAlignMode.TAM_MIDDLE_RIGHT
 // This desk is scaled down (0.85), so its text gets a local boost on top of the global scale.
@@ -48,16 +50,19 @@ let lowered = false
 let tiltNow = 0
 const bag: Bag = []
 let systemName: string | null = null
+let systemId: string | null = null
 let systemHasStation = false
 // Station details for the current system, fetched when the galaxy list says one exists but the system view hasn't loaded.
 let fetchedStation: { systemId: string; info: { id?: string; name: string; origin: string; founded_by: string | null } | null } | null = null
 let lastCanSwitch = true
 let lastPaused = false
 let pollTimer = 0
+let lastBuildMinute = -1
 
 /** The player's current system, from the galaxy list (has_station is known before the system view loads). */
 export function setNavConsoleSystem(system: { id: string; name: string; has_station: boolean } | null): void {
   systemName = system?.name ?? null
+  systemId = system?.id ?? null
   systemHasStation = !!system?.has_station
   refreshNavConsole()
   if (system?.has_station && fetchedStation?.systemId !== system.id) {
@@ -81,6 +86,7 @@ export function createNavConsole(): void {
   onDockingChanged(refreshNavConsole)
   setCameraModeChangedListener(refreshNavConsole)   // keeps the camera buttons in step with the HUD switcher and keys
   setStationChangedListener(refreshNavConsole)
+  onConstructionChanged(refreshNavConsole)
   engine.addSystem(pollSystem)
   engine.addSystem(deskMotionSystem)
   refreshNavConsole()
@@ -106,7 +112,52 @@ function pollSystem(dt: number): void {
   if (pollTimer < 0.5) return
   pollTimer = 0
   const canSwitch = canSwitchToSystemView(), paused = areOrbitsPaused()
-  if (canSwitch !== lastCanSwitch || paused !== lastPaused) refreshNavConsole()
+  // A build here: redraw as its time left ticks over a minute, and when it's ready
+  const build = activeBuild()
+  const minute = build && build.systemId === systemId ? Math.floor(Date.now() / 60_000) : -1
+  if (canSwitch !== lastCanSwitch || paused !== lastPaused || minute !== lastBuildMinute) { lastBuildMinute = minute; refreshNavConsole() }
+}
+
+// The station card in a system without a station: the slot, a build under way, a finished one to open, or the
+// crew's one build happening somewhere else (construction.ts)
+function stationBuildCard(root: Entity): void {
+  const card = stationCard(systemId, activeBuild())
+  if (card.kind === 'building') {
+    txt(bag, root, 2.1, 0.3, 'UNDER CONSTRUCTION', 0.16, WHITE)
+    txt(bag, root, 2.1, 0.14, card.build.stationName.toUpperCase(), 0.11, CYAN)
+    frame(bag, root, 2.1, -0.32, 1.3, 0.62)
+    icon(bag, root, 2.1, -0.14, 0.26, ICONS.buildStation, { color: CYAN3 })
+    bar(bag, root, 2.1, -0.37, 1.0, card.progress, { h: 0.07, color: GREEN3 })
+    txt(bag, root, 2.1, -0.5, `${card.left} LEFT`, 0.12, GREEN)
+  } else if (card.kind === 'ready') {
+    txt(bag, root, 2.1, 0.3, 'CONSTRUCTION COMPLETE', 0.15, WHITE)
+    txt(bag, root, 2.1, 0.14, card.build.stationName.toUpperCase(), 0.11, CYAN)
+    const openFill = frame(bag, root, 2.1, -0.32, 1.3, 0.62, { border: GREEN3, fill: Color4.create(0.02, 0.16, 0.08, 1) })
+    icon(bag, root, 2.1, -0.18, 0.3, ICONS.station, { color: GREEN3 })
+    txt(bag, root, 2.1, -0.47, 'OPEN STATION  »', 0.22, GREEN)
+    clickable(openFill, `Open ${card.build.stationName}`, () => {
+      openStation().then(() => {
+        playSfx('game_start')
+        showNotification(`${card.build.stationName} is open, Captain. Its docking clamps are ready for us.`, GREEN, 8)
+      }).catch((err: Error) => showNotification(err.message, Color4.create(1, 0.4, 0.4, 1)))
+    })
+  } else {
+    txt(bag, root, 2.1, 0.3, 'NO STATION PRESENT', 0.16, WHITE)
+    if (card.kind === 'elsewhere') {
+      txt(bag, root, 2.1, 0.14, `CREW BUSY BUILDING ${card.build.stationName.toUpperCase()}`, 0.09, MAGENTA)
+      frame(bag, root, 2.1, -0.32, 1.3, 0.62)
+      icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: Color3.create(0.3, 0.38, 0.45) })
+      txt(bag, root, 2.1, -0.47, 'ONE BUILD AT A TIME', 0.14, MUTED)
+    } else {
+      txt(bag, root, 2.1, 0.14, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
+      const buildFill = frame(bag, root, 2.1, -0.32, 1.3, 0.62, { border: GREEN3, fill: Color4.create(0.02, 0.16, 0.08, 1) })
+      icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: GREEN3 })
+      txt(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
+      clickable(buildFill, 'Build Station', () => { if (systemId) openBuildStationDialog(systemId) })
+    }
+  }
+  frame(bag, root, 2.1, -0.87, 1.0, 0.5)
+  image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationSlot)   // 2:1
 }
 
 /** Square icon button with a caption underneath (the MAP NAVIGATION grid). */
@@ -149,10 +200,11 @@ export function refreshNavConsole(): void {
     txt(bag, root, 1.93, 1.08, 'STELLAR STATION', 0.13, DIM, LEFT)
     txt(bag, root, 1.93, 0.92, station.name, 0.2, CYAN, LEFT)
   } else {
+    const card = stationCard(systemId, activeBuild())
     txt(bag, root, 1.93, 1.12, 'STATION STATUS', 0.12, DIM, LEFT)
-    txt(bag, root, 1.93, 1.0, 'NO STATION PRESENT', 0.13, MAGENTA, LEFT)
-    dot(bag, root, 1.98, 0.88, 0.04, GREEN3)
-    txt(bag, root, 2.06, 0.88, 'STATION SLOT AVAILABLE', 0.1, GREEN, LEFT)
+    txt(bag, root, 1.93, 1.0, card.kind === 'building' || card.kind === 'ready' ? card.build.stationName : 'NO STATION PRESENT', 0.13, card.kind === 'building' || card.kind === 'ready' ? CYAN : MAGENTA, LEFT)
+    dot(bag, root, 1.98, 0.88, 0.04, card.kind === 'elsewhere' ? MAGENTA3 : GREEN3)
+    txt(bag, root, 2.06, 0.88, card.kind === 'building' ? 'UNDER CONSTRUCTION' : card.kind === 'ready' ? 'READY TO OPEN' : card.kind === 'elsewhere' ? 'CREW BUILDING ELSEWHERE' : 'STATION SLOT AVAILABLE', 0.1, card.kind === 'elsewhere' ? MAGENTA : GREEN, LEFT)
   }
 
   // View tabs
@@ -275,14 +327,7 @@ export function refreshNavConsole(): void {
       image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationOrbit)   // 2:1
     }
   } else {
-    txt(bag, root, 2.1, 0.3, 'NO STATION PRESENT', 0.16, WHITE)
-    txt(bag, root, 2.1, 0.14, 'CONSTRUCT A STATION IN THIS SYSTEM', 0.09, CYAN)
-    const buildFill = frame(bag, root, 2.1, -0.32, 1.3, 0.62, { border: GREEN3, fill: Color4.create(0.02, 0.16, 0.08, 1) })
-    icon(bag, root, 2.1, -0.18, 0.3, ICONS.buildStation, { color: GREEN3 })
-    txt(bag, root, 2.1, -0.47, 'BUILD STATION  »', 0.22, GREEN)
-    clickable(buildFill, 'Build Station', () => { console.log('Build'); showNotification('Station construction coming soon', GREEN) })
-    frame(bag, root, 2.1, -0.87, 1.0, 0.5)
-    image(bag, root, 2.1, -0.87, 0.96, 0.48, IMAGES.stationSlot)   // 2:1
+    stationBuildCard(root)
   }
 
   // Footer, with the console camera toggle in the middle
