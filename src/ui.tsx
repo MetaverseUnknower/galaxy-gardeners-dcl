@@ -27,7 +27,7 @@ import { WormholeBanner } from './wormhole/banner'
 import { WormholeOverlay } from './wormhole/flash'
 import { HawkingOverlay } from './hawkingDrift'
 import { isWormholeBusy } from './wormhole/state'
-import { blackHoleLink, loadBlackHoleLink, isBlackHoleJumpArmed, resetBlackHoleArm } from './wormhole/blackHole'
+import { blackHoleLink, loadBlackHoleLink, isBlackHoleJumpArmed, resetBlackHoleArm, wormholeOpen } from './wormhole/blackHole'
 import { eventWormholeOffer, useEventWormhole, pressBlackHoleJump } from './wormhole/actions'
 import { progressLabel, systemProgress } from './systemProgress'
 import { selectSystem } from './interaction'
@@ -333,7 +333,7 @@ const SystemInfoPanel = () => {
         <UiEntity uiTransform={{ width: '100%', height: px(28), margin: { bottom: px(6) } }} uiText={{ value: (selectedSystem.star_type || 'unknown').replace(/_/g, ' ').toUpperCase(), fontSize: px(20), color: Color4.create(0.6, 0.6, 0.6, 1), textAlign: 'middle-center' }} />
         <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'center', margin: { bottom: px(8) } }}>
           {selectedSystem.has_station ? <UiEntity uiTransform={{ height: px(24), margin: { right: px(16) } }} uiText={{ value: 'STATION', fontSize: px(18), color: Color4.create(0, 1, 1, 1) }} /> : null}
-          {selectedSystem.has_wormhole ? <UiEntity uiTransform={{ height: px(24) }} uiText={{ value: 'WORMHOLE', fontSize: px(18), color: Color4.create(0.6, 0.2, 1, 1) }} /> : null}
+          {wormholeOpen(selectedSystem) ? <UiEntity uiTransform={{ height: px(24) }} uiText={{ value: 'WORMHOLE', fontSize: px(18), color: Color4.create(0.6, 0.2, 1, 1) }} /> : null}
         </UiEntity>
         {progressLabel(selectedSystem.id) ? <UiEntity uiTransform={{ width: '100%', height: px(24), margin: { bottom: px(8) } }} uiText={{ value: progressLabel(selectedSystem.id)!, fontSize: px(18), color: systemProgress(selectedSystem.id)?.explored ? Color4.create(0.35, 1, 0.55, 1) : Color4.create(0.3, 0.8, 0.45, 1), textAlign: 'middle-center' }} /> : null}
         {scanLines(selectedSystem.id) ? (

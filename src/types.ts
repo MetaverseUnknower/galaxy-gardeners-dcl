@@ -14,6 +14,7 @@ export interface StarSystem {
   has_station: boolean
   solar_recharge_rate: number
   has_wormhole: boolean
+  wormhole_target_id?: string | null   // the black hole its wormhole leads to; null while unlinked
   star_type: string | null
   created_at: string
 }

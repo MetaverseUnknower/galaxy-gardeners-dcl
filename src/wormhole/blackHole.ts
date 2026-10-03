@@ -10,6 +10,13 @@ export const ARM_SECONDS = 8   // how long the confirm stays up after the first 
 let link: BlackHoleLink | null = null
 let armedAt = -Infinity
 
+/** A wormhole that leads somewhere: every black hole has one, but it opens only once linked to another black hole.
+ *  A server that doesn't send the link yet (wormhole_target_id missing) is trusted on has_wormhole. */
+export function wormholeOpen(system: Pick<StarSystem, 'has_wormhole' | 'wormhole_target_id'>): boolean {
+  if (!system.has_wormhole) return false
+  return system.wormhole_target_id === undefined ? true : !!system.wormhole_target_id
+}
+
 /** Where this system's wormhole leads, if it's a black hole whose wormhole is linked. */
 export function blackHoleLink(systemId: string): BlackHoleLink | null { return link && link.systemId === systemId ? link : null }
 

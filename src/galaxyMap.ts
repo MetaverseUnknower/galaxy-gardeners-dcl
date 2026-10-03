@@ -1,5 +1,6 @@
 import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, ColliderLayer, TextureWrapMode, VisibilityComponent } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion, Vector2 } from '@dcl/sdk/math'
+import { wormholeOpen } from './wormhole/blackHole'
 import { StarSystem } from './types'
 import { getSystemRoot, getSystemAutoScale, isViewingRemoteSystem } from './systemView'
 import { DECK_Y } from './environment'
@@ -391,7 +392,8 @@ function getStarColor(system: StarSystem, homeSystemId: string | null, currentSy
   if (system.id === homeSystemId) return { color: Color4.create(1, 0.3, 1, 1), emissive: Color3.create(1, 0.3, 1), size: 0.12, intensity: 7 }
   if (system.id === currentSystemId) return { color: Color4.create(0, 1, 0.5, 1), emissive: Color3.create(0, 1, 0.5), size: 0.15, intensity: 7 }
   if (system.has_station) return { color: Color4.create(0, 0.8, 0.8, 1), emissive: Color3.create(0, 0.8, 0.8), size: 0.08, intensity: 3 }
-  if (system.has_wormhole) return { color: Color4.create(0.6, 0.2, 1, 1), emissive: Color3.create(0.6, 0.2, 1), size: 0.07, intensity: 4.5 }
+  if (wormholeOpen(system)) return { color: Color4.create(0.6, 0.2, 1, 1), emissive: Color3.create(0.6, 0.2, 1), size: 0.07, intensity: 4.5 }
+  if (system.has_wormhole) return { color: Color4.create(0.3, 0.12, 0.45, 1), emissive: Color3.create(0.3, 0.12, 0.45), size: 0.06, intensity: 2 }   // a black hole whose wormhole leads nowhere yet
   return { color: Color4.create(1, 1, 1, 1), emissive: Color3.create(1, 1, 1), size: 0.05, intensity: 3 }
 }
 

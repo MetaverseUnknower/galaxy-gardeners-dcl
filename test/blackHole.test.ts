@@ -64,3 +64,19 @@ describe('jumping', () => {
     expect(said).toEqual(["We're mid-jump already, Captain."])
   })
 })
+
+// The galaxy map's wormhole colour and the star panel's WORMHOLE tag: every black hole has a wormhole, but it only
+// leads anywhere once linked (Antaroraar showed WORMHOLE with nowhere to go, Oct 3 2026)
+import { wormholeOpen } from '../src/wormhole/blackHole'
+describe('an open wormhole on the map', () => {
+  it('is a black hole whose wormhole is linked', () => {
+    expect(wormholeOpen({ has_wormhole: true, wormhole_target_id: 'bh2' } as any)).toBe(true)
+  })
+  it("isn't one whose wormhole leads nowhere yet", () => {
+    expect(wormholeOpen({ has_wormhole: true, wormhole_target_id: null } as any)).toBe(false)
+  })
+  it('trusts has_wormhole when the server sends no link field (before the server update)', () => {
+    expect(wormholeOpen({ has_wormhole: true } as any)).toBe(true)
+    expect(wormholeOpen({ has_wormhole: false } as any)).toBe(false)
+  })
+})
