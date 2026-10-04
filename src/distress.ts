@@ -11,6 +11,8 @@ export type Help = 'respond' | 'responding' | 'help'
 
 const FUEL_PER_GU = 1          // the server's BASE_FUEL_RATE
 const TOW_MULTIPLIER = 2       // a tow costs the helper twice the trip, at base efficiency
+const MINUTES_PER_GU = 1       // the server's BASE_TRAVEL_MINUTES_PER_GU
+const TOW_TIME_MULTIPLIER = 1.5   // and takes 1.5x the trip at base speed (services/fuel/tow.ts)
 const FUEL_CHOICES = [10, 25, 50]
 const MESSAGE_MAX = 200        // the server keeps no more (routes/distress.ts)
 
@@ -30,7 +32,7 @@ let calls: api.DistressCall[] = []
 const announced = new Set<string>()
 let mine: api.DistressCall | null = null
 let cancelling = false          // our own call is closing because we cancelled it, not because someone helped
-let handlers: { say?: (text: string) => void; shipChanged?: () => void; moved?: () => void; changed?: () => void } = {}
+let handlers: { say?: (text: string) => void; shipChanged?: () => void; moved?: (how: 'towing' | 'rescued') => void; changed?: () => void } = {}
 
 export function setDistressHandlers(h: typeof handlers): void { handlers = { ...handlers, ...h } }
 export function distressCalls(): api.DistressCall[] { return calls }
@@ -91,6 +93,16 @@ export function towCost(fromId: string, toId: string, systems: System[]): number
   return a && b ? Math.ceil(dist(a, b) * FUEL_PER_GU * TOW_MULTIPLIER) : 0
 }
 
+/** How long a tow takes, before any galaxy-wide speed event. */
+export function towMinutes(fromId: string, toId: string, systems: System[]): number {
+  const a = systems.find(s => s.id === fromId), b = systems.find(s => s.id === toId)
+  return a && b ? Math.max(1, Math.round(dist(a, b) * MINUTES_PER_GU * TOW_TIME_MULTIPLIER)) : 0
+}
+export function durationText(minutes: number): string {
+  const h = Math.floor(minutes / 60), m = Math.round(minutes % 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
 /** "API error 400: {"error":"..."}" → the server's own words */
 function serverMessage(err: any, fallback: string): string {
   const m = /^API error \d+: (.*)$/s.exec(String(err?.message ?? ''))
@@ -117,7 +129,7 @@ export async function refreshDistress(): Promise<void> {
     if (!cancelling) {
       // Fuel from a helper, a tow, or the star's own recharge: all three close the call
       handlers.say?.("Our distress call has closed, Captain. We can move again.")
-      handlers.moved?.()   // a tow moves the ship; fuel shows on the desks either way
+      handlers.moved?.('rescued')   // a tow sets the ship off; fuel shows on the desks either way
     }
     cancelling = false
   }
@@ -152,7 +164,7 @@ export async function sendFuelTo(id: string, amount: number): Promise<number> {
 
 export async function towToSafety(id: string, destinationId: string): Promise<void> {
   await call(() => api.towDistressShip(id, destinationId), 'The tow failed')
-  handlers.moved?.()   // both ships are at the destination now
+  handlers.moved?.('towing')   // both ships are on their way to the destination now
   await refreshDistress()
 }
 

@@ -20,7 +20,7 @@ vi.mock('../src/api', async (orig) => ({
 }))
 
 import {
-  needsHelp, helpFor, setDistressPlace, DISTRESS_PRESETS, distressMessage, setDistressShip, shouldOfferDistress, fuelChoices, nearestStation, towCost, refreshDistress, callsAt, myCall,
+  needsHelp, helpFor, towMinutes, durationText, setDistressPlace, DISTRESS_PRESETS, distressMessage, setDistressShip, shouldOfferDistress, fuelChoices, nearestStation, towCost, refreshDistress, callsAt, myCall,
   sendDistress, cancelDistress, respondTo, sendFuelTo, towToSafety, setDistressHandlers, resetDistress,
 } from '../src/distress'
 
@@ -106,6 +106,11 @@ describe('helping', () => {
     expect(dest?.id).toBe('dock')
     expect(towCost('here', dest!.id, SYSTEMS)).toBe(120)
   })
+  it('takes 1.5x the trip at base speed (1 minute per GU), like the server', () => {
+    expect(towMinutes('here', 'dock', SYSTEMS)).toBe(90)
+    expect(durationText(90)).toBe('1h 30m')
+    expect(durationText(45)).toBe('45m')
+  })
   it("doesn't tow to the system you're already in", () => {
     expect(nearestStation('dock', SYSTEMS)?.id).toBe('far-dock')
   })
@@ -127,7 +132,7 @@ describe('hearing calls', () => {
     active = []
     await refreshDistress()
     expect(said.some(t => /distress call has closed/.test(t))).toBe(true)
-    expect(moved).toHaveBeenCalled()   // a tow may have moved the ship: the map follows it
+    expect(moved).toHaveBeenCalledWith('rescued')   // a tow may have set the ship off: the ship follows it
   })
 })
 
@@ -158,7 +163,7 @@ describe('acting', () => {
   it('tows to safety, and the map follows the ship there', async () => {
     await towToSafety('c1', 'dock')
     expect(towDistressShip).toHaveBeenCalledWith('c1', 'dock')
-    expect(moved).toHaveBeenCalled()
+    expect(moved).toHaveBeenCalledWith('towing')
   })
   it("passes on the server's refusal", async () => {
     transferDistressFuel.mockRejectedValueOnce(new Error('API error 400: {"error":"You must be in the same star system to transfer fuel"}'))

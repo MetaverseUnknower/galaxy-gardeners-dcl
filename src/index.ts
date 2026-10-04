@@ -6,7 +6,7 @@ import * as api from './api'
 import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker, getViewMode, setWormholeTarget, setDistressTargets } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
-import { startTravel, onDeparture, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
+import { startTravel, onDeparture, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel, getTravelDestination } from './navigation'
 import { oneAtATime } from './oneAtATime'
 import { setupUi, setSelectedSystemUI, setSelectedSystemFuel, setTravelingStatus, setStatusMessage, setTravelConfirmCallback, setViewSystemCallback, setCurrentSystemId, updateNotification, showNotification, showStemMessage } from './ui'
 import { StarSystem, PlayerInfo } from './types'
@@ -216,7 +216,7 @@ export async function main() {
     setDistressHandlers({
       say: text => showStemMessage(text),
       shipChanged: () => { void refreshStation('ship') },
-      moved: async () => { await reloadMap(); void refreshStation('ship') },
+      moved: how => followTow(how),
       changed: () => { setDistressTargets(distressCalls().filter(c => !c.isMe).map(c => c.systemId)); void refreshStation('ship') },
     })
     startDistressWatch()
@@ -360,6 +360,25 @@ export async function main() {
       }
     }
   })
+}
+
+// A tow (distress.ts): both ships are now on a trip to the station, so pick it up like a departure: hyperspace,
+// the countdown, then the normal arrival. A call closed by fuel instead leaves the ship where it is.
+async function followTow(how: 'towing' | 'rescued'): Promise<void> {
+  await updateTravelState()
+  if (!isCurrentlyTraveling()) { await reloadMap(); void refreshStation('ship'); return }
+  hideCurrentLocationMarker()
+  const dest = getTravelDestination()
+  if (dest) {
+    setTravelingStatus(dest.name)
+    showStemMessage(how === 'rescued'
+      ? `We're under tow to ${dest.name}, Captain. Sit tight; we'll arrive together.`
+      : `Tow lines holding, Captain. Hauling them to ${dest.name}; we'll arrive together.`)
+  }
+  refreshDiscoveryPanel()
+  refreshNavConsole()
+  void loadDockedStatus()   // a tow undocks both ships
+  void refreshStation('ship')
 }
 
 // One reload at a time: arrival, a wormhole jump and its close can all ask at once, and two overlapping reloads both

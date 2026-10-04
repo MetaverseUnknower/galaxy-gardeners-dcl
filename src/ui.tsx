@@ -34,7 +34,7 @@ import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
 import { constructionCosts, costRows, canBegin, beginConstruction } from './construction'
-import { callsAt, helpFor, fuelChoices, nearestStation, towCost, distressPlace, respondTo, sendFuelTo, towToSafety, sendDistress, distressMessage, DISTRESS_PRESETS } from './distress'
+import { callsAt, helpFor, fuelChoices, nearestStation, towCost, distressPlace, respondTo, sendFuelTo, towToSafety, towMinutes, durationText, sendDistress, distressMessage, DISTRESS_PRESETS } from './distress'
 
 
 let selectedSystem: StarSystem | null = null
@@ -377,6 +377,7 @@ function distressSection(systemId: string) {
           const amounts = fuelChoices(ship?.fuel ?? 0)
           const dest = hereId ? nearestStation(hereId, systems) : null
           const cost = dest && hereId ? towCost(hereId, dest.id, systems) : 0
+          const minutes = dest && hereId ? towMinutes(hereId, dest.id, systems) : 0
           const canTow = !!dest && (ship?.fuel ?? 0) >= cost && !distressBusy
           const armed = towArmed?.callId === c.id && Date.now() - towArmed.at <= TOW_ARM_MS
           actions = (
@@ -389,12 +390,12 @@ function distressSection(systemId: string) {
                     }), 180))
                   : <UiEntity uiTransform={{ width: '100%', height: px(26), margin: { top: px(6) } }} uiText={{ value: 'Not enough fuel to share', fontSize: px(16), color: Color4.create(0.5, 0.5, 0.5, 1), textAlign: 'middle-center' }} />}
               </UiEntity>
-              {dest ? distressButton(`tow-${c.id}`, armed ? `CONFIRM TOW TO ${dest.name.toUpperCase()} (−${cost} FUEL)` : `TOW TO ${dest.name.toUpperCase()} · −${cost} FUEL`, canTow, () => {
+              {dest ? distressButton(`tow-${c.id}`, armed ? `CONFIRM TOW TO ${dest.name.toUpperCase()} (−${cost} FUEL, ${durationText(minutes)})` : `TOW TO ${dest.name.toUpperCase()} · −${cost} FUEL · ${durationText(minutes)}`, canTow, () => {
                 if (!armed) { towArmed = { callId: c.id, at: Date.now() }; return }
                 towArmed = null
                 void distressAction(async () => {
                   await towToSafety(c.id, dest.id)
-                  return `Tow complete, Captain. ${c.username} and our ship are at ${dest.name}.`
+                  return `Tow lines secured, Captain. We'll haul ${c.username} to ${dest.name}: about ${durationText(minutes)}.`
                 })
               }) : null}
             </UiEntity>
