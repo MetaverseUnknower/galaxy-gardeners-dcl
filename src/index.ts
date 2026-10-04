@@ -3,7 +3,7 @@ import { Vector3, Color4 } from '@dcl/sdk/math'
 import { createStation } from './stations'
 import { authenticate } from './auth'
 import * as api from './api'
-import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker, getViewMode, setWormholeTarget } from './galaxyMap'
+import { createProjectorBase, restoreMapView, renderStarSystems, clearMap, starEntities, galaxyAnimationSystem, setViewModeCallback, switchViewMode, setCanSwitchCheck, hideCurrentLocationMarker, getViewMode, setWormholeTarget, setDistressTargets } from './galaxyMap'
 import { setupInteraction, setSelectionCallback, getSelectedSystem, selectSystem } from './interaction'
 import { getPlayer } from '@dcl/sdk/players'
 import { startTravel, onDeparture, updateTravelState, checkArrival, travelUpdateSystem, isCurrentlyTraveling, drawRouteLine, setCurrentSystemForTravel } from './navigation'
@@ -28,6 +28,7 @@ import { startSoundtrack, setSoundtrackContext } from './soundtrack'
 import { playSfx, setSfxSystemId } from './sfx'
 import { showCurrentSystem } from './currentSystem'
 import { loadConstruction, setStationOpenedCallback } from './construction'
+import { setDistressHandlers, setDistressPlace, startDistressWatch, refreshDistress, distressCalls } from './distress'
 import './windowScan'
 import { hyperspaceSystem } from './hyperspace'
 import { setupHeatMap } from './heatMap'
@@ -210,6 +211,16 @@ export async function main() {
     })
     void loadDockedStatus()
     void loadConstruction()   // a station build in progress shows on the nav console
+    // Distress calls: STEM announces them, the map rings their stars, the desks and star panel offer help
+    setDistressPlace(systems, playerInfo.current_system_id)
+    setDistressHandlers({
+      say: text => showStemMessage(text),
+      shipChanged: () => { void refreshStation('ship') },
+      moved: async () => { await reloadMap(); void refreshStation('ship') },
+      changed: () => { setDistressTargets(distressCalls().filter(c => !c.isMe).map(c => c.systemId)); void refreshStation('ship') },
+    })
+    startDistressWatch()
+    void refreshDistress()
     // A station the player built just opened: the map turns its star cyan, the console offers docking
     setStationOpenedCallback(async () => {
       await reloadMap()
@@ -367,6 +378,7 @@ async function reloadMapOnce(): Promise<void> {
   systems = await api.getSystems(playerInfo.galaxy_id)
   setSoundtrackContext({ docked: isDocked(), system: systems.find(s => s.id === playerInfo!.current_system_id) ?? null })
   setSfxSystemId(playerInfo.current_system_id)
+  setDistressPlace(systems, playerInfo.current_system_id)
   showCurrentSystem(systems.find(s => s.id === playerInfo!.current_system_id) ?? null)
   renderStarSystems(systems, playerInfo.home_system_id, playerInfo.current_system_id)
   setupInteraction()

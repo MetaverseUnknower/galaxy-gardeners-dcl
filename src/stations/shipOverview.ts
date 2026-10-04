@@ -5,7 +5,7 @@ import { engine, Entity, Transform, TextAlignMode } from '@dcl/sdk/ecs'
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import * as api from '../api'
 import { playSfx, playMiningFanfare } from '../sfx'
-import { openRefineryDialog, openPurchaseDialog, openRecallDialog } from '../ui'
+import { openRefineryDialog, openPurchaseDialog, openRecallDialog, openDistressDialog } from '../ui'
 import { ViewDefinition, StationContext, Screens, TOP, refreshStation } from '../stations'
 import { Bag, clearBag, text, frame, header, bar, button, image, WHITE, DIM, MUTED, GREEN } from './draw'
 import { cargoUsed } from './data'
@@ -13,6 +13,8 @@ import { redrawWhenCountdownChanges, minutesUntil } from '../countdown'
 import { displayedFuel, isCurrentlyTraveling } from '../navigation'
 import { refreshSystemProgress } from '../systemProgress'
 import { podPhase, canRecall } from './podPhase'
+import { setDistressShip, shouldOfferDistress, myCall, cancelDistress } from '../distress'
+import { showNotification } from '../ui'
 
 // Blueprint line-art of the ship, drawn flat on the glass (see assets/icons/manifest.json for the art spec).
 export const SHIP_BLUEPRINT = 'assets/images/ship-blueprint.png'
@@ -27,6 +29,8 @@ export function solarRechargeLine(): string | null {
 }
 
 // Cosmetic bar scaling for the stats panel (the concept shows bars; the API has no maxima).
+const MAGENTA_TEXT = Color4.create(1, 0.35, 0.8, 1)
+const RED_TEXT = Color4.create(1, 0.4, 0.4, 1)
 const STAT_SCALE: Record<string, number> = { fuel_efficiency: 3, resource_storage: 500, specimen_vault: 50, expedition_speed: 3, blast_shielding: 9, environmental_shielding: 6 }
 const MISSIONS_PER_PAGE = 4   // leaves room for the Pod Operations button under the list
 
@@ -71,6 +75,19 @@ function drawTop(top: Entity, ctx: StationContext): void {
     text(topBag, top, -0.15, -0.15, `${fuel.toFixed(0)} / ${ship.fuel_capacity.toFixed(0)}`, 0.42, WHITE, TextAlignMode.TAM_MIDDLE_RIGHT)
     const recharge = solarRechargeLine()
     if (recharge) text(topBag, top, -2.55, -0.45, recharge, 0.32, DIM, TextAlignMode.TAM_MIDDLE_LEFT)
+    // Distress: the call when the ship can't reach any other star, and its status once it's out. The row spans the
+    // REFINE / BUY FUEL row's outer edges (-2.575 to -0.175) and sits clear above it (their tops are at -0.77).
+    setDistressShip(isCurrentlyTraveling() ? null : { fuel: ship.fuel_current, efficiency: ship.fuel_efficiency || 1, stranded: !!ship.is_stranded })
+    const call = myCall()
+    if (call) {
+      const n = call.acceptorCount
+      text(topBag, top, -2.575, -0.63, `DISTRESS BEACON ACTIVE · ${n === 0 ? 'NO REPLIES YET' : `${n} RESPONDING`}`, 0.24, MAGENTA_TEXT, TextAlignMode.TAM_MIDDLE_LEFT)
+      button(topBag, top, -0.475, -0.63, 0.6, 0.2, 'CANCEL', 'Cancel the distress call', () => {
+        cancelDistress().then(() => refreshStation('ship')).catch((err: Error) => showNotification(err.message, RED_TEXT))
+      }, { variant: 'magenta', size: 0.2 })
+    } else if (shouldOfferDistress()) {
+      button(topBag, top, -1.375, -0.63, 2.4, 0.2, 'SEND DISTRESS CALL', 'Ask the galaxy for fuel or a tow', () => openDistressDialog(), { variant: 'magenta', size: 0.24 })
+    }
   } else {
     text(topBag, top, -1.4, -0.15, 'Fuel data unavailable', 0.4, MUTED)
   }

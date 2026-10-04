@@ -389,3 +389,19 @@ export async function startConstruction(stationName: string): Promise<{ construc
 export async function completeConstruction(constructionId: string): Promise<{ stationId: string; stationName: string }> {
   return apiPost(`/api/construction/complete/${constructionId}`)
 }
+
+// Distress calls: a stranded ship broadcasts to its galaxy; anyone can respond, then send fuel or tow it once there
+export type DistressCall = {
+  id: string; playerId: string; username: string; message: string | null; systemId: string; systemName: string
+  coordX: number; coordY: number; coordZ: number; acceptorCount: number; iAccepted: boolean; isMe: boolean; createdAt: string
+}
+export async function getActiveDistressCalls(): Promise<DistressCall[]> { return apiGet('/api/distress/active') }
+export async function sendDistressCall(message?: string): Promise<{ id: string }> { return apiPost('/api/distress', message ? { message } : {}) }
+export async function cancelDistressCall(id: string): Promise<unknown> { return apiPost(`/api/distress/cancel/${id}`) }
+export async function acceptDistressCall(id: string): Promise<{ accepted: boolean }> { return apiPost(`/api/distress/accept/${id}`) }
+export async function transferDistressFuel(id: string, fuelAmount: number): Promise<{ status: string; fuelTransferred: number }> {
+  return apiPost(`/api/distress/transfer-fuel/${id}`, { fuelAmount })
+}
+export async function towDistressShip(id: string, destinationSystemId: string): Promise<{ status: string; destinationSystemId: string; towFuelCost: number }> {
+  return apiPost(`/api/distress/tow/${id}`, { destinationSystemId })
+}

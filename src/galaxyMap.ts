@@ -484,6 +484,7 @@ export function applyMapFilters(): void {
   if (currentLocationMarker) setShown(currentLocationMarker, isMapFilterOn('here'))
   drawProgressRings()
   drawWormholeMarker()   // hidden with its star
+  drawDistressMarkers()
 }
 
 // --- Wormhole event marker: a violet ring of segments turning around the wormhole's target star ---
@@ -528,6 +529,55 @@ function drawWormholeMarker(): void {
       MeshRenderer.setBox(seg)
       Material.setPbrMaterial(seg, { albedoColor: Color4.create(WORMHOLE_COLOR.r, WORMHOLE_COLOR.g, WORMHOLE_COLOR.b, 1), emissiveColor: WORMHOLE_COLOR, emissiveIntensity: 2, castShadows: false })
       wormholeSegments.push(seg)
+    }
+  }
+}
+
+// --- Distress markers: a red ring of segments, pulsing, around each star with a stranded ship calling for help ---
+const DISTRESS_COLOR = Color3.create(1, 0.2, 0.25)
+let distressSystemIds: string[] = []
+const distressPivots: Entity[] = []
+const distressSegments: Entity[] = []
+let distressPulse = 0
+
+/** Rings the stars with active distress calls (other captains'; distress.ts). */
+export function setDistressTargets(systemIds: string[]): void {
+  if (systemIds.join() === distressSystemIds.join()) return
+  distressSystemIds = systemIds
+  drawDistressMarkers()
+}
+
+function clearDistressMarkers(): void {
+  for (const e of distressSegments) engine.removeEntity(e)
+  distressSegments.length = 0
+  for (const e of distressPivots) engine.removeEntity(e)
+  distressPivots.length = 0
+}
+
+function drawDistressMarkers(): void {
+  clearDistressMarkers()
+  if (!galaxyRoot || distressSystemIds.length === 0) return
+  for (const [entity, system] of starEntities) {
+    if (!distressSystemIds.includes(system.id) || !starShown(system)) continue
+    const t = Transform.get(entity)
+    const pivot = engine.addEntity()
+    Transform.create(pivot, { position: t.position, parent: galaxyRoot })
+    distressPivots.push(pivot)
+    const r = t.scale.x / 2 + 0.28
+    const n = 16
+    for (let i = 0; i < n; i++) {
+      if (i % 4 === 3) continue
+      const a = (i / n) * Math.PI * 2
+      const seg = engine.addEntity()
+      Transform.create(seg, {
+        position: Vector3.create(Math.cos(a) * r, 0, Math.sin(a) * r),
+        scale: Vector3.create((2 * Math.PI * r / n) * 0.85, 0.01, 0.025),
+        rotation: Quaternion.fromEulerDegrees(0, 90 - (a * 180) / Math.PI, 0),
+        parent: pivot,
+      })
+      MeshRenderer.setBox(seg)
+      Material.setPbrMaterial(seg, { albedoColor: Color4.create(DISTRESS_COLOR.r, DISTRESS_COLOR.g, DISTRESS_COLOR.b, 1), emissiveColor: DISTRESS_COLOR, emissiveIntensity: 3, castShadows: false })
+      distressSegments.push(seg)
     }
   }
 }
@@ -584,6 +634,11 @@ function lerp(current: number, target: number, t: number): number {
 }
 
 export function galaxyAnimationSystem(dt: number): void {
+  if (distressPivots.length) {
+    distressPulse += dt
+    const s = 1 + 0.18 * Math.sin(distressPulse * 4)   // a beacon's throb, by size only
+    for (const p of distressPivots) Transform.getMutable(p).scale = Vector3.create(s, 1, s)
+  }
   if (wormholePivot) {
     wormholeSpin = (wormholeSpin + dt * 40) % 360
     Transform.getMutable(wormholePivot).rotation = Quaternion.fromEulerDegrees(0, wormholeSpin, 0)
@@ -728,6 +783,7 @@ export function clearMap(): void {
   for (const entity of progressRingEntities) engine.removeEntity(entity)
   progressRingEntities.length = 0
   clearWormholeMarker()
+  clearDistressMarkers()
   if (currentLocationMarker) { engine.removeEntity(currentLocationMarker); currentLocationMarker = null }
   if (galaxyRoot) {
     engine.removeEntity(galaxyRoot)

@@ -34,6 +34,7 @@ import { selectSystem } from './interaction'
 import { payMana, redeemManaPurchase, paymentErrorMessage } from './payments'
 import * as api from './api'
 import { constructionCosts, costRows, canBegin, beginConstruction } from './construction'
+import { callsAt, helpFor, fuelChoices, nearestStation, towCost, distressPlace, respondTo, sendFuelTo, towToSafety, sendDistress, distressMessage, DISTRESS_PRESETS } from './distress'
 
 
 let selectedSystem: StarSystem | null = null
@@ -118,6 +119,25 @@ export function openBuildStationDialog(systemId: string): void {
     .catch(() => { d.inventory = []; d.status = "Couldn't read the hold. Close this and try again." })
 }
 function closeBuildStationDialog(): void { buildDialog = null }
+
+// Send a distress call (the Ship Overview's SEND DISTRESS CALL): an optional message, quick lines, then SEND CALL
+let distressDialog: { message: string; status: string | null; busy: boolean; generation: number } | null = null
+let distressGeneration = 0
+export function openDistressDialog(): void { distressDialog = { message: '', status: null, busy: false, generation: ++distressGeneration } }
+function closeDistressDialog(): void { distressDialog = null }
+async function submitDistress(): Promise<void> {
+  const d = distressDialog
+  if (!d || d.busy) return
+  d.busy = true; d.status = 'Transmitting…'
+  try {
+    await sendDistress(distressMessage(d.message))
+    if (distressDialog === d) distressDialog = null
+    showNotification('Distress beacon transmitting, Captain. Every ship in the galaxy can hear us.', Color4.create(1, 0.35, 0.8, 1), 8)
+    void refreshStation('ship')
+  } catch (err: any) {
+    d.busy = false; d.status = err?.message || 'The distress beacon failed to transmit'
+  }
+}
 
 async function submitBuild(): Promise<void> {
   const d = buildDialog
@@ -315,6 +335,83 @@ function blackHoleButton(systemId: string) {
   )
 }
 
+// Star panel: other captains' distress calls from this star. Respond from afar; once here, send fuel or tow them to
+// the nearest station (asks once first: a tow costs twice the trip).
+const TOW_ARM_MS = 8000
+let towArmed: { callId: string; at: number } | null = null
+let distressBusy = false
+async function distressAction(work: () => Promise<string>): Promise<void> {
+  if (distressBusy) return
+  distressBusy = true
+  try { showNotification(await work(), Color4.create(0.35, 1, 0.55, 1), 8) }
+  catch (err: any) { showNotification(err?.message || 'That failed, Captain.', Color4.create(1, 0.4, 0.4, 1)) }
+  finally { distressBusy = false }
+}
+function distressButton(key: string, label: string, enabled: boolean, onPress: () => void, width?: number) {
+  return (
+    <UiEntity key={key} uiTransform={{ width: width !== undefined ? px(width) : '100%', height: px(44), margin: { top: px(8), right: px(6) }, justifyContent: 'center', alignItems: 'center' }}
+      uiBackground={{ color: enabled ? Color4.create(0.55, 0.08, 0.16, 1) : Color4.create(0.15, 0.15, 0.15, 1) }}
+      uiText={{ value: label, fontSize: px(17), color: enabled ? Color4.White() : Color4.create(0.45, 0.45, 0.45, 1), textAlign: 'middle-center' }}
+      onMouseDown={() => { if (enabled) onPress() }} />
+  )
+}
+function distressSection(systemId: string) {
+  const list = callsAt(systemId)
+  if (!list.length) return null
+  const { systems, hereId, ship } = distressPlace()
+  const RED = Color4.create(1, 0.35, 0.4, 1)
+  return (
+    <UiEntity uiTransform={{ width: '100%', flexDirection: 'column', margin: { top: px(14) } }}>
+      {list.map(c => {
+        const help = helpFor(c, currentSystemId, isCurrentlyTraveling())
+        const replies = c.acceptorCount === 0 ? 'no replies yet' : `${c.acceptorCount} responding`
+        let actions: any = null
+        if (help === 'respond') {
+          actions = distressButton(`respond-${c.id}`, 'RESPOND TO DISTRESS CALL', !distressBusy, () => void distressAction(async () => {
+            await respondTo(c.id)
+            return `On our way to ${c.username}, Captain. TRAVEL to ${c.systemName} to help.`
+          }))
+        } else if (help === 'responding') {
+          actions = <UiEntity uiTransform={{ width: '100%', height: px(26), margin: { top: px(6) } }} uiText={{ value: `You're responding. TRAVEL to ${c.systemName} to help.`, fontSize: px(16), color: RED, textAlign: 'middle-center' }} />
+        } else if (help === 'help') {
+          const amounts = fuelChoices(ship?.fuel ?? 0)
+          const dest = hereId ? nearestStation(hereId, systems) : null
+          const cost = dest && hereId ? towCost(hereId, dest.id, systems) : 0
+          const canTow = !!dest && (ship?.fuel ?? 0) >= cost && !distressBusy
+          const armed = towArmed?.callId === c.id && Date.now() - towArmed.at <= TOW_ARM_MS
+          actions = (
+            <UiEntity uiTransform={{ width: '100%', flexDirection: 'column' }}>
+              <UiEntity uiTransform={{ width: '100%', flexDirection: 'row' }}>
+                {amounts.length
+                  ? amounts.map(n => distressButton(`fuel-${c.id}-${n}`, `SEND ${n} FUEL`, !distressBusy, () => void distressAction(async () => {
+                      const sent = await sendFuelTo(c.id, n)
+                      return `Transferred ${Math.round(sent)} fuel to ${c.username}, Captain. They can move again.`
+                    }), 180))
+                  : <UiEntity uiTransform={{ width: '100%', height: px(26), margin: { top: px(6) } }} uiText={{ value: 'Not enough fuel to share', fontSize: px(16), color: Color4.create(0.5, 0.5, 0.5, 1), textAlign: 'middle-center' }} />}
+              </UiEntity>
+              {dest ? distressButton(`tow-${c.id}`, armed ? `CONFIRM TOW TO ${dest.name.toUpperCase()} (−${cost} FUEL)` : `TOW TO ${dest.name.toUpperCase()} · −${cost} FUEL`, canTow, () => {
+                if (!armed) { towArmed = { callId: c.id, at: Date.now() }; return }
+                towArmed = null
+                void distressAction(async () => {
+                  await towToSafety(c.id, dest.id)
+                  return `Tow complete, Captain. ${c.username} and our ship are at ${dest.name}.`
+                })
+              }) : null}
+            </UiEntity>
+          )
+        }
+        return (
+          <UiEntity key={c.id} uiTransform={{ width: '100%', flexDirection: 'column', padding: { top: px(10), bottom: px(10), left: px(12), right: px(12) }, margin: { bottom: px(8) } }} uiBackground={{ color: Color4.create(0.2, 0.03, 0.06, 0.85) }}>
+            <UiEntity uiTransform={{ width: '100%', height: px(26) }} uiText={{ value: `DISTRESS · ${c.username} is stranded here`, fontSize: px(19), color: RED, textAlign: 'middle-left' }} />
+            <UiEntity uiTransform={{ width: '100%', height: px(22) }} uiText={{ value: c.message ? `"${c.message}" · ${replies}` : replies, fontSize: px(15), color: Color4.create(0.75, 0.6, 0.62, 1), textAlign: 'middle-left' }} />
+            {actions}
+          </UiEntity>
+        )
+      })}
+    </UiEntity>
+  )
+}
+
 const SystemInfoPanel = () => {
   if (!selectedSystem) return null
   const canAfford = fuelInfo ? fuelInfo.current_fuel >= fuelInfo.fuel_cost : false
@@ -362,6 +459,7 @@ const SystemInfoPanel = () => {
         {selectedSystem.id === currentSystemId || systemProgress(selectedSystem.id)?.visited ? <UiEntity uiTransform={{ width: '100%', height: px(50), margin: { top: px(14) }, justifyContent: 'center', alignItems: 'center' }} uiBackground={{ color: Color4.create(0.1, 0.3, 0.5, 1) }} uiText={{ value: selectedSystem.id === currentSystemId ? 'VIEW SYSTEM' : 'VIEW SURVEY', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }} onMouseDown={() => { if (onViewSystem && selectedSystem) onViewSystem(selectedSystem.id) }} /> : null}
         {wormholeButton(selectedSystem.id)}
         {blackHoleButton(selectedSystem.id)}
+        {distressSection(selectedSystem.id)}
         {selectedSystem.id !== currentSystemId && fuelInfo && !showTravelConfirm ? (() => {
           const traveling = isCurrentlyTraveling()
           const canTravel = canAfford && !traveling
@@ -696,6 +794,52 @@ const BuildStationDialog = () => {
   )
 }
 
+const DistressDialog = () => {
+  const d = distressDialog
+  if (!d) return null
+  const MAGENTA_UI = Color4.create(1, 0.35, 0.8, 1), GREY = Color4.create(0.5, 0.5, 0.5, 1)
+  return (
+    <UiEntity uiTransform={{ width: '100%', height: '100%', positionType: 'absolute', justifyContent: 'center', alignItems: 'center' }}>
+      <UiEntity uiTransform={{ width: px(540), flexDirection: 'column', padding: { top: px(24), bottom: px(24), left: px(24), right: px(24) } }} uiBackground={{ color: Color4.create(0.06, 0.01, 0.05, 0.96) }}>
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', margin: { bottom: px(6) } }}>
+          <UiEntity uiTransform={{ height: px(40), flex: 1 }} uiText={{ value: 'SEND A DISTRESS CALL', fontSize: px(28), color: MAGENTA_UI, textAlign: 'middle-center' }} />
+          <UiEntity uiTransform={{ width: px(36), height: px(36), justifyContent: 'center', alignItems: 'center' }}
+            uiBackground={{ color: Color4.create(0.3, 0.1, 0.1, 1) }}
+            uiText={{ value: 'X', fontSize: px(20), color: Color4.White(), textAlign: 'middle-center' }}
+            onMouseDown={() => { closeDistressDialog() }} />
+        </UiEntity>
+        <UiEntity uiTransform={{ width: '100%', height: px(40), margin: { bottom: px(14) } }}
+          uiText={{ value: 'Every ship in the galaxy will hear this. You can cancel it any time.', fontSize: px(15), color: GREY, textAlign: 'middle-center' }} />
+        <UiEntity uiTransform={{ width: '100%', flexDirection: 'row', margin: { bottom: px(10) } }}>
+          {DISTRESS_PRESETS.map(p => (
+            <UiEntity key={p.label} uiTransform={{ flex: 1, height: px(40), margin: { right: px(8) }, justifyContent: 'center', alignItems: 'center' }}
+              uiBackground={{ color: Color4.create(0.18, 0.04, 0.14, 1) }}
+              uiText={{ value: p.label, fontSize: px(17), color: MAGENTA_UI, textAlign: 'middle-center' }}
+              onMouseDown={() => { d.message = p.text; d.generation = ++distressGeneration }} />
+          ))}
+        </UiEntity>
+        <Input
+          key={`distress-message-${d.generation}`}
+          uiTransform={{ width: '100%', height: px(44), margin: { bottom: px(14) } }}
+          uiBackground={{ color: Color4.create(0.12, 0.04, 0.1, 1) }}
+          fontSize={px(17)}
+          color={Color4.White()}
+          placeholder="Add a message (optional)"
+          placeholderColor={GREY}
+          value={d.message}
+          onChange={(v) => { d.message = v }}
+          onSubmit={(v) => { d.message = v; void submitDistress() }}
+        />
+        <UiEntity uiTransform={{ width: '100%', height: px(50), justifyContent: 'center', alignItems: 'center' }}
+          uiBackground={{ color: d.busy ? Color4.create(0.15, 0.15, 0.15, 1) : Color4.create(0.55, 0.08, 0.35, 1) }}
+          uiText={{ value: d.busy ? 'TRANSMITTING…' : 'SEND CALL', fontSize: px(20), color: d.busy ? Color4.create(0.6, 0.6, 0.6, 1) : Color4.White(), textAlign: 'middle-center' }}
+          onMouseDown={() => { void submitDistress() }} />
+        {d.status ? <UiEntity uiTransform={{ width: '100%', height: px(28), margin: { top: px(8) } }} uiText={{ value: d.status, fontSize: px(16), color: Color4.create(0.8, 0.8, 0.3, 1), textAlign: 'middle-center' }} /> : null}
+      </UiEntity>
+    </UiEntity>
+  )
+}
+
 const CameraSwitch = () => {
   if (isCameraSuspended()) return null   // the ship tour holds the camera
   const current = getCameraMode()
@@ -878,6 +1022,7 @@ const uiComponent = () => sleepSceneVisible() ? <SleepOverlay /> : (
     <RecallDialog />
     <RefineryDialog />
     <BuildStationDialog />
+    <DistressDialog />
     <CameraSwitch />
     <MusicBar />
     <ReturnToTerminal />
