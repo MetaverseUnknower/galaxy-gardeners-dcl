@@ -2,7 +2,7 @@
 // Implements the concept art's visual language once: dark glass frames with thin cyan borders,
 // icon + title + subtitle headers, cyan bars, outline/primary buttons, category tiles, list rows.
 // All helpers draw children of a screen root in screen coordinates (x right, y up, -z toward viewer).
-import { engine, Entity, Transform, MeshRenderer, MeshCollider, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem, GltfContainer } from '@dcl/sdk/ecs'
+import { engine, Entity, Transform, MeshRenderer, MeshCollider, ColliderLayer, Material, MaterialTransparencyMode, TextShape, TextAlignMode, InputAction, pointerEventsSystem, GltfContainer } from '@dcl/sdk/ecs'
 import { Color3, Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 
 export type Bag = Entity[]
@@ -26,9 +26,10 @@ const IMAGE_ROT = Quaternion.fromEulerDegrees(0, 0, 0)
 
 export function clearBag(bag: Bag): void { for (const e of bag) engine.removeEntity(e); bag.length = 0 }
 
-/** Makes any box-shaped entity (a frame's fill, a button) respond to pointer clicks. */
+/** Makes any box-shaped entity (a frame's fill, a button) respond to pointer clicks. Pointer layer only: with no
+ *  layer the SDK makes the box solid too, and a redraw then drops solid boxes where the captain is standing. */
 export function clickable(e: Entity, hover: string, onClick: () => void): void {
-  MeshCollider.setBox(e)
+  MeshCollider.setBox(e, ColliderLayer.CL_POINTER)
   pointerEventsSystem.onPointerDown({ entity: e, opts: { button: InputAction.IA_POINTER, hoverText: hover, maxDistance: 10 } }, onClick)
 }
 
